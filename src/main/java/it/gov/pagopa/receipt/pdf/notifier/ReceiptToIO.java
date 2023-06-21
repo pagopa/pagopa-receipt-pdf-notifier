@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+/**
+ * Azure Functions with CosmosDB trigger.
+ */
 public class ReceiptToIO {
 
     @FunctionName("ReceiptToIoProcessor")
@@ -60,8 +63,9 @@ public class ReceiptToIO {
         logger.info(logMsg);
         int discarder = 0;
 
-        List<Receipt> itemsNotified = new ArrayList<>();
+        List<Receipt> receiptsNotified = new ArrayList<>();
         List<Map<String, String>> messagesNotified = new ArrayList<>();
+        int queueSent = 0;
 
         for (Receipt receipt : listReceipts) {
             if (receipt != null && (receipt.getStatus().equals(ReceiptStatusType.GENERATED) || receipt.getStatus().equals(ReceiptStatusType.IO_NOTIFIER_RETRY))) {
@@ -87,36 +91,18 @@ public class ReceiptToIO {
                             //IO /messages
                         }
 
-                        if (receipt.getIoMessageData() != null) {
-                            Map<String, String> debtorMessageData = new HashMap<>();
-                            debtorMessageData.put(receipt.getIoMessageData().getIdMessageDebtor(), receipt.getIdEvent());
-                            messagesNotified.add(debtorMessageData);
-
-                            String payerMessageId = receipt.getIoMessageData().getIdMessagePayer();
-
-                            if (payerMessageId != null && !payerMessageId.isEmpty()) {
-                                Map<String, String> payerMessageData = new HashMap<>();
-                                payerMessageData.put(payerMessageId, receipt.getIdEvent());
-                                messagesNotified.add(payerMessageData);
-
-                            } else {
-
-                                if (!payerDebtorEqual) {
-                                    throw new ErrorToNotifyException("Error sending notification to IO user (payer)");
-                                }
-                            }
-
-                        } else {
-                            throw new ErrorToNotifyException("Error sending notification to IO user");
-                        }
+                        verifyMessagesNotification(messagesNotified, receipt, payerDebtorEqual);
 
                     } else {
                         throw new ErrorToNotifyException("Receipt does not contain event data");
                     }
                 } catch (ErrorToNotifyException e) {
+                    receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);
                     //TODO save on queue on error
+                    queueSent++;
                 }
 
+                receiptsNotified.add(receipt);
             } else {
                 discarder++;
             }
@@ -126,23 +112,50 @@ public class ReceiptToIO {
         logMsg = String.format("itemsDone stat %s function - %d number of events in discarder  ", context.getInvocationId(), discarder);
         logger.info(logMsg);
 
-        //TODO insert queue messages logger info
+        //Call to error queue info
+        logMsg = String.format("error messages stat %s function - number of error messages sent to queue %d", context.getInvocationId(), queueSent);
+        logger.info(logMsg);
 
         //Call to receipts' datastore info
-        logMsg = String.format("receipts notified stat %s function - number of receipts updated on the receipts' datastore %d", context.getInvocationId(), itemsNotified.size());
+        logMsg = String.format("receipts notified stat %s function - number of receipts updated on the receipts' datastore %d", context.getInvocationId(), receiptsNotified.size());
         logger.info(logMsg);
 
         //Call to messages' datastore info
         logMsg = String.format("messages notified stat %s function - number of messages inserted on the messages' datastore %d", context.getInvocationId(), messagesNotified.size());
         logger.info(logMsg);
 
-        if (!itemsNotified.isEmpty()) {
-            documentReceipts.setValue(itemsNotified);
+        if (!receiptsNotified.isEmpty()) {
+            documentReceipts.setValue(receiptsNotified);
         }
 
         if (!messagesNotified.isEmpty()) {
             documentMessages.setValue(messagesNotified);
         }
 
+    }
+
+    private static void verifyMessagesNotification(List<Map<String, String>> messagesNotified, Receipt receipt, boolean payerDebtorEqual) throws ErrorToNotifyException {
+        if (receipt.getIoMessageData() != null) {
+            Map<String, String> debtorMessageData = new HashMap<>();
+            debtorMessageData.put(receipt.getIoMessageData().getIdMessageDebtor(), receipt.getIdEvent());
+            messagesNotified.add(debtorMessageData);
+
+            String payerMessageId = receipt.getIoMessageData().getIdMessagePayer();
+
+            if (payerMessageId != null && !payerMessageId.isEmpty()) {
+                Map<String, String> payerMessageData = new HashMap<>();
+                payerMessageData.put(payerMessageId, receipt.getIdEvent());
+                messagesNotified.add(payerMessageData);
+
+            } else {
+                if (!payerDebtorEqual) {
+                    throw new ErrorToNotifyException("Error sending notification to IO user (payer)");
+                }
+            }
+
+            receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
+        } else {
+            throw new ErrorToNotifyException("Error sending notification to IO user");
+        }
     }
 }
