@@ -68,10 +68,14 @@ public class ReceiptToIO {
         int queueSent = 0;
 
         for (Receipt receipt : listReceipts) {
-            if (receipt != null && (receipt.getStatus().equals(ReceiptStatusType.GENERATED) || receipt.getStatus().equals(ReceiptStatusType.IO_NOTIFIER_RETRY))) {
+            if (receipt != null &&
+                    receipt.getEventData() != null &&
+                    (receipt.getStatus().equals(ReceiptStatusType.GENERATED) ||
+                            receipt.getStatus().equals(ReceiptStatusType.SIGNED) ||
+                            receipt.getStatus().equals(ReceiptStatusType.IO_NOTIFIER_RETRY))
+            ) {
 
                 try {
-                    if (receipt.getEventData() != null) {
                         String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
                         String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
 
@@ -93,9 +97,6 @@ public class ReceiptToIO {
 
                         verifyMessagesNotification(messagesNotified, receipt, payerDebtorEqual);
 
-                    } else {
-                        throw new ErrorToNotifyException("Receipt does not contain event data");
-                    }
                 } catch (ErrorToNotifyException e) {
                     receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);
                     //TODO save on queue on error
