@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Receipt {
 
-    private String idEvent;
+    private String eventId;
     private String id;
     private String version;
     private EventData eventData;
@@ -20,4 +20,5 @@ public class Receipt {
     private ReceiptMetadata mdAttachPayer;
     private int numRetry;
     private ReasonError reasonErr;
+    private int notificationNumRetry;
 }
