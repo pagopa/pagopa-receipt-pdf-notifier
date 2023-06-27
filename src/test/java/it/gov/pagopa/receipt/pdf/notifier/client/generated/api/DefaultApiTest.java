@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 @Disabled
 class DefaultApiTest {
 
-    private final DefaultApi api = new DefaultApi();
+    private final IOClient api = new IOClient();
 
     /**
      * Get a User Profile using POST

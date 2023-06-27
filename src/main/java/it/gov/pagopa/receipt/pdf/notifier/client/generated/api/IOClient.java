@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DefaultApi {
+public class IOClient {
     private final ApiClient localVarApiClient;
 
     private final String BASE_PATH = System.getenv().getOrDefault("IO_API_BASE_PATH", "https://api.io.pagopa.it/api/v1");
@@ -42,11 +42,11 @@ public class DefaultApi {
     private final String MESSAGES_PATH = System.getenv().getOrDefault("IO_API_MESSAGES_PATH", "/messages");
     private static final String CONTENT_TYPE_JSON = "application/json";
 
-    public DefaultApi() {
+    public IOClient() {
         this(Configuration.getDefaultApiClient());
     }
 
-    public DefaultApi(ApiClient apiClient) {
+    public IOClient(ApiClient apiClient) {
         this.localVarApiClient = apiClient;
     }
 
