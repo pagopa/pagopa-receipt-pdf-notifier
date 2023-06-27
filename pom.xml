@@ -8,7 +8,7 @@
     <version>0.0.1</version>
     <packaging>jar</packaging>
 
-    <name>Azure Custom Fn</name>
+    <name>pagopa-receipt-pdf-notifier</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
