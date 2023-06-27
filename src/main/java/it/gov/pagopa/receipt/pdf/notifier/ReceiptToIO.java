@@ -6,9 +6,17 @@ import com.microsoft.azure.functions.annotation.CosmosDBOutput;
 import com.microsoft.azure.functions.annotation.CosmosDBTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.QueueOutput;
+import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiException;
+import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiResponse;
+import it.gov.pagopa.receipt.pdf.notifier.client.generated.api.IOClient;
+import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
+import it.gov.pagopa.receipt.pdf.notifier.model.generated.CreatedMessage;
+import it.gov.pagopa.receipt.pdf.notifier.model.generated.FiscalCodePayload;
+import it.gov.pagopa.receipt.pdf.notifier.model.generated.LimitedProfile;
+import it.gov.pagopa.receipt.pdf.notifier.model.generated.NewMessage;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,6 +29,9 @@ import java.util.logging.Logger;
  * Azure Functions with CosmosDB trigger.
  */
 public class ReceiptToIO {
+
+    private final static String PAYER = "payer";
+    private final static String DEBTOR = "debtor";
 
     @FunctionName("ReceiptToIoProcessor")
     //TODO @ExponentialBackoffRetry(maxRetryCount = 5, minimumInterval = "500", maximumInterval = "5000")
@@ -76,26 +87,26 @@ public class ReceiptToIO {
             ) {
 
                 try {
-                        String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
-                        String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
+                    String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
+                    String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
 
-                        boolean payerDebtorEqual = payerFiscalCode.equals(debtorFiscalCode);
+                    boolean notifyOnlyDebtor = payerFiscalCode == null || payerFiscalCode.equals(debtorFiscalCode);
 
-                        if (payerDebtorEqual) {
-                            //TODO verify user is an IO user
-                            //IO /profiles
+                    if (debtorFiscalCode != null &&
+                            (receipt.getIoMessageData() == null ||
+                                    receipt.getIoMessageData().getIdMessageDebtor() == null)
+                    ) {
+                        notifyMessage(debtorFiscalCode, DEBTOR);
+                    }
+                    if (payerFiscalCode != null &&
+                            (receipt.getIoMessageData() == null ||
+                                    receipt.getIoMessageData().getIdMessagePayer() == null
+                            )
+                    ) {
+                        notifyMessage(payerFiscalCode, PAYER);
+                    }
 
-                            //TODO send notification to user
-                            //IO /messages
-                        } else {
-                            //TODO verify user(s) is an IO user
-                            //IO /profiles
-
-                            //TODO send notification to users
-                            //IO /messages
-                        }
-
-                        verifyMessagesNotification(messagesNotified, receipt, payerDebtorEqual);
+                    verifyMessagesNotification(messagesNotified, receipt, notifyOnlyDebtor);
 
                 } catch (ErrorToNotifyException e) {
                     receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);
@@ -135,7 +146,7 @@ public class ReceiptToIO {
 
     }
 
-    private static void verifyMessagesNotification(List<Map<String, String>> messagesNotified, Receipt receipt, boolean payerDebtorEqual) throws ErrorToNotifyException {
+    private static void verifyMessagesNotification(List<Map<String, String>> messagesNotified, Receipt receipt, boolean notifyOnlyDebtor) throws ErrorToNotifyException {
         if (receipt.getIoMessageData() != null) {
             Map<String, String> debtorMessageData = new HashMap<>();
             debtorMessageData.put(receipt.getIoMessageData().getIdMessageDebtor(), receipt.getIdEvent());
@@ -149,7 +160,7 @@ public class ReceiptToIO {
                 messagesNotified.add(payerMessageData);
 
             } else {
-                if (!payerDebtorEqual) {
+                if (!notifyOnlyDebtor) {
                     throw new ErrorToNotifyException("Error sending notification to IO user (payer)");
                 }
             }
@@ -157,6 +168,49 @@ public class ReceiptToIO {
             receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
         } else {
             throw new ErrorToNotifyException("Error sending notification to IO user");
+        }
+    }
+
+    private static void notifyMessage(String fiscalCode, String userType) {
+        FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
+        NewMessage message = new NewMessage();
+        IOClient client = new IOClient();
+
+        fiscalCodePayload.setFiscalCode(fiscalCode);
+        //TODO verify user is an IO user
+        //IO /profiles
+        ApiResponse<LimitedProfile> getProfileResponse;
+        try {
+            getProfileResponse = client.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
+        } catch (ApiException e) {
+            //TODO handle error
+            throw new RuntimeException(e);
+        }
+
+        if (getProfileResponse != null &&
+                getProfileResponse.getData() != null &&
+                getProfileResponse.getData().getSenderAllowed()) {
+            //TODO send notification to users
+            //IO /messages
+            try {
+                ApiResponse<CreatedMessage> sendMessageResponse = client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(message);
+                IOMessageData messageData = new IOMessageData();
+                if (sendMessageResponse != null &&
+                        sendMessageResponse.getData() != null) {
+                    if (userType.equals(DEBTOR)) {
+                        messageData.setIdMessageDebtor(sendMessageResponse.getData().getId());
+                    } else {
+                        messageData.setIdMessagePayer(sendMessageResponse.getData().getId());
+                    }
+                }
+
+
+            } catch (ApiException e) {
+                //TODO handle error
+                throw new RuntimeException(e);
+            }
+        } else {
+            //TODO handle not allowed / error response
         }
     }
 }
