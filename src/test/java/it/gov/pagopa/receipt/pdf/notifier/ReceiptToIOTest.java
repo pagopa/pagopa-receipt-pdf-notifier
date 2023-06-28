@@ -401,6 +401,126 @@ class ReceiptToIOTest {
     }
 
     @Test
+    void runOkWithStatusSIGNED() throws ApiException {
+        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
+        when(context.getLogger()).thenReturn(logger);
+
+        ///profile
+        @SuppressWarnings("unchecked")
+        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
+        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        LimitedProfile profile = mock(LimitedProfile.class);
+        when(profile.getSenderAllowed()).thenReturn(true);
+        when(getProfileResponse.getData()).thenReturn(profile);
+
+        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
+
+        ///messages
+        @SuppressWarnings("unchecked")
+        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        CreatedMessage createdMessage = mock(CreatedMessage.class);
+        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID, VALID_PAYER_MESSAGE_ID);
+        when(messageResponse.getData()).thenReturn(createdMessage);
+        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
+
+        setMock(client);
+
+        List<Receipt> receiptList = new ArrayList<>();
+        EventData eventData = mock(EventData.class);
+        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
+        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
+
+        receipt.setEventData(eventData);
+        receipt.setEventId(EVENT_ID);
+        receipt.setStatus(ReceiptStatusType.SIGNED);
+
+        receiptList.add(receipt);
+
+        @SuppressWarnings("unchecked")
+        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
+
+        Assertions.assertDoesNotThrow(() ->
+                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                ));
+
+        //Verify receipts update
+        verify(documentReceipts).setValue(receiptCaptor.capture());
+        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
+        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
+        assertEquals(VALID_PAYER_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessagePayer());
+        assertEquals(EVENT_ID, updatedReceipt.getEventId());
+        assertEquals(0, updatedReceipt.getNotificationNumRetry());
+        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
+        assertNull(updatedReceipt.getReasonErr());
+
+    }
+
+    @Test
+    void runOkWithStatusIO_NOTIFIER_RETRY() throws ApiException {
+        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
+        when(context.getLogger()).thenReturn(logger);
+
+        ///profile
+        @SuppressWarnings("unchecked")
+        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
+        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        LimitedProfile profile = mock(LimitedProfile.class);
+        when(profile.getSenderAllowed()).thenReturn(true);
+        when(getProfileResponse.getData()).thenReturn(profile);
+
+        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
+
+        ///messages
+        @SuppressWarnings("unchecked")
+        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        CreatedMessage createdMessage = mock(CreatedMessage.class);
+        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID, VALID_PAYER_MESSAGE_ID);
+        when(messageResponse.getData()).thenReturn(createdMessage);
+        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
+
+        setMock(client);
+
+        List<Receipt> receiptList = new ArrayList<>();
+        EventData eventData = mock(EventData.class);
+        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
+        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
+
+        receipt.setEventData(eventData);
+        receipt.setEventId(EVENT_ID);
+        receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);
+
+        receiptList.add(receipt);
+
+        @SuppressWarnings("unchecked")
+        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
+
+        Assertions.assertDoesNotThrow(() ->
+                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                ));
+
+        //Verify receipts update
+        verify(documentReceipts).setValue(receiptCaptor.capture());
+        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
+        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
+        assertEquals(VALID_PAYER_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessagePayer());
+        assertEquals(EVENT_ID, updatedReceipt.getEventId());
+        assertEquals(0, updatedReceipt.getNotificationNumRetry());
+        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
+        assertNull(updatedReceipt.getReasonErr());
+
+    }
+
+    @Test
     void runKoErrorResponseProfileBothDebtorAndPayer() throws ApiException {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
