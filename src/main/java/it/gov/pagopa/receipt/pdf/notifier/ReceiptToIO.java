@@ -5,7 +5,6 @@ import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.*;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.impl.ReceiptToIOServiceImpl;
@@ -83,8 +82,10 @@ public class ReceiptToIO {
                 //Notify to debtor
                 service.notifyMessage(usersToBeVerified, debtorFiscalCode, UserType.DEBTOR, receipt, logger);
 
-                //Notify to payer
-                service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt, logger);
+                if(payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode))){
+                    //Notify to payer
+                    service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt, logger);
+                }
 
                 //Verify notification(s) status
                 queueSent += service.verifyMessagesNotification(
