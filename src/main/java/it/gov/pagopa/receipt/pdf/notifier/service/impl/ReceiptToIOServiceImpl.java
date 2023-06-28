@@ -2,7 +2,7 @@ package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 
 import com.microsoft.azure.functions.OutputBinding;
 import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiResponse;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.api.IOClient;
+import it.gov.pagopa.receipt.pdf.notifier.client.generated.api.IOService;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
@@ -14,6 +14,7 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.model.generated.*;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
+import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 import lombok.NoArgsConstructor;
 import org.apache.http.HttpStatus;
 
@@ -39,45 +40,77 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                               UserType userType,
                               Receipt receipt,
                               Logger logger) {
-        FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
-        IOClient client = new IOClient();
 
-        fiscalCodePayload.setFiscalCode(fiscalCode);
-        //Verify user is an IO user
-        //IO /profiles
-        ApiResponse<LimitedProfile> getProfileResponse;
-        try {
-            getProfileResponse = client.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
+        if (fiscalCode != null &&
+                (receipt.getIoMessageData() == null ||
+                        ReceiptToIOUtils.verifyMessageIdIsNotPresent(userType, receipt)
+                )
+        ) {
+            FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
+            IOService client = new IOService();
 
-            if (getProfileResponse != null
+            fiscalCodePayload.setFiscalCode(fiscalCode);
+            //Verify user is an IO user
+            //IO /profiles
+            ApiResponse<LimitedProfile> getProfileResponse;
+            try {
+                getProfileResponse = client.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
+
+                handleGetProfileResponseAndNotify(usersToBeVerified, fiscalCode, userType, receipt, logger, client, getProfileResponse);
+            } catch (Exception e) {
+                usersToBeVerified.put(fiscalCode, UserNotifyStatus.NOT_NOTIFIED);
+
+                String logMsg = String.format("Error verifying IO user with fiscal code %s : %s", fiscalCode, e);
+                logger.severe(logMsg);
+            }
+        }
+
+    }
+
+    /**
+     * Verify getProfile response's status and in case of success sends notification
+     *
+     * @param usersToBeVerified  Map<FiscalCode, Status> containing user notification status
+     * @param fiscalCode         User fiscal code
+     * @param userType           Enum User type
+     * @param receipt            Receipt from CosmosDB
+     * @param logger             Logger
+     * @param client             API Client
+     * @param getProfileResponse Response from API /profiles
+     * @throws ErrorToNotifyException in case of error notifying user
+     */
+    private static void handleGetProfileResponseAndNotify(
+            Map<String, UserNotifyStatus> usersToBeVerified,
+            String fiscalCode, UserType userType,
+            Receipt receipt,
+            Logger logger,
+            IOService client,
+            ApiResponse<LimitedProfile> getProfileResponse
+    ) throws ErrorToNotifyException {
+
+        if (getProfileResponse != null
+        ) {
+            if (
+                    getProfileResponse.getData() != null &&
+                            getProfileResponse.getStatusCode() == HttpStatus.SC_OK
             ) {
-                if (
-                        getProfileResponse.getData() != null &&
-                                getProfileResponse.getStatusCode() == HttpStatus.SC_OK
-                ) {
-                    if (getProfileResponse.getData().getSenderAllowed()) {
-                        //Send notification to user
-                        handleSendNotificationToUser(fiscalCode, userType, receipt, client);
+                if (getProfileResponse.getData().getSenderAllowed()) {
+                    //Send notification to user
+                    handleSendNotificationToUser(fiscalCode, userType, receipt, client);
 
-                        usersToBeVerified.put(fiscalCode, UserNotifyStatus.NOTIFIED);
+                    usersToBeVerified.put(fiscalCode, UserNotifyStatus.NOTIFIED);
 
-                    } else {
-                        usersToBeVerified.put(fiscalCode, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
-
-                        logger.info("User with fiscal code %s has not to be notified");
-                    }
                 } else {
-                    String errorMsg = String.format("IO /profiles responded with code %s", getProfileResponse.getStatusCode());
-                    throw new ErrorToNotifyException(errorMsg);
+                    usersToBeVerified.put(fiscalCode, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
+
+                    logger.info("User with fiscal code %s has not to be notified");
                 }
             } else {
-                throw new ErrorToNotifyException("IO /profiles failed to respond");
+                String errorMsg = String.format("IO /profiles responded with code %s", getProfileResponse.getStatusCode());
+                throw new ErrorToNotifyException(errorMsg);
             }
-        } catch (Exception e) {
-            usersToBeVerified.put(fiscalCode, UserNotifyStatus.NOT_NOTIFIED);
-
-            String logMsg = String.format("Error verifying IO user with fiscal code %s : %s", fiscalCode, e);
-            logger.severe(logMsg);
+        } else {
+            throw new ErrorToNotifyException("IO /profiles failed to respond");
         }
     }
 
@@ -93,9 +126,9 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             String fiscalCode,
             UserType userType,
             Receipt receipt,
-            IOClient client
+            IOService client
     ) throws ErrorToNotifyException {
-        NewMessage message = buildNewMessage(fiscalCode, receipt);
+        NewMessage message = ReceiptToIOUtils.buildNewMessage(fiscalCode, receipt);
 
         //IO /messages
         try {
@@ -124,39 +157,6 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             String errorMsg = String.format("Error sending notification to IO user with fiscal code %s : %s", fiscalCode, e);
             throw new ErrorToNotifyException(errorMsg);
         }
-    }
-
-    /**
-     * Build message request from Receipt's data
-     *
-     * @param receipt    Receipt from CosmosDB
-     * @param fiscalCode User's fiscal code
-     * @return NewMessage object used as request to notify
-     */
-    private static NewMessage buildNewMessage(String fiscalCode, Receipt receipt) {
-        NewMessage message = new NewMessage();
-
-        message.setFiscalCode(fiscalCode);
-        message.setFeatureLevelType("ADVANCED");
-
-        MessageContent content = new MessageContent();
-        //https://pagopa.atlassian.net/wiki/spaces/PPR/pages/719093789/Overview+processo+invio+messaggi+IO
-        //TODO subject, markdown
-        content.setSubject("");
-        content.setMarkdown("");
-
-        ThirdPartyData thirdPartyData = new ThirdPartyData();
-        String pdfId = String.format(receipt.getEventId(), fiscalCode);
-        thirdPartyData.setId(pdfId);
-        thirdPartyData.setHasAttachments(true);
-        //TODO set summary
-        thirdPartyData.setSummary("");
-
-        content.setThirdPartyData(thirdPartyData);
-
-        message.setContent(content);
-
-        return message;
     }
 
     /**

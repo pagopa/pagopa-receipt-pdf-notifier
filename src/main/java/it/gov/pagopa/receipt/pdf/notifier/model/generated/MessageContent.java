@@ -43,18 +43,6 @@ public class MessageContent {
   @SerializedName(SERIALIZED_NAME_PAYMENT_DATA)
   private PaymentData paymentData;
 
-  public static final String SERIALIZED_NAME_PRESCRIPTION_DATA = "prescription_data";
-  @SerializedName(SERIALIZED_NAME_PRESCRIPTION_DATA)
-  private PrescriptionData prescriptionData;
-
-  public static final String SERIALIZED_NAME_LEGAL_DATA = "legal_data";
-  @SerializedName(SERIALIZED_NAME_LEGAL_DATA)
-  private LegalData legalData;
-
-  public static final String SERIALIZED_NAME_EU_COVID_CERT = "eu_covid_cert";
-  @SerializedName(SERIALIZED_NAME_EU_COVID_CERT)
-  private EUCovidCert euCovidCert;
-
   public static final String SERIALIZED_NAME_THIRD_PARTY_DATA = "third_party_data";
   @SerializedName(SERIALIZED_NAME_THIRD_PARTY_DATA)
   private ThirdPartyData thirdPartyData;
@@ -128,70 +116,6 @@ public class MessageContent {
     this.paymentData = paymentData;
   }
 
-
-  public MessageContent prescriptionData(PrescriptionData prescriptionData) {
-    
-    this.prescriptionData = prescriptionData;
-    return this;
-  }
-
-   /**
-   * Get prescriptionData
-   * @return prescriptionData
-  **/
-  @javax.annotation.Nullable
-  public PrescriptionData getPrescriptionData() {
-    return prescriptionData;
-  }
-
-
-  public void setPrescriptionData(PrescriptionData prescriptionData) {
-    this.prescriptionData = prescriptionData;
-  }
-
-
-  public MessageContent legalData(LegalData legalData) {
-    
-    this.legalData = legalData;
-    return this;
-  }
-
-   /**
-   * Get legalData
-   * @return legalData
-  **/
-  @javax.annotation.Nullable
-  public LegalData getLegalData() {
-    return legalData;
-  }
-
-
-  public void setLegalData(LegalData legalData) {
-    this.legalData = legalData;
-  }
-
-
-  public MessageContent euCovidCert(EUCovidCert euCovidCert) {
-    
-    this.euCovidCert = euCovidCert;
-    return this;
-  }
-
-   /**
-   * Get euCovidCert
-   * @return euCovidCert
-  **/
-  @javax.annotation.Nullable
-  public EUCovidCert getEuCovidCert() {
-    return euCovidCert;
-  }
-
-
-  public void setEuCovidCert(EUCovidCert euCovidCert) {
-    this.euCovidCert = euCovidCert;
-  }
-
-
   public MessageContent thirdPartyData(ThirdPartyData thirdPartyData) {
     
     this.thirdPartyData = thirdPartyData;
@@ -247,16 +171,13 @@ public class MessageContent {
     return Objects.equals(this.subject, messageContent.subject) &&
         Objects.equals(this.markdown, messageContent.markdown) &&
         Objects.equals(this.paymentData, messageContent.paymentData) &&
-        Objects.equals(this.prescriptionData, messageContent.prescriptionData) &&
-        Objects.equals(this.legalData, messageContent.legalData) &&
-        Objects.equals(this.euCovidCert, messageContent.euCovidCert) &&
         Objects.equals(this.thirdPartyData, messageContent.thirdPartyData) &&
         Objects.equals(this.dueDate, messageContent.dueDate);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(subject, markdown, paymentData, prescriptionData, legalData, euCovidCert, thirdPartyData, dueDate);
+    return Objects.hash(subject, markdown, paymentData, thirdPartyData, dueDate);
   }
 
   @Override
@@ -266,9 +187,6 @@ public class MessageContent {
     sb.append("    subject: ").append(toIndentedString(subject)).append("\n");
     sb.append("    markdown: ").append(toIndentedString(markdown)).append("\n");
     sb.append("    paymentData: ").append(toIndentedString(paymentData)).append("\n");
-    sb.append("    prescriptionData: ").append(toIndentedString(prescriptionData)).append("\n");
-    sb.append("    legalData: ").append(toIndentedString(legalData)).append("\n");
-    sb.append("    euCovidCert: ").append(toIndentedString(euCovidCert)).append("\n");
     sb.append("    thirdPartyData: ").append(toIndentedString(thirdPartyData)).append("\n");
     sb.append("    dueDate: ").append(toIndentedString(dueDate)).append("\n");
     sb.append("}");
@@ -344,18 +262,6 @@ public class MessageContent {
       // validate the optional field `payment_data`
       if (jsonObj.get("payment_data") != null && !jsonObj.get("payment_data").isJsonNull()) {
         PaymentData.validateJsonObject(jsonObj.getAsJsonObject("payment_data"));
-      }
-      // validate the optional field `prescription_data`
-      if (jsonObj.get("prescription_data") != null && !jsonObj.get("prescription_data").isJsonNull()) {
-        PrescriptionData.validateJsonObject(jsonObj.getAsJsonObject("prescription_data"));
-      }
-      // validate the optional field `legal_data`
-      if (jsonObj.get("legal_data") != null && !jsonObj.get("legal_data").isJsonNull()) {
-        LegalData.validateJsonObject(jsonObj.getAsJsonObject("legal_data"));
-      }
-      // validate the optional field `eu_covid_cert`
-      if (jsonObj.get("eu_covid_cert") != null && !jsonObj.get("eu_covid_cert").isJsonNull()) {
-        EUCovidCert.validateJsonObject(jsonObj.getAsJsonObject("eu_covid_cert"));
       }
       // validate the optional field `third_party_data`
       if (jsonObj.get("third_party_data") != null && !jsonObj.get("third_party_data").isJsonNull()) {

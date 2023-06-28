@@ -394,30 +394,6 @@ definitions:
     format: FiscalCode
     x-import: '@pagopa/ts-commons/lib/strings'
     example: TCNZRO80R13C555Y
-
-
-
-  LegalData:
-    type: object
-    properties:
-      sender_mail_from:
-        type: string
-        minLength: 1
-      has_attachment:
-        type: boolean
-        default: false
-      message_unique_id:
-        type: string
-        minLength: 1
-      original_message_url:
-        type: string
-        minLength: 1
-      pec_server_service_id:
-        $ref: '#/definitions/ServiceId'
-    required:
-      - sender_mail_from
-      - has_attachment
-      - message_unique_id
   ServiceId:
     type: string
     description: |-
@@ -456,14 +432,6 @@ definitions:
         minLength: 1
     required:
       - id
-  EUCovidCert:
-    type: object
-    description: Paylod with access token to retrieve a EU Covid Certificate
-    properties:
-      auth_code:
-        type: string
-    required:
-      - auth_code
   MessageContentBase:
     type: object
     properties:

@@ -13,8 +13,8 @@
 
 package it.gov.pagopa.receipt.pdf.notifier.client.generated;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>ApiException class.</p>
