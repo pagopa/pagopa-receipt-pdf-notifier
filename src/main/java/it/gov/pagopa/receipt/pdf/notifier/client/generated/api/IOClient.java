@@ -27,8 +27,9 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-public class IOService {
+public class IOClient {
     private final ApiClient localVarApiClient;
+    private static IOClient instance = null;
 
     private final String BASE_PATH = System.getenv().getOrDefault("IO_API_BASE_PATH", "https://api.io.pagopa.it/api/v1");
     private final String PROFILES_PATH = System.getenv().getOrDefault("IO_API_PROFILES_PATH", "/profiles");
@@ -37,12 +38,20 @@ public class IOService {
     private final String OCP_APIM_SUBSCRIPTION_KEY = System.getenv("OCP_APIM_SUBSCRIPTION_KEY");
     private static final String CONTENT_TYPE_JSON = "application/json";
 
-    public IOService() {
+    public IOClient() {
         this(Configuration.getDefaultApiClient());
     }
 
-    public IOService(ApiClient apiClient) {
+    public IOClient(ApiClient apiClient) {
         this.localVarApiClient = apiClient;
+    }
+
+    public static IOClient getInstance() {
+        if (instance == null) {
+            instance = new IOClient();
+        }
+
+        return instance;
     }
 
     /**

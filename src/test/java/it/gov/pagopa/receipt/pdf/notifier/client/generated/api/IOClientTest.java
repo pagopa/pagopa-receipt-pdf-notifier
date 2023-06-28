@@ -19,6 +19,8 @@ import it.gov.pagopa.receipt.pdf.notifier.model.generated.CreatedMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.generated.FiscalCodePayload;
 import it.gov.pagopa.receipt.pdf.notifier.model.generated.LimitedProfile;
 import it.gov.pagopa.receipt.pdf.notifier.model.generated.NewMessage;
+import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +30,7 @@ import org.junit.jupiter.api.Test;
 @Disabled
 class IOClientTest {
 
-    private final IOService api = new IOService();
+    private final IOClient api = new IOClient();
 
     /**
      * Get a User Profile using POST
@@ -41,7 +43,8 @@ class IOClientTest {
     void getProfileByPOSTTest() throws ApiException {
         FiscalCodePayload payload = null;
         ApiResponse<LimitedProfile> response = api.getProfileByPOSTWithHttpInfo(payload);
-        // TODO: test validations
+
+        Assertions.assertEquals(response.getStatusCode(), HttpStatus.SC_OK);
     }
 
     /**
