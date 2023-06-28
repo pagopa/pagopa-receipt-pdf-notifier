@@ -2,16 +2,14 @@ package it.gov.pagopa.receipt.pdf.notifier;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
-import com.microsoft.azure.functions.annotation.CosmosDBOutput;
-import com.microsoft.azure.functions.annotation.CosmosDBTrigger;
-import com.microsoft.azure.functions.annotation.FunctionName;
-import com.microsoft.azure.functions.annotation.QueueOutput;
+import com.microsoft.azure.functions.annotation.*;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.impl.ReceiptToIOServiceImpl;
+import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,12 +24,15 @@ import java.util.logging.Logger;
 public class ReceiptToIO {
 
     @FunctionName("ReceiptToIoProcessor")
-    //TODO @ExponentialBackoffRetry(maxRetryCount = 5, minimumInterval = "500", maximumInterval = "5000")
+    @ExponentialBackoffRetry(maxRetryCount = 5, minimumInterval = "500", maximumInterval = "5000")
     public void processReceiptToIO(
             @CosmosDBTrigger(
                     name = "ReceiptInputDatastore",
                     databaseName = "db",
                     collectionName = "receipts",
+                    leaseCollectionName = "receipts-leases",
+                    leaseCollectionPrefix = "materialized",
+                    createLeaseCollectionIfNotExists = true,
                     maxItemsPerInvocation = 100,
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             List<Receipt> listReceipts,
@@ -67,9 +68,7 @@ public class ReceiptToIO {
         for (Receipt receipt : listReceipts) {
             if (receipt != null &&
                     receipt.getEventData() != null &&
-                    (receipt.getStatus().equals(ReceiptStatusType.GENERATED) ||
-                            receipt.getStatus().equals(ReceiptStatusType.SIGNED) ||
-                            receipt.getStatus().equals(ReceiptStatusType.IO_NOTIFIER_RETRY))
+                    ReceiptToIOUtils.verifyReceiptStatus(receipt)
             ) {
 
 
@@ -81,20 +80,13 @@ public class ReceiptToIO {
                 ReceiptToIOServiceImpl service = new ReceiptToIOServiceImpl();
 
                 //TODO verify if both fiscal code can be null
-                if (debtorFiscalCode != null &&
-                        (receipt.getIoMessageData() == null ||
-                                receipt.getIoMessageData().getIdMessageDebtor() == null)
-                ) {
-                    service.notifyMessage(usersToBeVerified, debtorFiscalCode, UserType.DEBTOR, receipt, logger);
-                }
-                if (payerFiscalCode != null &&
-                        (receipt.getIoMessageData() == null ||
-                                receipt.getIoMessageData().getIdMessagePayer() == null
-                        )
-                ) {
-                    service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt, logger);
-                }
+                //Notify to debtor
+                service.notifyMessage(usersToBeVerified, debtorFiscalCode, UserType.DEBTOR, receipt, logger);
 
+                //Notify to payer
+                service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt, logger);
+
+                //Verify notification(s) status
                 queueSent += service.verifyMessagesNotification(
                         usersToBeVerified,
                         messagesNotified,
@@ -134,4 +126,6 @@ public class ReceiptToIO {
         }
 
     }
+
+
 }

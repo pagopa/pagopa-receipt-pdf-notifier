@@ -39,10 +39,6 @@ public class NewMessage {
   @SerializedName(SERIALIZED_NAME_CONTENT)
   private MessageContent content;
 
-  public static final String SERIALIZED_NAME_DEFAULT_ADDRESSES = "default_addresses";
-  @SerializedName(SERIALIZED_NAME_DEFAULT_ADDRESSES)
-  private NewMessageDefaultAddresses defaultAddresses;
-
   public static final String SERIALIZED_NAME_FISCAL_CODE = "fiscal_code";
   @SerializedName(SERIALIZED_NAME_FISCAL_CODE)
   private String fiscalCode;
@@ -95,27 +91,6 @@ public class NewMessage {
 
   public void setContent(MessageContent content) {
     this.content = content;
-  }
-
-
-  public NewMessage defaultAddresses(NewMessageDefaultAddresses defaultAddresses) {
-    
-    this.defaultAddresses = defaultAddresses;
-    return this;
-  }
-
-   /**
-   * Get defaultAddresses
-   * @return defaultAddresses
-  **/
-  @javax.annotation.Nullable
-  public NewMessageDefaultAddresses getDefaultAddresses() {
-    return defaultAddresses;
-  }
-
-
-  public void setDefaultAddresses(NewMessageDefaultAddresses defaultAddresses) {
-    this.defaultAddresses = defaultAddresses;
   }
 
 
@@ -173,14 +148,13 @@ public class NewMessage {
     NewMessage newMessage = (NewMessage) o;
     return Objects.equals(this.timeToLive, newMessage.timeToLive) &&
         Objects.equals(this.content, newMessage.content) &&
-        Objects.equals(this.defaultAddresses, newMessage.defaultAddresses) &&
         Objects.equals(this.fiscalCode, newMessage.fiscalCode) &&
         Objects.equals(this.featureLevelType, newMessage.featureLevelType);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(timeToLive, content, defaultAddresses, fiscalCode, featureLevelType);
+    return Objects.hash(timeToLive, content, fiscalCode, featureLevelType);
   }
 
   @Override
@@ -189,7 +163,6 @@ public class NewMessage {
     sb.append("class NewMessage {\n");
     sb.append("    timeToLive: ").append(toIndentedString(timeToLive)).append("\n");
     sb.append("    content: ").append(toIndentedString(content)).append("\n");
-    sb.append("    defaultAddresses: ").append(toIndentedString(defaultAddresses)).append("\n");
     sb.append("    fiscalCode: ").append(toIndentedString(fiscalCode)).append("\n");
     sb.append("    featureLevelType: ").append(toIndentedString(featureLevelType)).append("\n");
     sb.append("}");
@@ -255,9 +228,6 @@ public class NewMessage {
       // validate the required field `content`
       MessageContent.validateJsonObject(jsonObj.getAsJsonObject("content"));
       // validate the optional field `default_addresses`
-      if (jsonObj.get("default_addresses") != null && !jsonObj.get("default_addresses").isJsonNull()) {
-        NewMessageDefaultAddresses.validateJsonObject(jsonObj.getAsJsonObject("default_addresses"));
-      }
       if ((jsonObj.get("fiscal_code") != null && !jsonObj.get("fiscal_code").isJsonNull()) && !jsonObj.get("fiscal_code").isJsonPrimitive()) {
         throw new IllegalArgumentException(String.format("Expected the field `fiscal_code` to be a primitive type in the JSON string but got `%s`", jsonObj.get("fiscal_code").toString()));
       }

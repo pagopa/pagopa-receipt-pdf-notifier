@@ -19,13 +19,12 @@ import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okio.Buffer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -37,6 +36,8 @@ import java.util.Map.Entry;
 public class ApiClient {
 
     private final Map<String, String> defaultHeaderMap = new HashMap<>();
+
+    private final String OCP_APIM_SUBSCRIPTION_KEY = System.getenv("OCP_APIM_SUBSCRIPTION_KEY");
 
     private Map<String, Authentication> authentications;
 
@@ -50,7 +51,7 @@ public class ApiClient {
         initHttpClient();
 
         // Setup authentications (key: authentication name, value: authentication).
-        authentications.put("SubscriptionKey", new ApiKeyAuth("header", "Ocp-Apim-Subscription-Key"));
+        authentications.put(OCP_APIM_SUBSCRIPTION_KEY, new ApiKeyAuth("header", "Ocp-Apim-Subscription-Key"));
         // Prevent the authentications from being modified.
         authentications = Collections.unmodifiableMap(authentications);
     }
@@ -182,16 +183,6 @@ public class ApiClient {
     }
 
     /**
-     * Escape the given string to be used as URL query value.
-     *
-     * @param str String to be escaped
-     * @return Escaped string
-     */
-    public String escapeString(String str) {
-        return URLEncoder.encode(str, StandardCharsets.UTF_8).replace("\\+", "%20");
-    }
-
-    /**
      * Deserialize response body to Java object, according to the return type and
      * the Content-Type response header.
      *
@@ -219,14 +210,7 @@ public class ApiClient {
         }
 
         String respBody;
-        try {
-            if (response.body() != null)
-                respBody = response.body().string();
-            else
-                respBody = null;
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
+        respBody = getString(response);
 
         if (respBody == null || "".equals(respBody)) {
             return null;
@@ -249,6 +233,20 @@ public class ApiClient {
                     response.headers().toMultimap(),
                     respBody);
         }
+    }
+
+    @Nullable
+    private static String getString(Response response) throws ApiException {
+        String respBody;
+        try {
+            if (response.body() != null)
+                respBody = response.body().string();
+            else
+                respBody = null;
+        } catch (IOException e) {
+            throw new ApiException(e);
+        }
+        return respBody;
     }
 
     /**
@@ -332,17 +330,23 @@ public class ApiClient {
             } else {
                 return deserialize(response, returnType);
             }
-        } else {
-            String respBody = null;
-            if (response.body() != null) {
-                try {
-                    respBody = response.body().string();
-                } catch (IOException e) {
-                    throw new ApiException(response.message(), e, response.code(), response.headers().toMultimap());
-                }
-            }
-            throw new ApiException(response.message(), response.code(), response.headers().toMultimap(), respBody);
         }
+
+        handleErrorResponse(response);
+
+        return null;
+    }
+
+    private static void handleErrorResponse(Response response) throws ApiException {
+        String respBody = null;
+        if (response.body() != null) {
+            try {
+                respBody = response.body().string();
+            } catch (IOException e) {
+                throw new ApiException(response.message(), e, response.code(), response.headers().toMultimap());
+            }
+        }
+        throw new ApiException(response.message(), response.code(), response.headers().toMultimap(), respBody);
     }
 
     /**
@@ -351,19 +355,14 @@ public class ApiClient {
      * @param baseUrl               The base URL
      * @param path                  The sub-path of the HTTP URL
      * @param method                The request method, one of "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH" and "DELETE"
-     * @param queryParams           The query parameters
-     * @param collectionQueryParams The collection query parameters
      * @param body                  The request body object
      * @param headerParams          The header parameters
-     * @param cookieParams          The cookie parameters
-     * @param formParams            The form parameters
      * @param authNames             The authentications to apply
-     * @param callback              Callback for upload/download progress
      * @return The HTTP call
      * @throws ApiException If fail to serialize the request body object
      */
-    public Call buildCall(String baseUrl, String path, String method, List<Pair> queryParams, List<Pair> collectionQueryParams, Object body, Map<String, String> headerParams, Map<String, String> cookieParams, Map<String, Object> formParams, String[] authNames, ApiCallback callback) throws ApiException {
-        Request request = buildRequest(baseUrl, path, method, queryParams, collectionQueryParams, body, headerParams, cookieParams, formParams, authNames, callback);
+    public Call buildCall(String baseUrl, String path, String method, Object body, Map<String, String> headerParams, String[] authNames) throws ApiException {
+        Request request = buildRequest(baseUrl, path, method, body, headerParams, authNames);
 
         return httpClient.newCall(request);
     }
@@ -374,23 +373,15 @@ public class ApiClient {
      * @param baseUrl               The base URL
      * @param path                  The sub-path of the HTTP URL
      * @param method                The request method, one of "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH" and "DELETE"
-     * @param queryParams           The query parameters
-     * @param collectionQueryParams The collection query parameters
      * @param body                  The request body object
      * @param headerParams          The header parameters
-     * @param cookieParams          The cookie parameters
-     * @param formParams            The form parameters
      * @param authNames             The authentications to apply
-     * @param callback              Callback for upload/download progress
      * @return The HTTP request
      * @throws ApiException If fail to serialize the request body object
      */
-    public Request buildRequest(String baseUrl, String path, String method, List<Pair> queryParams, List<Pair> collectionQueryParams, Object body, Map<String, String> headerParams, Map<String, String> cookieParams, Map<String, Object> formParams, String[] authNames, ApiCallback callback) throws ApiException {
-        // aggregate queryParams (non-collection) and collectionQueryParams into allQueryParams
-        List<Pair> allQueryParams = new ArrayList<>(queryParams);
-        allQueryParams.addAll(collectionQueryParams);
+    public Request buildRequest(String baseUrl, String path, String method, Object body, Map<String, String> headerParams, String[] authNames) throws ApiException {
 
-        final String url = buildUrl(baseUrl, path, queryParams, collectionQueryParams);
+        final String url = buildUrl(baseUrl, path);
 
         // prepare HTTP request body
         RequestBody reqBody;
@@ -411,25 +402,13 @@ public class ApiClient {
         }
 
         // update parameters with authentication settings
-        updateParamsForAuth(authNames, allQueryParams, headerParams, cookieParams, requestBodyToString(reqBody), method, URI.create(url));
+        updateParamsForAuth(authNames, headerParams, requestBodyToString(reqBody), method, URI.create(url));
 
         final Request.Builder reqBuilder = new Request.Builder().url(url);
         processHeaderParams(headerParams, reqBuilder);
 
-        // Associate callback with request (if not null) so interceptor can
-        // access it when creating ProgressResponseBody
-        reqBuilder.tag(callback);
 
-        Request request = null;
-
-        if (callback != null && reqBody != null) {
-            ProgressRequestBody progressRequestBody = new ProgressRequestBody(reqBody, callback);
-            request = reqBuilder.method(method, progressRequestBody).build();
-        } else {
-            request = reqBuilder.method(method, reqBody).build();
-        }
-
-        return request;
+        return reqBuilder.method(method, reqBody).build();
     }
 
     /**
@@ -437,49 +416,13 @@ public class ApiClient {
      *
      * @param baseUrl               The base URL
      * @param path                  The sub path
-     * @param queryParams           The query parameters
-     * @param collectionQueryParams The collection query parameters
      * @return The full URL
      */
-    public String buildUrl(String baseUrl, String path, List<Pair> queryParams, List<Pair> collectionQueryParams) {
+    public String buildUrl(String baseUrl, String path) {
         final StringBuilder url = new StringBuilder();
 
         if (baseUrl != null) {
             url.append(baseUrl).append(path);
-        }
-
-        if (queryParams != null && !queryParams.isEmpty()) {
-            // support (constant) query string in `path`, e.g. "/posts?draft=1"
-            String prefix = path.contains("?") ? "&" : "?";
-            for (Pair param : queryParams) {
-                if (param.getValue() != null) {
-                    if (prefix != null) {
-                        url.append(prefix);
-                        prefix = null;
-                    } else {
-                        url.append("&");
-                    }
-                    String value = parameterToString(param.getValue());
-                    url.append(escapeString(param.getName())).append("=").append(escapeString(value));
-                }
-            }
-        }
-
-        if (collectionQueryParams != null && !collectionQueryParams.isEmpty()) {
-            String prefix = url.toString().contains("?") ? "&" : "?";
-            for (Pair param : collectionQueryParams) {
-                if (param.getValue() != null) {
-                    if (prefix != null) {
-                        url.append(prefix);
-                        prefix = null;
-                    } else {
-                        url.append("&");
-                    }
-                    String value = parameterToString(param.getValue());
-                    // collection query parameter value already escaped as part of parameterToPairs
-                    url.append(escapeString(param.getName())).append("=").append(value);
-                }
-            }
         }
 
         return url.toString();
@@ -506,22 +449,20 @@ public class ApiClient {
      * Update query and header parameters based on authentication settings.
      *
      * @param authNames    The authentications to apply
-     * @param queryParams  List of query parameters
      * @param headerParams Map of header parameters
-     * @param cookieParams Map of cookie parameters
      * @param payload      HTTP request body
      * @param method       HTTP method
      * @param uri          URI
      * @throws ApiException If fails to update the parameters
      */
-    public void updateParamsForAuth(String[] authNames, List<Pair> queryParams, Map<String, String> headerParams,
-                                    Map<String, String> cookieParams, String payload, String method, URI uri) throws ApiException {
+    public void updateParamsForAuth(String[] authNames, Map<String, String> headerParams,
+                                    String payload, String method, URI uri) throws ApiException {
         for (String authName : authNames) {
             Authentication auth = authentications.get(authName);
             if (auth == null) {
                 throw new ApiException("Authentication undefined: " + authName);
             }
-            auth.applyToParams(queryParams, headerParams, cookieParams, payload, method, uri);
+            auth.applyToParams(headerParams, payload, method, uri);
         }
     }
 

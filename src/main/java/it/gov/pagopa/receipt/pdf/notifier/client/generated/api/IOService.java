@@ -13,40 +13,35 @@
 
 package it.gov.pagopa.receipt.pdf.notifier.client.generated.api;
 
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiCallback;
+import com.google.gson.reflect.TypeToken;
 import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiException;
 import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiResponse;
 import it.gov.pagopa.receipt.pdf.notifier.client.generated.Configuration;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.Pair;
-
-import com.google.gson.reflect.TypeToken;
-
-
 import it.gov.pagopa.receipt.pdf.notifier.model.generated.CreatedMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.generated.FiscalCodePayload;
 import it.gov.pagopa.receipt.pdf.notifier.model.generated.LimitedProfile;
 import it.gov.pagopa.receipt.pdf.notifier.model.generated.NewMessage;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class IOClient {
+public class IOService {
     private final ApiClient localVarApiClient;
 
     private final String BASE_PATH = System.getenv().getOrDefault("IO_API_BASE_PATH", "https://api.io.pagopa.it/api/v1");
     private final String PROFILES_PATH = System.getenv().getOrDefault("IO_API_PROFILES_PATH", "/profiles");
     private final String MESSAGES_PATH = System.getenv().getOrDefault("IO_API_MESSAGES_PATH", "/messages");
+
+    private final String OCP_APIM_SUBSCRIPTION_KEY = System.getenv("OCP_APIM_SUBSCRIPTION_KEY");
     private static final String CONTENT_TYPE_JSON = "application/json";
 
-    public IOClient() {
+    public IOService() {
         this(Configuration.getDefaultApiClient());
     }
 
-    public IOClient(ApiClient apiClient) {
+    public IOService(ApiClient apiClient) {
         this.localVarApiClient = apiClient;
     }
 
@@ -59,34 +54,22 @@ public class IOClient {
      * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
      */
     public ApiResponse<LimitedProfile> getProfileByPOSTWithHttpInfo(FiscalCodePayload payload) throws ApiException {
-        okhttp3.Call localVarCall = getProfileByPOSTValidateBeforeCall(payload, null);
+        okhttp3.Call localVarCall = getProfileByPOSTCall(payload);
         Type localVarReturnType = new TypeToken<LimitedProfile>() {
         }.getType();
         return localVarApiClient.execute(localVarCall, localVarReturnType);
     }
 
-    @SuppressWarnings("rawtypes")
-    private okhttp3.Call getProfileByPOSTValidateBeforeCall(FiscalCodePayload payload, final ApiCallback _callback) throws ApiException {
-        return getProfileByPOSTCall(payload, _callback);
-
-    }
-
     /**
      * Build call for getProfileByPOST
      *
-     * @param payload   (optional)
-     * @param apiCallback Callback for upload/download progress
+     * @param payload (optional)
      * @return Call to execute
      * @throws ApiException If fail to serialize the request body object
      */
-    @SuppressWarnings("rawtypes")
-    public okhttp3.Call getProfileByPOSTCall(FiscalCodePayload payload, final ApiCallback apiCallback) throws ApiException {
+    public okhttp3.Call getProfileByPOSTCall(FiscalCodePayload payload) throws ApiException {
 
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        List<Pair> localVarCollectionQueryParams = new ArrayList<>();
         Map<String, String> localVarHeaderParams = new HashMap<>();
-        Map<String, String> localVarCookieParams = new HashMap<>();
-        Map<String, Object> localVarFormParams = new HashMap<>();
 
         final String[] localVarAccepts = {
                 CONTENT_TYPE_JSON
@@ -104,19 +87,15 @@ public class IOClient {
             localVarHeaderParams.put("Content-Type", localVarContentType);
         }
 
-        String[] localVarAuthNames = new String[]{"SubscriptionKey"};
+        String[] localVarAuthNames = new String[]{OCP_APIM_SUBSCRIPTION_KEY};
         return localVarApiClient.buildCall(
                 BASE_PATH,
                 PROFILES_PATH,
                 "POST",
-                localVarQueryParams,
-                localVarCollectionQueryParams,
                 payload,
                 localVarHeaderParams,
-                localVarCookieParams,
-                localVarFormParams,
-                localVarAuthNames,
-                apiCallback);
+                localVarAuthNames
+        );
     }
 
     /**
@@ -128,35 +107,22 @@ public class IOClient {
      * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
      */
     public ApiResponse<CreatedMessage> submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(NewMessage message) throws ApiException {
-        okhttp3.Call localVarCall = submitMessageforUserWithFiscalCodeInBodyValidateBeforeCall(message, null);
+        okhttp3.Call localVarCall = submitMessageforUserWithFiscalCodeInBodyCall(message);
         Type localVarReturnType = new TypeToken<CreatedMessage>() {
         }.getType();
         return localVarApiClient.execute(localVarCall, localVarReturnType);
     }
 
-    @SuppressWarnings("rawtypes")
-    private okhttp3.Call submitMessageforUserWithFiscalCodeInBodyValidateBeforeCall(NewMessage message, final ApiCallback _callback) throws ApiException {
-        return submitMessageforUserWithFiscalCodeInBodyCall(message, _callback);
-
-    }
-
     /**
      * Build call for submitMessageforUserWithFiscalCodeInBody
      *
-     * @param message   (optional)
-     * @param apiCallback Callback for upload/download progress
+     * @param message (optional)
      * @return Call to execute
      * @throws ApiException If fail to serialize the request body object
      */
-    @SuppressWarnings("rawtypes")
-    public okhttp3.Call submitMessageforUserWithFiscalCodeInBodyCall(NewMessage message, final ApiCallback apiCallback) throws ApiException {
-        String basePath = BASE_PATH;
+    public okhttp3.Call submitMessageforUserWithFiscalCodeInBodyCall(NewMessage message) throws ApiException {
 
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        List<Pair> localVarCollectionQueryParams = new ArrayList<>();
         Map<String, String> localVarHeaderParams = new HashMap<>();
-        Map<String, String> localVarCookieParams = new HashMap<>();
-        Map<String, Object> localVarFormParams = new HashMap<>();
 
         final String[] localVarAccepts = {
                 CONTENT_TYPE_JSON
@@ -174,17 +140,13 @@ public class IOClient {
             localVarHeaderParams.put("Content-Type", localVarContentType);
         }
 
-        String[] localVarAuthNames = new String[]{"SubscriptionKey"};
-        return localVarApiClient.buildCall(basePath,
+        String[] localVarAuthNames = new String[]{OCP_APIM_SUBSCRIPTION_KEY};
+        return localVarApiClient.buildCall(BASE_PATH,
                 MESSAGES_PATH,
                 "POST",
-                localVarQueryParams,
-                localVarCollectionQueryParams,
-                message, localVarHeaderParams,
-                localVarCookieParams,
-                localVarFormParams,
-                localVarAuthNames,
-                apiCallback
+                message,
+                localVarHeaderParams,
+                localVarAuthNames
         );
     }
 }

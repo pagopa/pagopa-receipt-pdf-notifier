@@ -25,7 +25,7 @@ import java.lang.reflect.Type;
  *       backward-compatibility
  */
 public class JSON {
-    private static Gson gson;
+    private static Gson gson = new Gson();
 
     private JSON() {
     }
