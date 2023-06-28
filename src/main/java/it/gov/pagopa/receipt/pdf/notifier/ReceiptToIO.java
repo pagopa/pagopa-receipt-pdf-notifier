@@ -11,7 +11,7 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
+import it.gov.pagopa.receipt.pdf.notifier.service.impl.ReceiptToIOServiceImpl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,24 +29,19 @@ public class ReceiptToIO {
     //TODO @ExponentialBackoffRetry(maxRetryCount = 5, minimumInterval = "500", maximumInterval = "5000")
     public void processReceiptToIO(
             @CosmosDBTrigger(
-                    name = "ReceiptDatastore",
+                    name = "ReceiptInputDatastore",
                     databaseName = "db",
                     collectionName = "receipts",
-                    //TODO verify need of lease collection
-                    //  leaseCollectionName = "biz-events-leases",
-                    //  leaseCollectionPrefix = "materialized",
-                    //  createLeaseCollectionIfNotExists = true,
                     maxItemsPerInvocation = 100,
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             List<Receipt> listReceipts,
             @QueueOutput(
                     name = "QueueReceiptIoNotifierError",
-                    //TODO change with correct queue name
-                    queueName = "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen",
-                    connection = "NOTIFIER_QUEUE_CONN_STRING")
+                    queueName = "%NOTIFIER_QUEUE_TOPIC%",
+                    connection = "STORAGE_CONN_STRING")
             OutputBinding<String> requeueMessages,
             @CosmosDBOutput(
-                    name = "ReceiptDatastore",
+                    name = "ReceiptOutputDatastore",
                     databaseName = "db",
                     collectionName = "receipts",
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
@@ -54,9 +49,8 @@ public class ReceiptToIO {
             @CosmosDBOutput(
                     name = "IoMessageDatastore",
                     databaseName = "db",
-                    //TODO change with correct collection name
-                    collectionName = "messages",
-                    connectionStringSetting = "COSMOS_IO_MESSAGE_CONN_STRING")
+                    collectionName = "receipts-io-messages",
+                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<IOMessage>> documentMessages,
             final ExecutionContext context
     ) {
@@ -84,20 +78,21 @@ public class ReceiptToIO {
 
                 Map<String, UserNotifyStatus> usersToBeVerified = new HashMap<>();
 
-                ReceiptToIOService service = new ReceiptToIOService();
+                ReceiptToIOServiceImpl service = new ReceiptToIOServiceImpl();
 
+                //TODO verify if both fiscal code can be null
                 if (debtorFiscalCode != null &&
                         (receipt.getIoMessageData() == null ||
                                 receipt.getIoMessageData().getIdMessageDebtor() == null)
                 ) {
-                    service.notifyMessage(usersToBeVerified, debtorFiscalCode, UserType.DEBTOR, logger);
+                    service.notifyMessage(usersToBeVerified, debtorFiscalCode, UserType.DEBTOR, receipt, logger);
                 }
                 if (payerFiscalCode != null &&
                         (receipt.getIoMessageData() == null ||
                                 receipt.getIoMessageData().getIdMessagePayer() == null
                         )
                 ) {
-                    service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, logger);
+                    service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt, logger);
                 }
 
                 queueSent += service.verifyMessagesNotification(
