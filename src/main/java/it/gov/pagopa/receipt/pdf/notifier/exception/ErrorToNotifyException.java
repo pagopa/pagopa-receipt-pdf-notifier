@@ -13,14 +13,4 @@ public class ErrorToNotifyException extends Exception {
     public ErrorToNotifyException(String message) {
         super(message);
     }
-
-    /**
-     * Constructs new exception with provided message and cause
-     *
-     * @param message Detail message
-     * @param cause   Throwable Cause
-     */
-    public ErrorToNotifyException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
