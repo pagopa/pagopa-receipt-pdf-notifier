@@ -7,7 +7,6 @@ import it.gov.pagopa.receipt.pdf.notifier.client.impl.ReceiptCosmosClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ReceiptNotFoundException;
-import org.glassfish.pfl.basic.fsm.Guard;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ public class NotifierRetry {
      * @throws ReceiptNotFoundException in case the receipt is not found
      */
     @FunctionName("NotifierRetryProcessor")
-    @ExponentialBackoffRetry(maxRetryCount = 5, minimumInterval = "500", maximumInterval = "5000")
     public void processNotifierRetry(
             @QueueTrigger(
                     name = "QueueReceiptIoNotifierError",

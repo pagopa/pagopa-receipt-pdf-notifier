@@ -47,7 +47,6 @@ public class ReceiptToIO {
      * @param context Function context
      */
     @FunctionName("ReceiptToIoProcessor")
-    @ExponentialBackoffRetry(maxRetryCount = 5, minimumInterval = "500", maximumInterval = "5000")
     public void processReceiptToIO(
             @CosmosDBTrigger(
                     name = "ReceiptInputDatastore",
