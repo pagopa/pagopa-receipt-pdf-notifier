@@ -1,6 +1,5 @@
 package it.gov.pagopa.receipt.pdf.notifier.service;
 
-import com.microsoft.azure.functions.OutputBinding;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
