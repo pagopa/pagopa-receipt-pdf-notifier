@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 @NoArgsConstructor
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
-    private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
+    private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_RECEIPT_MAX_RETRY", "5"));
 
     /**
      * Handles IO user validation and notification

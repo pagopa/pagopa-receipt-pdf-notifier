@@ -45,7 +45,7 @@ class ReceiptToIOTest {
     private final String VALID_DEBTOR_CF = "a valid debtor fiscal code";
     private final String EVENT_ID = "a valid id";
 
-    private final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
+    private final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_RECEIPT_MAX_RETRY", "5"));
 
     @Spy
     private Receipt receipt;

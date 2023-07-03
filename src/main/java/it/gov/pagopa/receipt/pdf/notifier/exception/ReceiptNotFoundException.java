@@ -11,16 +11,6 @@ public class ReceiptNotFoundException extends Exception{
     public ReceiptNotFoundException(String message) {
         super(message);
     }
-
-    /**
-     * Constructs new exception with provided message and cause
-     *
-     * @param message Detail message
-     * @param cause Exception thrown
-     */
-    public ReceiptNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
 
 
