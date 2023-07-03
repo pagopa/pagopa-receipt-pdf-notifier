@@ -11,14 +11,7 @@
  */
 package it.gov.pagopa.receipt.pdf.notifier.generated.client.auth;
 
-<<<<<<< HEAD:src/main/java/it/gov/pagopa/receipt/pdf/notifier/client/generated/auth/ApiKeyAuth.java
-
-package it.gov.pagopa.receipt.pdf.notifier.client.generated.auth;
-
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiException;
-=======
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
->>>>>>> PRDP-36-feat-add-receipt-to-io-function:src/main/java/it/gov/pagopa/receipt/pdf/notifier/generated/client/auth/ApiKeyAuth.java
 
 import java.net.URI;
 import java.util.Map;
