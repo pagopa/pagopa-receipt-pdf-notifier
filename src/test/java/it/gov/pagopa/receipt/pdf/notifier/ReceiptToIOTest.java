@@ -1,7 +1,11 @@
 package it.gov.pagopa.receipt.pdf.notifier;
 
+import com.azure.core.http.rest.Response;
+import com.azure.storage.queue.models.SendMessageResult;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
+import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
+import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
@@ -55,11 +59,11 @@ class ReceiptToIOTest {
     @Mock
     private IOClient client;
 
-    @Captor
-    private ArgumentCaptor<List<Receipt>> receiptCaptor;
+    @Mock
+    private NotifierQueueClientImpl queueClient;
 
     @Captor
-    private ArgumentCaptor<String> queueCaptor;
+    private ArgumentCaptor<List<Receipt>> receiptCaptor;
 
     @Captor
     private ArgumentCaptor<List<IOMessage>> messageCaptor;
@@ -67,9 +71,8 @@ class ReceiptToIOTest {
     @AfterEach
     public void teardown() throws Exception {
         // reset singleton
-        Field instance = IOClient.class.getDeclaredField("instance");
-        instance.setAccessible(true);
-        instance.set(null, null);
+        tearDownInstance(IOClient.class);
+        tearDownInstance(NotifierQueueClientImpl.class);
     }
 
     @Test
@@ -96,7 +99,7 @@ class ReceiptToIOTest {
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -110,14 +113,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -130,6 +131,16 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
         assertNull(updatedReceipt.getReasonErr());
 
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(2, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID) || message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     @Test
@@ -152,11 +163,11 @@ class ReceiptToIOTest {
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
         when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID, VALID_PAYER_MESSAGE_ID);
+        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -170,14 +181,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -190,6 +199,16 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
         assertNull(updatedReceipt.getReasonErr());
 
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(1, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     @Test
@@ -216,7 +235,7 @@ class ReceiptToIOTest {
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -230,14 +249,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -249,6 +266,17 @@ class ReceiptToIOTest {
         assertEquals(0, updatedReceipt.getNotificationNumRetry());
         assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
         assertNull(updatedReceipt.getReasonErr());
+
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(1, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
+                fail();
+            }
+        }
 
     }
 
@@ -276,7 +304,7 @@ class ReceiptToIOTest {
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -290,14 +318,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -310,6 +336,16 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
         assertNull(updatedReceipt.getReasonErr());
 
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(1, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     @Test
@@ -327,7 +363,7 @@ class ReceiptToIOTest {
 
         when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -341,14 +377,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -360,14 +394,13 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.NOT_TO_NOTIFY, updatedReceipt.getStatus());
         assertNull(updatedReceipt.getReasonErr());
 
+        verify(documentMessages, never()).setValue(any());
     }
 
     @Test
     void runOkWithDebtorNullAndPayerNull() {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
-
-        setMock(client);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -381,14 +414,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -400,6 +431,7 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.NOT_TO_NOTIFY, updatedReceipt.getStatus());
         assertNull(updatedReceipt.getReasonErr());
 
+        verify(documentMessages, never()).setValue(any());
     }
 
     @Test
@@ -426,7 +458,7 @@ class ReceiptToIOTest {
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -440,14 +472,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -460,6 +490,16 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
         assertNull(updatedReceipt.getReasonErr());
 
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(2, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID) || message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     @Test
@@ -486,7 +526,7 @@ class ReceiptToIOTest {
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -500,14 +540,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -520,6 +558,16 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
         assertNull(updatedReceipt.getReasonErr());
 
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(2, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID) || message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     @Test
@@ -536,7 +584,14 @@ class ReceiptToIOTest {
 
         when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
+
+        @SuppressWarnings("unchecked")
+        Response<SendMessageResult> queueResponse = mock(Response.class);
+        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
+        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
+
+        setMock(NotifierQueueClientImpl.class, queueClient);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -550,14 +605,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -569,14 +622,11 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
-        verify(requeueMessages).setValue(queueCaptor.capture());
-        String messageSentToQueue = queueCaptor.getValue();
-        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
-
+        verify(documentMessages, never()).setValue(any());
     }
 
     @Test
-    void runKoErrorResponseProfileOnlyDebtor() throws ApiException {
+    void runKoErrorResponseProfileOnDebtor() throws ApiException {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -599,7 +649,14 @@ class ReceiptToIOTest {
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
+
+        @SuppressWarnings("unchecked")
+        Response<SendMessageResult> queueResponse = mock(Response.class);
+        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
+        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
+
+        setMock(NotifierQueueClientImpl.class, queueClient);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -613,14 +670,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -633,14 +688,20 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
-        verify(requeueMessages).setValue(queueCaptor.capture());
-        String messageSentToQueue = queueCaptor.getValue();
-        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(1, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
 
+            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     @Test
-    void runKoErrorResponseProfileOnlyPayer() throws ApiException {
+    void runKoErrorResponseProfileOnPayer() throws ApiException {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -663,7 +724,14 @@ class ReceiptToIOTest {
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
+
+        @SuppressWarnings("unchecked")
+        Response<SendMessageResult> queueResponse = mock(Response.class);
+        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
+        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
+
+        setMock(NotifierQueueClientImpl.class, queueClient);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -677,14 +745,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -697,9 +763,16 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
-        verify(requeueMessages).setValue(queueCaptor.capture());
-        String messageSentToQueue = queueCaptor.getValue();
-        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(1, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     @Test
@@ -722,7 +795,14 @@ class ReceiptToIOTest {
         when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
+
+        @SuppressWarnings("unchecked")
+        Response<SendMessageResult> queueResponse = mock(Response.class);
+        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
+        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
+
+        setMock(NotifierQueueClientImpl.class, queueClient);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -736,14 +816,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -755,13 +833,11 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
-        verify(requeueMessages).setValue(queueCaptor.capture());
-        String messageSentToQueue = queueCaptor.getValue();
-        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
+        verify(documentMessages, never()).setValue(any());
     }
 
     @Test
-    void runKoErrorResponseMessagesOnlyDebtor() throws ApiException {
+    void runKoErrorResponseMessagesOnDebtor() throws ApiException {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -783,7 +859,14 @@ class ReceiptToIOTest {
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
+
+        @SuppressWarnings("unchecked")
+        Response<SendMessageResult> queueResponse = mock(Response.class);
+        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
+        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
+
+        setMock(NotifierQueueClientImpl.class, queueClient);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -797,14 +880,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -817,13 +898,20 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
-        verify(requeueMessages).setValue(queueCaptor.capture());
-        String messageSentToQueue = queueCaptor.getValue();
-        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(1, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     @Test
-    void runKoErrorResponseMessagesOnlyPayer() throws ApiException {
+    void runKoErrorResponseMessagesOnPayer() throws ApiException {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -845,7 +933,14 @@ class ReceiptToIOTest {
         when(messageResponse.getData()).thenReturn(createdMessage);
         when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
+
+        @SuppressWarnings("unchecked")
+        Response<SendMessageResult> queueResponse = mock(Response.class);
+        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
+        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
+
+        setMock(NotifierQueueClientImpl.class, queueClient);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -859,14 +954,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -879,9 +972,16 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
-        verify(requeueMessages).setValue(queueCaptor.capture());
-        String messageSentToQueue = queueCaptor.getValue();
-        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(1, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     @Test
@@ -896,7 +996,7 @@ class ReceiptToIOTest {
 
         when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
 
-        setMock(client);
+        setMock(IOClient.class, client);
 
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
@@ -910,14 +1010,12 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessages = (OutputBinding<String>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
         Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, requeueMessages, documentReceipts, documentMessages, context
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -928,11 +1026,71 @@ class ReceiptToIOTest {
         assertEquals(MAX_NUMBER_RETRY+1, updatedReceipt.getNotificationNumRetry());
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
+
+        verify(documentMessages, never()).setValue(any());
     }
 
-    private static void setMock(IOClient mock) {
+    @Test
+    void runKoErrorSendingToQueue() throws ApiException {
+        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
+        when(context.getLogger()).thenReturn(logger);
+
+        ///profile
+        @SuppressWarnings("unchecked")
+        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
+        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
+
+        setMock(IOClient.class, client);
+
+        @SuppressWarnings("unchecked")
+        Response<SendMessageResult> queueResponse = mock(Response.class);
+        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.I_AM_A_TEAPOT.value());
+        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
+
+        setMock(NotifierQueueClientImpl.class, queueClient);
+
+        List<Receipt> receiptList = new ArrayList<>();
+        EventData eventData = mock(EventData.class);
+        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
+
+        receipt.setEventData(eventData);
+        receipt.setEventId(EVENT_ID);
+        receipt.setStatus(ReceiptStatusType.GENERATED);
+
+        receiptList.add(receipt);
+
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
+
+        Assertions.assertDoesNotThrow(() ->
+                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                ));
+
+        //Verify receipts update
+        verify(documentReceipts).setValue(receiptCaptor.capture());
+        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
+        assertNull(updatedReceipt.getIoMessageData());
+        assertEquals(EVENT_ID, updatedReceipt.getEventId());
+        assertEquals(ReceiptStatusType.UNABLE_TO_SEND, updatedReceipt.getStatus());
+        assertNotNull(updatedReceipt.getReasonErr());
+
+        verify(documentMessages, never()).setValue(any());
+    }
+
+    private <T> void tearDownInstance(Class<T> classInstanced) throws IllegalAccessException, NoSuchFieldException {
+        Field instance = classInstanced.getDeclaredField("instance");
+
+        instance.setAccessible(true);
+        instance.set(null, null);
+    }
+
+    private static <T> void setMock(Class<T> classToMock, T mock) {
         try {
-            Field instance = IOClient.class.getDeclaredField("instance");
+            Field instance = classToMock.getDeclaredField("instance");
             instance.setAccessible(true);
             instance.set(instance, mock);
         } catch (Exception e) {

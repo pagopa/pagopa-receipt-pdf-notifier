@@ -42,7 +42,6 @@ public class ReceiptToIO {
      * In case of success the receipt's status will be IO_NOTIFIED
      *
      * @param listReceipts Receipts saved on CosmosDB and triggering the function
-     * @param requeueMessages Output binding to send messages to queue
      * @param documentReceipts Output binding to save receipts to cosmos
      * @param documentMessages Output binding to save the IO notification id to cosmos
      * @param context Function context
@@ -60,11 +59,6 @@ public class ReceiptToIO {
                     maxItemsPerInvocation = 100,
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             List<Receipt> listReceipts,
-            @QueueOutput(
-                    name = "QueueReceiptIoNotifierError",
-                    queueName = "%NOTIFIER_QUEUE_TOPIC%",
-                    connection = "STORAGE_CONN_STRING")
-            OutputBinding<String> requeueMessages,
             @CosmosDBOutput(
                     name = "ReceiptOutputDatastore",
                     databaseName = "db",
@@ -117,7 +111,6 @@ public class ReceiptToIO {
                         usersToBeVerified,
                         messagesNotified,
                         receipt,
-                        requeueMessages,
                         logger
                 );
 

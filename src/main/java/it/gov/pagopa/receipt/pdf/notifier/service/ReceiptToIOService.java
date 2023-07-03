@@ -21,7 +21,6 @@ public interface ReceiptToIOService {
             Map<String, UserNotifyStatus> usersToBeVerified,
             List<IOMessage> messagesNotified,
             Receipt receipt,
-            OutputBinding<String> requeueMessages,
             Logger logger
     );
 }
