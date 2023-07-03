@@ -11,14 +11,14 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.model.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.model;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.JSON;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.JSON;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -27,35 +27,60 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * FiscalCodePayload
+ * MessageContentBase
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class FiscalCodePayload {
-  public static final String SERIALIZED_NAME_FISCAL_CODE = "fiscal_code";
-  @SerializedName(SERIALIZED_NAME_FISCAL_CODE)
-  private String fiscalCode;
+public class MessageContentBase {
+  public static final String SERIALIZED_NAME_SUBJECT = "subject";
+  @SerializedName(SERIALIZED_NAME_SUBJECT)
+  private String subject;
 
-  public FiscalCodePayload() {
+  public static final String SERIALIZED_NAME_MARKDOWN = "markdown";
+  @SerializedName(SERIALIZED_NAME_MARKDOWN)
+  private String markdown;
+
+  public MessageContentBase() {
   }
 
-  public FiscalCodePayload fiscalCode(String fiscalCode) {
+  public MessageContentBase subject(String subject) {
     
-    this.fiscalCode = fiscalCode;
+    this.subject = subject;
     return this;
   }
 
    /**
-   * User&#39;s fiscal code.
-   * @return fiscalCode
+   * The (optional) subject of the message - note that only some notification channels support the display of a subject. When a subject is not provided, one gets generated from the client attributes.
+   * @return subject
   **/
-  @javax.annotation.Nullable
-  public String getFiscalCode() {
-    return fiscalCode;
+  @javax.annotation.Nonnull
+  public String getSubject() {
+    return subject;
   }
 
 
-  public void setFiscalCode(String fiscalCode) {
-    this.fiscalCode = fiscalCode;
+  public void setSubject(String subject) {
+    this.subject = subject;
+  }
+
+
+  public MessageContentBase markdown(String markdown) {
+    
+    this.markdown = markdown;
+    return this;
+  }
+
+   /**
+   * The full version of the message, in plain text or Markdown format. The content of this field will be delivered to channels that don&#39;t have any limit in terms of content size (e.g. email, etc...).
+   * @return markdown
+  **/
+  @javax.annotation.Nonnull
+  public String getMarkdown() {
+    return markdown;
+  }
+
+
+  public void setMarkdown(String markdown) {
+    this.markdown = markdown;
   }
 
 
@@ -68,20 +93,22 @@ public class FiscalCodePayload {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    FiscalCodePayload fiscalCodePayload = (FiscalCodePayload) o;
-    return Objects.equals(this.fiscalCode, fiscalCodePayload.fiscalCode);
+    MessageContentBase messageContentBase = (MessageContentBase) o;
+    return Objects.equals(this.subject, messageContentBase.subject) &&
+        Objects.equals(this.markdown, messageContentBase.markdown);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(fiscalCode);
+    return Objects.hash(subject, markdown);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class FiscalCodePayload {\n");
-    sb.append("    fiscalCode: ").append(toIndentedString(fiscalCode)).append("\n");
+    sb.append("class MessageContentBase {\n");
+    sb.append("    subject: ").append(toIndentedString(subject)).append("\n");
+    sb.append("    markdown: ").append(toIndentedString(markdown)).append("\n");
     sb.append("}");
     return sb.toString();
   }
@@ -104,34 +131,47 @@ public class FiscalCodePayload {
   static {
     // a set of all properties/fields (JSON key names)
     openapiFields = new HashSet<String>();
-    openapiFields.add("fiscal_code");
+    openapiFields.add("subject");
+    openapiFields.add("markdown");
 
     // a set of required properties/fields (JSON key names)
     openapiRequiredFields = new HashSet<String>();
+    openapiRequiredFields.add("subject");
+    openapiRequiredFields.add("markdown");
   }
 
  /**
   * Validates the JSON Object and throws an exception if issues found
   *
   * @param jsonObj JSON Object
-  * @throws IOException if the JSON Object is invalid with respect to FiscalCodePayload
+  * @throws IOException if the JSON Object is invalid with respect to MessageContentBase
   */
   public static void validateJsonObject(JsonObject jsonObj) throws IOException {
       if (jsonObj == null) {
-        if (!FiscalCodePayload.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
-          throw new IllegalArgumentException(String.format("The required field(s) %s in FiscalCodePayload is not found in the empty JSON string", FiscalCodePayload.openapiRequiredFields.toString()));
+        if (!MessageContentBase.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
+          throw new IllegalArgumentException(String.format("The required field(s) %s in MessageContentBase is not found in the empty JSON string", MessageContentBase.openapiRequiredFields.toString()));
         }
       }
 
       Set<Entry<String, JsonElement>> entries = jsonObj.entrySet();
       // check to see if the JSON string contains additional fields
       for (Entry<String, JsonElement> entry : entries) {
-        if (!FiscalCodePayload.openapiFields.contains(entry.getKey())) {
-          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `FiscalCodePayload` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
+        if (!MessageContentBase.openapiFields.contains(entry.getKey())) {
+          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `MessageContentBase` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
         }
       }
-      if ((jsonObj.get("fiscal_code") != null && !jsonObj.get("fiscal_code").isJsonNull()) && !jsonObj.get("fiscal_code").isJsonPrimitive()) {
-        throw new IllegalArgumentException(String.format("Expected the field `fiscal_code` to be a primitive type in the JSON string but got `%s`", jsonObj.get("fiscal_code").toString()));
+
+      // check to make sure all required properties/fields are present in the JSON string
+      for (String requiredField : MessageContentBase.openapiRequiredFields) {
+        if (jsonObj.get(requiredField) == null) {
+          throw new IllegalArgumentException(String.format("The required field `%s` is not found in the JSON string: %s", requiredField, jsonObj.toString()));
+        }
+      }
+      if (!jsonObj.get("subject").isJsonPrimitive()) {
+        throw new IllegalArgumentException(String.format("Expected the field `subject` to be a primitive type in the JSON string but got `%s`", jsonObj.get("subject").toString()));
+      }
+      if (!jsonObj.get("markdown").isJsonPrimitive()) {
+        throw new IllegalArgumentException(String.format("Expected the field `markdown` to be a primitive type in the JSON string but got `%s`", jsonObj.get("markdown").toString()));
       }
   }
 
@@ -139,22 +179,22 @@ public class FiscalCodePayload {
     @SuppressWarnings("unchecked")
     @Override
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-       if (!FiscalCodePayload.class.isAssignableFrom(type.getRawType())) {
-         return null; // this class only serializes 'FiscalCodePayload' and its subtypes
+       if (!MessageContentBase.class.isAssignableFrom(type.getRawType())) {
+         return null; // this class only serializes 'MessageContentBase' and its subtypes
        }
        final TypeAdapter<JsonElement> elementAdapter = gson.getAdapter(JsonElement.class);
-       final TypeAdapter<FiscalCodePayload> thisAdapter
-                        = gson.getDelegateAdapter(this, TypeToken.get(FiscalCodePayload.class));
+       final TypeAdapter<MessageContentBase> thisAdapter
+                        = gson.getDelegateAdapter(this, TypeToken.get(MessageContentBase.class));
 
-       return (TypeAdapter<T>) new TypeAdapter<FiscalCodePayload>() {
+       return (TypeAdapter<T>) new TypeAdapter<MessageContentBase>() {
            @Override
-           public void write(JsonWriter out, FiscalCodePayload value) throws IOException {
+           public void write(JsonWriter out, MessageContentBase value) throws IOException {
              JsonObject obj = thisAdapter.toJsonTree(value).getAsJsonObject();
              elementAdapter.write(out, obj);
            }
 
            @Override
-           public FiscalCodePayload read(JsonReader in) throws IOException {
+           public MessageContentBase read(JsonReader in) throws IOException {
              JsonObject jsonObj = elementAdapter.read(in).getAsJsonObject();
              validateJsonObject(jsonObj);
              return thisAdapter.fromJsonTree(jsonObj);
@@ -165,18 +205,18 @@ public class FiscalCodePayload {
   }
 
  /**
-  * Create an instance of FiscalCodePayload given an JSON string
+  * Create an instance of MessageContentBase given an JSON string
   *
   * @param jsonString JSON string
-  * @return An instance of FiscalCodePayload
-  * @throws IOException if the JSON string is invalid with respect to FiscalCodePayload
+  * @return An instance of MessageContentBase
+  * @throws IOException if the JSON string is invalid with respect to MessageContentBase
   */
-  public static FiscalCodePayload fromJson(String jsonString) throws IOException {
-    return JSON.getGson().fromJson(jsonString, FiscalCodePayload.class);
+  public static MessageContentBase fromJson(String jsonString) throws IOException {
+    return JSON.getGson().fromJson(jsonString, MessageContentBase.class);
   }
 
  /**
-  * Convert an instance of FiscalCodePayload to an JSON string
+  * Convert an instance of MessageContentBase to an JSON string
   *
   * @return JSON string
   */

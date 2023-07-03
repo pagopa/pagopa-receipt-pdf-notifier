@@ -11,47 +11,56 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.client.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.client;
 
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class Pair {
-    private String name = "";
-    private String value = "";
+import java.util.List;
+import java.util.Map;
 
-    public Pair (String name, String value) {
-        setName(name);
-        setValue(value);
+/**
+ * API response returned by API call.
+ */
+public class ApiResponse<T> {
+    private final int statusCode;
+    private final Map<String, List<String>> headers;
+    private final T data;
+
+    /**
+     * <p>Constructor for ApiResponse.</p>
+     *
+     * @param statusCode The status code of HTTP response
+     * @param headers The headers of HTTP response
+     * @param data The object deserialized from response bod
+     */
+    public ApiResponse(int statusCode, Map<String, List<String>> headers, T data) {
+        this.statusCode = statusCode;
+        this.headers = headers;
+        this.data = data;
     }
 
-    private void setName(String name) {
-        if (!isValidString(name)) {
-            return;
-        }
-
-        this.name = name;
+    /**
+     * <p>Get the <code>status code</code>.</p>
+     *
+     * @return the status code
+     */
+    public int getStatusCode() {
+        return statusCode;
     }
 
-    private void setValue(String value) {
-        if (!isValidString(value)) {
-            return;
-        }
-
-        this.value = value;
+    /**
+     * <p>Get the <code>headers</code>.</p>
+     *
+     * @return a {@link java.util.Map} of headers 
+     */
+    public Map<String, List<String>> getHeaders() {
+        return headers;
     }
 
-    public String getName() {
-        return this.name;
-    }
-
-    public String getValue() {
-        return this.value;
-    }
-
-    private boolean isValidString(String arg) {
-        if (arg == null) {
-            return false;
-        }
-
-        return true;
+    /**
+     * <p>Get the <code>data</code>.</p>
+     *
+     * @return the data
+     */
+    public T getData() {
+        return data;
     }
 }

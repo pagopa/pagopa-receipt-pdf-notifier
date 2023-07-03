@@ -9,12 +9,9 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+package it.gov.pagopa.receipt.pdf.notifier.generated.client.auth;
 
-
-package it.gov.pagopa.receipt.pdf.notifier.client.generated.auth;
-
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiException;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.Pair;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
 
 import java.net.URI;
 import java.util.List;
