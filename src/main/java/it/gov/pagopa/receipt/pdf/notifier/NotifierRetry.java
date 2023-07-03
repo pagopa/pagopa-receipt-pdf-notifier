@@ -16,10 +16,22 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * Azure Functions with CosmosDB trigger.
+ * Azure Functions with Azure Storage Queue trigger.
  */
 public class NotifierRetry {
 
+    /**
+     * This function will be invoked when an Azure Storage Queue trigger occurs
+     * #
+     * Retrieve receipt with the eventId equals to the decoded queue message
+     * If found the receipt's status is updated as IO_NOTIFIER_RETRY and saved on Cosmos
+     * It will trigger the ReceiptToIO function to retry the notification to user
+     *
+     * @param message Message from notification error queue
+     * @param documentReceipts Output binding to save the updated receipt
+     * @param context Function Context
+     * @throws ReceiptNotFoundException in case the receipt is not found
+     */
     @FunctionName("NotifierRetryProcessor")
     @ExponentialBackoffRetry(maxRetryCount = 5, minimumInterval = "500", maximumInterval = "5000")
     public void processNotifierRetry(

@@ -311,6 +311,8 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
         } else {
             receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
+
+            requeueMessages.setValue(Base64.getMimeEncoder().encodeToString(receipt.getEventId().getBytes()));
         }
 
         ReasonError reasonError = new ReasonError();
@@ -319,8 +321,6 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         receipt.setReasonErr(reasonError);
 
         receipt.setNotificationNumRetry(numRetry + 1);
-
-        requeueMessages.setValue(Base64.getMimeEncoder().encodeToString(receipt.getEventId().getBytes()));
 
         String logMsg = String.format("Error sending notification: %s", errorMessage);
         logger.severe(logMsg);

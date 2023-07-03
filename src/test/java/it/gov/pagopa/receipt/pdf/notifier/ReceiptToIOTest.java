@@ -928,10 +928,6 @@ class ReceiptToIOTest {
         assertEquals(MAX_NUMBER_RETRY+1, updatedReceipt.getNotificationNumRetry());
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(requeueMessages).setValue(queueCaptor.capture());
-        String messageSentToQueue = queueCaptor.getValue();
-        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
     }
 
     private static void setMock(IOClient mock) {

@@ -22,6 +22,31 @@ import java.util.logging.Logger;
  */
 public class ReceiptToIO {
 
+    /**
+     * This function will be invoked when a CosmosDB trigger occurs
+     * #
+     * User(s) retrieved from the receipt's data will be notified in the IO app
+     * and the receipt will be updated with the right status
+     * #
+     * Step to notify user:
+     * - Verify user is a IO user with IO API /profiles
+     * - Send notification message to IO user with IO API /messages
+     * If user(s) is not an IO user the receipt's status will be NOT_TO_NOTIFY
+     * In case of errors during notification the receipt's status will be:
+     * - IO_ERROR_TO_NOTIFY before max numbers of retry
+     * - UNABLE_TO_SEND after max numbers of retry
+     * #
+     * In case of any type of error a queue message with the receipt's biz-event
+     * id will be sent to the error queue ready to be processed by the NotifyRetry function
+     * #
+     * In case of success the receipt's status will be IO_NOTIFIED
+     *
+     * @param listReceipts Receipts saved on CosmosDB and triggering the function
+     * @param requeueMessages Output binding to send messages to queue
+     * @param documentReceipts Output binding to save receipts to cosmos
+     * @param documentMessages Output binding to save the IO notification id to cosmos
+     * @param context Function context
+     */
     @FunctionName("ReceiptToIoProcessor")
     @ExponentialBackoffRetry(maxRetryCount = 5, minimumInterval = "500", maximumInterval = "5000")
     public void processReceiptToIO(
