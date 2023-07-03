@@ -14,10 +14,8 @@
 package it.gov.pagopa.receipt.pdf.notifier.client.generated.auth;
 
 import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiException;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.Pair;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")

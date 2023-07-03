@@ -13,9 +13,6 @@
 
 package it.gov.pagopa.receipt.pdf.notifier.client.generated;
 
-import java.util.Collection;
-import java.util.Iterator;
-
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
 public class StringUtil {
   /**

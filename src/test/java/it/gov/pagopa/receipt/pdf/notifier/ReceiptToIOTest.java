@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -58,6 +59,9 @@ class ReceiptToIOTest {
 
     @Captor
     private ArgumentCaptor<List<Receipt>> receiptCaptor;
+
+    @Captor
+    private ArgumentCaptor<String> queueCaptor;
 
     @Captor
     private ArgumentCaptor<List<IOMessage>> messageCaptor;
@@ -564,8 +568,12 @@ class ReceiptToIOTest {
         assertNull(updatedReceipt.getIoMessageData());
         assertEquals(EVENT_ID, updatedReceipt.getEventId());
         assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIER_RETRY, updatedReceipt.getStatus());
+        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
+
+        verify(requeueMessages).setValue(queueCaptor.capture());
+        String messageSentToQueue = queueCaptor.getValue();
+        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
 
     }
 
@@ -624,8 +632,12 @@ class ReceiptToIOTest {
         assertNull(updatedReceipt.getIoMessageData().getIdMessagePayer());
         assertEquals(EVENT_ID, updatedReceipt.getEventId());
         assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIER_RETRY, updatedReceipt.getStatus());
+        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
+
+        verify(requeueMessages).setValue(queueCaptor.capture());
+        String messageSentToQueue = queueCaptor.getValue();
+        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
 
     }
 
@@ -684,9 +696,12 @@ class ReceiptToIOTest {
         assertEquals(VALID_PAYER_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessagePayer());
         assertEquals(EVENT_ID, updatedReceipt.getEventId());
         assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIER_RETRY, updatedReceipt.getStatus());
+        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
+        verify(requeueMessages).setValue(queueCaptor.capture());
+        String messageSentToQueue = queueCaptor.getValue();
+        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
     }
 
     @Test
@@ -739,9 +754,12 @@ class ReceiptToIOTest {
         assertNull(updatedReceipt.getIoMessageData());
         assertEquals(EVENT_ID, updatedReceipt.getEventId());
         assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIER_RETRY, updatedReceipt.getStatus());
+        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
+        verify(requeueMessages).setValue(queueCaptor.capture());
+        String messageSentToQueue = queueCaptor.getValue();
+        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
     }
 
     @Test
@@ -798,9 +816,12 @@ class ReceiptToIOTest {
         assertNull(updatedReceipt.getIoMessageData().getIdMessageDebtor());
         assertEquals(EVENT_ID, updatedReceipt.getEventId());
         assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIER_RETRY, updatedReceipt.getStatus());
+        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
+        verify(requeueMessages).setValue(queueCaptor.capture());
+        String messageSentToQueue = queueCaptor.getValue();
+        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
     }
 
     @Test
@@ -857,9 +878,12 @@ class ReceiptToIOTest {
         assertNull(updatedReceipt.getIoMessageData().getIdMessagePayer());
         assertEquals(EVENT_ID, updatedReceipt.getEventId());
         assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIER_RETRY, updatedReceipt.getStatus());
+        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
+        verify(requeueMessages).setValue(queueCaptor.capture());
+        String messageSentToQueue = queueCaptor.getValue();
+        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
     }
 
     @Test
@@ -907,6 +931,9 @@ class ReceiptToIOTest {
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, updatedReceipt.getStatus());
         assertNotNull(updatedReceipt.getReasonErr());
 
+        verify(requeueMessages).setValue(queueCaptor.capture());
+        String messageSentToQueue = queueCaptor.getValue();
+        assertEquals(messageSentToQueue, Base64.getMimeEncoder().encodeToString(EVENT_ID.getBytes()));
     }
 
     private static void setMock(IOClient mock) {

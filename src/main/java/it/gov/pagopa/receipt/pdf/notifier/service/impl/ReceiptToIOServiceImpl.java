@@ -17,7 +17,9 @@ import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 import lombok.NoArgsConstructor;
 import org.apache.http.HttpStatus;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -259,21 +261,33 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 messagesNotified.add(ioMessage);
 
             } else if (userNotified.equals(UserNotifyStatus.NOT_NOTIFIED)) {
-                if (previousErrorMessageExist) {
-
-                    return "Error notifying both users";
-                } else {
-                    if (userType.equals(UserType.DEBTOR)) {
-
-                        return "Error notifying debtor user";
-                    } else {
-                        return "Error notifying payer user";
-                    }
-                }
+                return generateErrorMessage(userType, previousErrorMessageExist);
             }
         }
 
         return null;
+    }
+
+    /**
+     * Return correct error message
+     *
+     * @param userType Enum user type
+     * @param previousErrorMessageExist Boolean that indicates if the previous user also had errors
+     * @return error message
+     */
+    @NotNull
+    private static String generateErrorMessage(UserType userType, boolean previousErrorMessageExist) {
+        if (previousErrorMessageExist) {
+
+            return "Error notifying both users";
+        } else {
+            if (userType.equals(UserType.DEBTOR)) {
+
+                return "Error notifying debtor user";
+            } else {
+                return "Error notifying payer user";
+            }
+        }
     }
 
     /**
@@ -293,7 +307,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         if (numRetry >= MAX_NUMBER_RETRY) {
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
         } else {
-            receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);
+            receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
         }
 
         ReasonError reasonError = new ReasonError();
@@ -303,7 +317,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
         receipt.setNotificationNumRetry(numRetry + 1);
 
-        requeueMessages.setValue(receipt.getEventId());
+        requeueMessages.setValue(Base64.getMimeEncoder().encodeToString(receipt.getEventId().getBytes()));
 
         String logMsg = String.format("Error sending notification: %s", errorMessage);
         logger.severe(logMsg);
