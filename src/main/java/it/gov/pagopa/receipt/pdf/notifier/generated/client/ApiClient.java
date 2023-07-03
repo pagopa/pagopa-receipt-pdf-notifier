@@ -11,10 +11,10 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.client.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.client;
 
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.auth.ApiKeyAuth;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.auth.Authentication;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.auth.ApiKeyAuth;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.auth.Authentication;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okio.Buffer;
@@ -152,7 +152,7 @@ public class ApiClient {
                 return accept;
             }
         }
-        return StringUtil.join(accepts, ",");
+        return it.gov.pagopa.receipt.pdf.notifier.client.generated.StringUtil.join(accepts, ",");
     }
 
     /**

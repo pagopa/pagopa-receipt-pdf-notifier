@@ -11,22 +11,50 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.client.generated.auth;
+package it.gov.pagopa.receipt.pdf.notifier.generated.client;
 
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiException;
-
-import java.net.URI;
 import java.util.Map;
+import java.util.List;
 
-public interface Authentication {
+/**
+ * Callback for asynchronous API call.
+ *
+ * @param <T> The return type
+ */
+public interface ApiCallback<T> {
     /**
-     * Apply authentication settings to header and query params.
+     * This is called when the API call fails.
      *
-     * @param headerParams Map of header parameters
-     * @param payload HTTP request body
-     * @param method HTTP method
-     * @param uri URI
-     * @throws ApiException if failed to update the parameters
+     * @param e The exception causing the failure
+     * @param statusCode Status code of the response if available, otherwise it would be 0
+     * @param responseHeaders Headers of the response if available, otherwise it would be null
      */
-    void applyToParams(Map<String, String> headerParams, String payload, String method, URI uri) throws ApiException;
+    void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders);
+
+    /**
+     * This is called when the API call succeeded.
+     *
+     * @param result The result deserialized from response
+     * @param statusCode Status code of the response
+     * @param responseHeaders Headers of the response
+     */
+    void onSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders);
+
+    /**
+     * This is called when the API upload processing.
+     *
+     * @param bytesWritten bytes Written
+     * @param contentLength content length of request body
+     * @param done write end
+     */
+    void onUploadProgress(long bytesWritten, long contentLength, boolean done);
+
+    /**
+     * This is called when the API download processing.
+     *
+     * @param bytesRead bytes Read
+     * @param contentLength content length of the response
+     * @param done Read end
+     */
+    void onDownloadProgress(long bytesRead, long contentLength, boolean done);
 }

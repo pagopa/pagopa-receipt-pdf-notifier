@@ -11,63 +11,47 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.client.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.client;
 
-import okhttp3.MediaType;
-import okhttp3.ResponseBody;
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
+public class Pair {
+    private String name = "";
+    private String value = "";
 
-import java.io.IOException;
-
-import okio.Buffer;
-import okio.BufferedSource;
-import okio.ForwardingSource;
-import okio.Okio;
-import okio.Source;
-import org.jetbrains.annotations.NotNull;
-
-public class ProgressResponseBody extends ResponseBody {
-
-    private final ResponseBody responseBody;
-    @SuppressWarnings("rawtypes")
-    private final ApiCallback callback;
-    private BufferedSource bufferedSource;
-    @SuppressWarnings("rawtypes")
-    public ProgressResponseBody(ResponseBody responseBody, ApiCallback callback) {
-        this.responseBody = responseBody;
-        this.callback = callback;
+    public Pair (String name, String value) {
+        setName(name);
+        setValue(value);
     }
 
-    @Override
-    public MediaType contentType() {
-        return responseBody.contentType();
-    }
-
-    @Override
-    public long contentLength() {
-        return responseBody.contentLength();
-    }
-
-    @NotNull
-    @Override
-    public BufferedSource source() {
-        if (bufferedSource == null) {
-            bufferedSource = Okio.buffer(source(responseBody.source()));
+    private void setName(String name) {
+        if (!isValidString(name)) {
+            return;
         }
-        return bufferedSource;
+
+        this.name = name;
     }
 
-    private Source source(Source source) {
-        return new ForwardingSource(source) {
-            long totalBytesRead = 0L;
+    private void setValue(String value) {
+        if (!isValidString(value)) {
+            return;
+        }
 
-            @Override
-            public long read(@NotNull Buffer sink, long byteCount) throws IOException {
-                long bytesRead = super.read(sink, byteCount);
-                // read() returns the number of bytes read, or -1 if this source is exhausted.
-                totalBytesRead += bytesRead != -1 ? bytesRead : 0;
-                callback.onDownloadProgress(totalBytesRead, responseBody.contentLength(), bytesRead == -1);
-                return bytesRead;
-            }
-        };
+        this.value = value;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public String getValue() {
+        return this.value;
+    }
+
+    private boolean isValidString(String arg) {
+        if (arg == null) {
+            return false;
+        }
+
+        return true;
     }
 }

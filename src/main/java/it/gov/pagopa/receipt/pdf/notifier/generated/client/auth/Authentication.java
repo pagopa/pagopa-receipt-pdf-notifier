@@ -11,47 +11,22 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.client.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.client.auth;
 
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class Pair {
-    private String name = "";
-    private String value = "";
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
 
-    public Pair (String name, String value) {
-        setName(name);
-        setValue(value);
-    }
+import java.net.URI;
+import java.util.Map;
 
-    private void setName(String name) {
-        if (!isValidString(name)) {
-            return;
-        }
-
-        this.name = name;
-    }
-
-    private void setValue(String value) {
-        if (!isValidString(value)) {
-            return;
-        }
-
-        this.value = value;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getValue() {
-        return this.value;
-    }
-
-    private boolean isValidString(String arg) {
-        if (arg == null) {
-            return false;
-        }
-
-        return true;
-    }
+public interface Authentication {
+    /**
+     * Apply authentication settings to header and query params.
+     *
+     * @param headerParams Map of header parameters
+     * @param payload HTTP request body
+     * @param method HTTP method
+     * @param uri URI
+     * @throws ApiException if failed to update the parameters
+     */
+    void applyToParams(Map<String, String> headerParams, String payload, String method, URI uri) throws ApiException;
 }

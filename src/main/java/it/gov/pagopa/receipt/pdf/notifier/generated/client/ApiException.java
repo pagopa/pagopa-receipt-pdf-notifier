@@ -11,7 +11,7 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.client.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.client;
 
 import java.util.List;
 import java.util.Map;

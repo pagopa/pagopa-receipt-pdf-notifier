@@ -11,16 +11,15 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.model.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.model;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.JSON;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.JSON;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -28,35 +27,35 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * CreatedMessage
+ * Metadata needed to explicit payment&#39;s payee.
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class CreatedMessage {
-  public static final String SERIALIZED_NAME_ID = "id";
-  @SerializedName(SERIALIZED_NAME_ID)
-  private String id;
+public class Payee {
+  public static final String SERIALIZED_NAME_FISCAL_CODE = "fiscal_code";
+  @SerializedName(SERIALIZED_NAME_FISCAL_CODE)
+  private String fiscalCode;
 
-  public CreatedMessage() {
+  public Payee() {
   }
 
-  public CreatedMessage id(String id) {
+  public Payee fiscalCode(String fiscalCode) {
     
-    this.id = id;
+    this.fiscalCode = fiscalCode;
     return this;
   }
 
    /**
-   * The identifier of the created message.
-   * @return id
+   * Organization fiscal code.
+   * @return fiscalCode
   **/
-  @Nullable
-  public String getId() {
-    return id;
+  @javax.annotation.Nonnull
+  public String getFiscalCode() {
+    return fiscalCode;
   }
 
 
-  public void setId(String id) {
-    this.id = id;
+  public void setFiscalCode(String fiscalCode) {
+    this.fiscalCode = fiscalCode;
   }
 
 
@@ -69,20 +68,20 @@ public class CreatedMessage {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CreatedMessage createdMessage = (CreatedMessage) o;
-    return Objects.equals(this.id, createdMessage.id);
+    Payee payee = (Payee) o;
+    return Objects.equals(this.fiscalCode, payee.fiscalCode);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);
+    return Objects.hash(fiscalCode);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class CreatedMessage {\n");
-    sb.append("    id: ").append(toIndentedString(id)).append("\n");
+    sb.append("class Payee {\n");
+    sb.append("    fiscalCode: ").append(toIndentedString(fiscalCode)).append("\n");
     sb.append("}");
     return sb.toString();
   }
@@ -105,34 +104,42 @@ public class CreatedMessage {
   static {
     // a set of all properties/fields (JSON key names)
     openapiFields = new HashSet<String>();
-    openapiFields.add("id");
+    openapiFields.add("fiscal_code");
 
     // a set of required properties/fields (JSON key names)
     openapiRequiredFields = new HashSet<String>();
+    openapiRequiredFields.add("fiscal_code");
   }
 
  /**
   * Validates the JSON Object and throws an exception if issues found
   *
   * @param jsonObj JSON Object
-  * @throws IOException if the JSON Object is invalid with respect to CreatedMessage
+  * @throws IOException if the JSON Object is invalid with respect to Payee
   */
   public static void validateJsonObject(JsonObject jsonObj) throws IOException {
       if (jsonObj == null) {
-        if (!CreatedMessage.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
-          throw new IllegalArgumentException(String.format("The required field(s) %s in CreatedMessage is not found in the empty JSON string", CreatedMessage.openapiRequiredFields.toString()));
+        if (!Payee.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
+          throw new IllegalArgumentException(String.format("The required field(s) %s in Payee is not found in the empty JSON string", Payee.openapiRequiredFields.toString()));
         }
       }
 
       Set<Entry<String, JsonElement>> entries = jsonObj.entrySet();
       // check to see if the JSON string contains additional fields
       for (Entry<String, JsonElement> entry : entries) {
-        if (!CreatedMessage.openapiFields.contains(entry.getKey())) {
-          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `CreatedMessage` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
+        if (!Payee.openapiFields.contains(entry.getKey())) {
+          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `Payee` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
         }
       }
-      if ((jsonObj.get("id") != null && !jsonObj.get("id").isJsonNull()) && !jsonObj.get("id").isJsonPrimitive()) {
-        throw new IllegalArgumentException(String.format("Expected the field `id` to be a primitive type in the JSON string but got `%s`", jsonObj.get("id").toString()));
+
+      // check to make sure all required properties/fields are present in the JSON string
+      for (String requiredField : Payee.openapiRequiredFields) {
+        if (jsonObj.get(requiredField) == null) {
+          throw new IllegalArgumentException(String.format("The required field `%s` is not found in the JSON string: %s", requiredField, jsonObj.toString()));
+        }
+      }
+      if (!jsonObj.get("fiscal_code").isJsonPrimitive()) {
+        throw new IllegalArgumentException(String.format("Expected the field `fiscal_code` to be a primitive type in the JSON string but got `%s`", jsonObj.get("fiscal_code").toString()));
       }
   }
 
@@ -140,22 +147,22 @@ public class CreatedMessage {
     @SuppressWarnings("unchecked")
     @Override
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-       if (!CreatedMessage.class.isAssignableFrom(type.getRawType())) {
-         return null; // this class only serializes 'CreatedMessage' and its subtypes
+       if (!Payee.class.isAssignableFrom(type.getRawType())) {
+         return null; // this class only serializes 'Payee' and its subtypes
        }
        final TypeAdapter<JsonElement> elementAdapter = gson.getAdapter(JsonElement.class);
-       final TypeAdapter<CreatedMessage> thisAdapter
-                        = gson.getDelegateAdapter(this, TypeToken.get(CreatedMessage.class));
+       final TypeAdapter<Payee> thisAdapter
+                        = gson.getDelegateAdapter(this, TypeToken.get(Payee.class));
 
-       return (TypeAdapter<T>) new TypeAdapter<CreatedMessage>() {
+       return (TypeAdapter<T>) new TypeAdapter<Payee>() {
            @Override
-           public void write(JsonWriter out, CreatedMessage value) throws IOException {
+           public void write(JsonWriter out, Payee value) throws IOException {
              JsonObject obj = thisAdapter.toJsonTree(value).getAsJsonObject();
              elementAdapter.write(out, obj);
            }
 
            @Override
-           public CreatedMessage read(JsonReader in) throws IOException {
+           public Payee read(JsonReader in) throws IOException {
              JsonObject jsonObj = elementAdapter.read(in).getAsJsonObject();
              validateJsonObject(jsonObj);
              return thisAdapter.fromJsonTree(jsonObj);
@@ -166,18 +173,18 @@ public class CreatedMessage {
   }
 
  /**
-  * Create an instance of CreatedMessage given an JSON string
+  * Create an instance of Payee given an JSON string
   *
   * @param jsonString JSON string
-  * @return An instance of CreatedMessage
-  * @throws IOException if the JSON string is invalid with respect to CreatedMessage
+  * @return An instance of Payee
+  * @throws IOException if the JSON string is invalid with respect to Payee
   */
-  public static CreatedMessage fromJson(String jsonString) throws IOException {
-    return JSON.getGson().fromJson(jsonString, CreatedMessage.class);
+  public static Payee fromJson(String jsonString) throws IOException {
+    return JSON.getGson().fromJson(jsonString, Payee.class);
   }
 
  /**
-  * Convert an instance of CreatedMessage to an JSON string
+  * Convert an instance of Payee to an JSON string
   *
   * @return JSON string
   */

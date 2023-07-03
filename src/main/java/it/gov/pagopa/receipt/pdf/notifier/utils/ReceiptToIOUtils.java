@@ -3,9 +3,9 @@ package it.gov.pagopa.receipt.pdf.notifier.utils;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.MessageContent;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.NewMessage;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.ThirdPartyData;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.MessageContent;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.ThirdPartyData;
 
 public class ReceiptToIOUtils {
 

@@ -11,17 +11,17 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.client.generated.api;
+package it.gov.pagopa.receipt.pdf.notifier.generated.client.api;
 
 import com.google.gson.reflect.TypeToken;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiClient;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiException;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiResponse;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.Configuration;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.CreatedMessage;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.FiscalCodePayload;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.LimitedProfile;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.NewMessage;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiClient;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.Configuration;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.CreatedMessage;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.FiscalCodePayload;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;

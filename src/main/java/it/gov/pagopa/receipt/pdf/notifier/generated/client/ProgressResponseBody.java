@@ -11,21 +11,63 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.client.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.client;
 
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class Configuration {
+import okhttp3.MediaType;
+import okhttp3.ResponseBody;
 
-    private static ApiClient defaultApiClient = new ApiClient();
+import java.io.IOException;
 
-    /**
-     * Get the default API client, which would be used when creating API
-     * instances without providing an API client.
-     *
-     * @return Default API client
-     */
-    public static ApiClient getDefaultApiClient() {
-        return defaultApiClient;
+import okio.Buffer;
+import okio.BufferedSource;
+import okio.ForwardingSource;
+import okio.Okio;
+import okio.Source;
+import org.jetbrains.annotations.NotNull;
+
+public class ProgressResponseBody extends ResponseBody {
+
+    private final ResponseBody responseBody;
+    @SuppressWarnings("rawtypes")
+    private final ApiCallback callback;
+    private BufferedSource bufferedSource;
+    @SuppressWarnings("rawtypes")
+    public ProgressResponseBody(ResponseBody responseBody, ApiCallback callback) {
+        this.responseBody = responseBody;
+        this.callback = callback;
     }
 
+    @Override
+    public MediaType contentType() {
+        return responseBody.contentType();
+    }
+
+    @Override
+    public long contentLength() {
+        return responseBody.contentLength();
+    }
+
+    @NotNull
+    @Override
+    public BufferedSource source() {
+        if (bufferedSource == null) {
+            bufferedSource = Okio.buffer(source(responseBody.source()));
+        }
+        return bufferedSource;
+    }
+
+    private Source source(Source source) {
+        return new ForwardingSource(source) {
+            long totalBytesRead = 0L;
+
+            @Override
+            public long read(@NotNull Buffer sink, long byteCount) throws IOException {
+                long bytesRead = super.read(sink, byteCount);
+                // read() returns the number of bytes read, or -1 if this source is exhausted.
+                totalBytesRead += bytesRead != -1 ? bytesRead : 0;
+                callback.onDownloadProgress(totalBytesRead, responseBody.contentLength(), bytesRead == -1);
+                return bytesRead;
+            }
+        };
+    }
 }

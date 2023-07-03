@@ -11,14 +11,14 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.model.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.model;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.JSON;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.JSON;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -27,87 +27,35 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Metadata needed to process pagoPA payments.
+ * PaymentDataAllOf
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class PaymentDataBase {
-  public static final String SERIALIZED_NAME_AMOUNT = "amount";
-  @SerializedName(SERIALIZED_NAME_AMOUNT)
-  private Integer amount;
+public class PaymentDataAllOf {
+  public static final String SERIALIZED_NAME_PAYEE = "payee";
+  @SerializedName(SERIALIZED_NAME_PAYEE)
+  private Payee payee;
 
-  public static final String SERIALIZED_NAME_NOTICE_NUMBER = "notice_number";
-  @SerializedName(SERIALIZED_NAME_NOTICE_NUMBER)
-  private String noticeNumber;
-
-  public static final String SERIALIZED_NAME_INVALID_AFTER_DUE_DATE = "invalid_after_due_date";
-  @SerializedName(SERIALIZED_NAME_INVALID_AFTER_DUE_DATE)
-  private Boolean invalidAfterDueDate = false;
-
-  public PaymentDataBase() {
+  public PaymentDataAllOf() {
   }
 
-  public PaymentDataBase amount(Integer amount) {
+  public PaymentDataAllOf payee(Payee payee) {
     
-    this.amount = amount;
+    this.payee = payee;
     return this;
   }
 
    /**
-   * Amount of payment in euro cent. PagoPA accepts up to 9999999999 euro cents.
-   * minimum: 1
-   * maximum: 9999999999
-   * @return amount
-  **/
-  @javax.annotation.Nonnull
-  public Integer getAmount() {
-    return amount;
-  }
-
-
-  public void setAmount(Integer amount) {
-    this.amount = amount;
-  }
-
-
-  public PaymentDataBase noticeNumber(String noticeNumber) {
-    
-    this.noticeNumber = noticeNumber;
-    return this;
-  }
-
-   /**
-   * The field [\&quot;Numero Avviso\&quot;](https://pagopa-specifichepagamenti.readthedocs.io/it/latest/_docs/Capitolo7.html#il-numero-avviso-e-larchivio-dei-pagamenti-in-attesa) of pagoPa, needed to identify the payment. Format is &#x60;&lt;aux digit (1n)&gt;[&lt;application code&gt; (2n)]&lt;codice IUV (15|17n)&gt;&#x60;. See [pagoPa specs](https://www.agid.gov.it/sites/default/files/repository_files/specifiche_attuative_pagamenti_1_3_1_0.pdf) for more info on this field and the IUV.
-   * @return noticeNumber
-  **/
-  @javax.annotation.Nonnull
-  public String getNoticeNumber() {
-    return noticeNumber;
-  }
-
-
-  public void setNoticeNumber(String noticeNumber) {
-    this.noticeNumber = noticeNumber;
-  }
-
-
-  public PaymentDataBase invalidAfterDueDate(Boolean invalidAfterDueDate) {
-    
-    this.invalidAfterDueDate = invalidAfterDueDate;
-    return this;
-  }
-
-   /**
-   * Get invalidAfterDueDate
-   * @return invalidAfterDueDate
+   * Get payee
+   * @return payee
   **/
   @javax.annotation.Nullable
-  public Boolean getInvalidAfterDueDate() {
-    return invalidAfterDueDate;
+  public Payee getPayee() {
+    return payee;
   }
 
 
-  public void setInvalidAfterDueDate(Boolean invalidAfterDueDate) {
-    this.invalidAfterDueDate = invalidAfterDueDate;
+  public void setPayee(Payee payee) {
+    this.payee = payee;
   }
 
 
@@ -120,24 +68,20 @@ public class PaymentDataBase {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    PaymentDataBase paymentDataBase = (PaymentDataBase) o;
-    return Objects.equals(this.amount, paymentDataBase.amount) &&
-        Objects.equals(this.noticeNumber, paymentDataBase.noticeNumber) &&
-        Objects.equals(this.invalidAfterDueDate, paymentDataBase.invalidAfterDueDate);
+    PaymentDataAllOf paymentDataAllOf = (PaymentDataAllOf) o;
+    return Objects.equals(this.payee, paymentDataAllOf.payee);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(amount, noticeNumber, invalidAfterDueDate);
+    return Objects.hash(payee);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class PaymentDataBase {\n");
-    sb.append("    amount: ").append(toIndentedString(amount)).append("\n");
-    sb.append("    noticeNumber: ").append(toIndentedString(noticeNumber)).append("\n");
-    sb.append("    invalidAfterDueDate: ").append(toIndentedString(invalidAfterDueDate)).append("\n");
+    sb.append("class PaymentDataAllOf {\n");
+    sb.append("    payee: ").append(toIndentedString(payee)).append("\n");
     sb.append("}");
     return sb.toString();
   }
@@ -160,45 +104,35 @@ public class PaymentDataBase {
   static {
     // a set of all properties/fields (JSON key names)
     openapiFields = new HashSet<String>();
-    openapiFields.add("amount");
-    openapiFields.add("notice_number");
-    openapiFields.add("invalid_after_due_date");
+    openapiFields.add("payee");
 
     // a set of required properties/fields (JSON key names)
     openapiRequiredFields = new HashSet<String>();
-    openapiRequiredFields.add("amount");
-    openapiRequiredFields.add("notice_number");
   }
 
  /**
   * Validates the JSON Object and throws an exception if issues found
   *
   * @param jsonObj JSON Object
-  * @throws IOException if the JSON Object is invalid with respect to PaymentDataBase
+  * @throws IOException if the JSON Object is invalid with respect to PaymentDataAllOf
   */
   public static void validateJsonObject(JsonObject jsonObj) throws IOException {
       if (jsonObj == null) {
-        if (!PaymentDataBase.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
-          throw new IllegalArgumentException(String.format("The required field(s) %s in PaymentDataBase is not found in the empty JSON string", PaymentDataBase.openapiRequiredFields.toString()));
+        if (!PaymentDataAllOf.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
+          throw new IllegalArgumentException(String.format("The required field(s) %s in PaymentDataAllOf is not found in the empty JSON string", PaymentDataAllOf.openapiRequiredFields.toString()));
         }
       }
 
       Set<Entry<String, JsonElement>> entries = jsonObj.entrySet();
       // check to see if the JSON string contains additional fields
       for (Entry<String, JsonElement> entry : entries) {
-        if (!PaymentDataBase.openapiFields.contains(entry.getKey())) {
-          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `PaymentDataBase` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
+        if (!PaymentDataAllOf.openapiFields.contains(entry.getKey())) {
+          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `PaymentDataAllOf` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
         }
       }
-
-      // check to make sure all required properties/fields are present in the JSON string
-      for (String requiredField : PaymentDataBase.openapiRequiredFields) {
-        if (jsonObj.get(requiredField) == null) {
-          throw new IllegalArgumentException(String.format("The required field `%s` is not found in the JSON string: %s", requiredField, jsonObj.toString()));
-        }
-      }
-      if (!jsonObj.get("notice_number").isJsonPrimitive()) {
-        throw new IllegalArgumentException(String.format("Expected the field `notice_number` to be a primitive type in the JSON string but got `%s`", jsonObj.get("notice_number").toString()));
+      // validate the optional field `payee`
+      if (jsonObj.get("payee") != null && !jsonObj.get("payee").isJsonNull()) {
+        Payee.validateJsonObject(jsonObj.getAsJsonObject("payee"));
       }
   }
 
@@ -206,22 +140,22 @@ public class PaymentDataBase {
     @SuppressWarnings("unchecked")
     @Override
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-       if (!PaymentDataBase.class.isAssignableFrom(type.getRawType())) {
-         return null; // this class only serializes 'PaymentDataBase' and its subtypes
+       if (!PaymentDataAllOf.class.isAssignableFrom(type.getRawType())) {
+         return null; // this class only serializes 'PaymentDataAllOf' and its subtypes
        }
        final TypeAdapter<JsonElement> elementAdapter = gson.getAdapter(JsonElement.class);
-       final TypeAdapter<PaymentDataBase> thisAdapter
-                        = gson.getDelegateAdapter(this, TypeToken.get(PaymentDataBase.class));
+       final TypeAdapter<PaymentDataAllOf> thisAdapter
+                        = gson.getDelegateAdapter(this, TypeToken.get(PaymentDataAllOf.class));
 
-       return (TypeAdapter<T>) new TypeAdapter<PaymentDataBase>() {
+       return (TypeAdapter<T>) new TypeAdapter<PaymentDataAllOf>() {
            @Override
-           public void write(JsonWriter out, PaymentDataBase value) throws IOException {
+           public void write(JsonWriter out, PaymentDataAllOf value) throws IOException {
              JsonObject obj = thisAdapter.toJsonTree(value).getAsJsonObject();
              elementAdapter.write(out, obj);
            }
 
            @Override
-           public PaymentDataBase read(JsonReader in) throws IOException {
+           public PaymentDataAllOf read(JsonReader in) throws IOException {
              JsonObject jsonObj = elementAdapter.read(in).getAsJsonObject();
              validateJsonObject(jsonObj);
              return thisAdapter.fromJsonTree(jsonObj);
@@ -232,18 +166,18 @@ public class PaymentDataBase {
   }
 
  /**
-  * Create an instance of PaymentDataBase given an JSON string
+  * Create an instance of PaymentDataAllOf given an JSON string
   *
   * @param jsonString JSON string
-  * @return An instance of PaymentDataBase
-  * @throws IOException if the JSON string is invalid with respect to PaymentDataBase
+  * @return An instance of PaymentDataAllOf
+  * @throws IOException if the JSON string is invalid with respect to PaymentDataAllOf
   */
-  public static PaymentDataBase fromJson(String jsonString) throws IOException {
-    return JSON.getGson().fromJson(jsonString, PaymentDataBase.class);
+  public static PaymentDataAllOf fromJson(String jsonString) throws IOException {
+    return JSON.getGson().fromJson(jsonString, PaymentDataAllOf.class);
   }
 
  /**
-  * Convert an instance of PaymentDataBase to an JSON string
+  * Convert an instance of PaymentDataAllOf to an JSON string
   *
   * @return JSON string
   */

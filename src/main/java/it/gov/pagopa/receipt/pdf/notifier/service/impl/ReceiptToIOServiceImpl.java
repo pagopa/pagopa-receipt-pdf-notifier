@@ -1,8 +1,6 @@
 package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 
 import com.microsoft.azure.functions.OutputBinding;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiResponse;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.api.IOClient;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
@@ -10,9 +8,14 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.CreatedMessage;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.FiscalCodePayload;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.*;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 import lombok.NoArgsConstructor;

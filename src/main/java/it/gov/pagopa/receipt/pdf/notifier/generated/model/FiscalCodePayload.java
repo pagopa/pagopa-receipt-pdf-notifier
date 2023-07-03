@@ -11,82 +11,51 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.model.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.model;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.JSON;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.JSON;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
 
 /**
- * Describes the citizen&#39;s profile, mostly interesting for preferences attributes.
+ * FiscalCodePayload
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class LimitedProfile {
-  public static final String SERIALIZED_NAME_SENDER_ALLOWED = "sender_allowed";
-  @SerializedName(SERIALIZED_NAME_SENDER_ALLOWED)
-  private Boolean senderAllowed;
+public class FiscalCodePayload {
+  public static final String SERIALIZED_NAME_FISCAL_CODE = "fiscal_code";
+  @SerializedName(SERIALIZED_NAME_FISCAL_CODE)
+  private String fiscalCode;
 
-  public static final String SERIALIZED_NAME_PREFERRED_LANGUAGES = "preferred_languages";
-  @SerializedName(SERIALIZED_NAME_PREFERRED_LANGUAGES)
-  private List<String> preferredLanguages;
-
-  public LimitedProfile() {
+  public FiscalCodePayload() {
   }
 
-  public LimitedProfile senderAllowed(Boolean senderAllowed) {
+  public FiscalCodePayload fiscalCode(String fiscalCode) {
     
-    this.senderAllowed = senderAllowed;
+    this.fiscalCode = fiscalCode;
     return this;
   }
 
    /**
-   * True in case the service that made the request can send messages to the user identified by this profile (false otherwise).
-   * @return senderAllowed
-  **/
-  @javax.annotation.Nonnull
-  public Boolean getSenderAllowed() {
-    return senderAllowed;
-  }
-
-
-  public void setSenderAllowed(Boolean senderAllowed) {
-    this.senderAllowed = senderAllowed;
-  }
-
-
-  public LimitedProfile preferredLanguages(List<String> preferredLanguages) {
-    
-    this.preferredLanguages = preferredLanguages;
-    return this;
-  }
-
-  public LimitedProfile addPreferredLanguagesItem(String preferredLanguagesItem) {
-    if (this.preferredLanguages == null) {
-      this.preferredLanguages = new ArrayList<>();
-    }
-    this.preferredLanguages.add(preferredLanguagesItem);
-    return this;
-  }
-
-   /**
-   * Indicates the User&#39;s preferred written or spoken languages in order of preference. Generally used for selecting a localized User interface. Valid values are concatenation of the ISO 639-1 two letter language code, an underscore, and the ISO 3166-1 2 letter country code; e.g., &#39;en_US&#39; specifies the language English and country US.
-   * @return preferredLanguages
+   * User&#39;s fiscal code.
+   * @return fiscalCode
   **/
   @javax.annotation.Nullable
-  public List<String> getPreferredLanguages() {
-    return preferredLanguages;
+  public String getFiscalCode() {
+    return fiscalCode;
   }
 
 
-  public void setPreferredLanguages(List<String> preferredLanguages) {
-    this.preferredLanguages = preferredLanguages;
+  public void setFiscalCode(String fiscalCode) {
+    this.fiscalCode = fiscalCode;
   }
 
 
@@ -99,22 +68,20 @@ public class LimitedProfile {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    LimitedProfile limitedProfile = (LimitedProfile) o;
-    return Objects.equals(this.senderAllowed, limitedProfile.senderAllowed) &&
-        Objects.equals(this.preferredLanguages, limitedProfile.preferredLanguages);
+    FiscalCodePayload fiscalCodePayload = (FiscalCodePayload) o;
+    return Objects.equals(this.fiscalCode, fiscalCodePayload.fiscalCode);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(senderAllowed, preferredLanguages);
+    return Objects.hash(fiscalCode);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class LimitedProfile {\n");
-    sb.append("    senderAllowed: ").append(toIndentedString(senderAllowed)).append("\n");
-    sb.append("    preferredLanguages: ").append(toIndentedString(preferredLanguages)).append("\n");
+    sb.append("class FiscalCodePayload {\n");
+    sb.append("    fiscalCode: ").append(toIndentedString(fiscalCode)).append("\n");
     sb.append("}");
     return sb.toString();
   }
@@ -137,44 +104,34 @@ public class LimitedProfile {
   static {
     // a set of all properties/fields (JSON key names)
     openapiFields = new HashSet<String>();
-    openapiFields.add("sender_allowed");
-    openapiFields.add("preferred_languages");
+    openapiFields.add("fiscal_code");
 
     // a set of required properties/fields (JSON key names)
     openapiRequiredFields = new HashSet<String>();
-    openapiRequiredFields.add("sender_allowed");
   }
 
  /**
   * Validates the JSON Object and throws an exception if issues found
   *
   * @param jsonObj JSON Object
-  * @throws IOException if the JSON Object is invalid with respect to LimitedProfile
+  * @throws IOException if the JSON Object is invalid with respect to FiscalCodePayload
   */
   public static void validateJsonObject(JsonObject jsonObj) throws IOException {
       if (jsonObj == null) {
-        if (!LimitedProfile.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
-          throw new IllegalArgumentException(String.format("The required field(s) %s in LimitedProfile is not found in the empty JSON string", LimitedProfile.openapiRequiredFields.toString()));
+        if (!FiscalCodePayload.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
+          throw new IllegalArgumentException(String.format("The required field(s) %s in FiscalCodePayload is not found in the empty JSON string", FiscalCodePayload.openapiRequiredFields.toString()));
         }
       }
 
       Set<Entry<String, JsonElement>> entries = jsonObj.entrySet();
       // check to see if the JSON string contains additional fields
       for (Entry<String, JsonElement> entry : entries) {
-        if (!LimitedProfile.openapiFields.contains(entry.getKey())) {
-          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `LimitedProfile` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
+        if (!FiscalCodePayload.openapiFields.contains(entry.getKey())) {
+          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `FiscalCodePayload` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
         }
       }
-
-      // check to make sure all required properties/fields are present in the JSON string
-      for (String requiredField : LimitedProfile.openapiRequiredFields) {
-        if (jsonObj.get(requiredField) == null) {
-          throw new IllegalArgumentException(String.format("The required field `%s` is not found in the JSON string: %s", requiredField, jsonObj.toString()));
-        }
-      }
-      // ensure the optional json data is an array if present
-      if (jsonObj.get("preferred_languages") != null && !jsonObj.get("preferred_languages").isJsonArray()) {
-        throw new IllegalArgumentException(String.format("Expected the field `preferred_languages` to be an array in the JSON string but got `%s`", jsonObj.get("preferred_languages").toString()));
+      if ((jsonObj.get("fiscal_code") != null && !jsonObj.get("fiscal_code").isJsonNull()) && !jsonObj.get("fiscal_code").isJsonPrimitive()) {
+        throw new IllegalArgumentException(String.format("Expected the field `fiscal_code` to be a primitive type in the JSON string but got `%s`", jsonObj.get("fiscal_code").toString()));
       }
   }
 
@@ -182,22 +139,22 @@ public class LimitedProfile {
     @SuppressWarnings("unchecked")
     @Override
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-       if (!LimitedProfile.class.isAssignableFrom(type.getRawType())) {
-         return null; // this class only serializes 'LimitedProfile' and its subtypes
+       if (!FiscalCodePayload.class.isAssignableFrom(type.getRawType())) {
+         return null; // this class only serializes 'FiscalCodePayload' and its subtypes
        }
        final TypeAdapter<JsonElement> elementAdapter = gson.getAdapter(JsonElement.class);
-       final TypeAdapter<LimitedProfile> thisAdapter
-                        = gson.getDelegateAdapter(this, TypeToken.get(LimitedProfile.class));
+       final TypeAdapter<FiscalCodePayload> thisAdapter
+                        = gson.getDelegateAdapter(this, TypeToken.get(FiscalCodePayload.class));
 
-       return (TypeAdapter<T>) new TypeAdapter<LimitedProfile>() {
+       return (TypeAdapter<T>) new TypeAdapter<FiscalCodePayload>() {
            @Override
-           public void write(JsonWriter out, LimitedProfile value) throws IOException {
+           public void write(JsonWriter out, FiscalCodePayload value) throws IOException {
              JsonObject obj = thisAdapter.toJsonTree(value).getAsJsonObject();
              elementAdapter.write(out, obj);
            }
 
            @Override
-           public LimitedProfile read(JsonReader in) throws IOException {
+           public FiscalCodePayload read(JsonReader in) throws IOException {
              JsonObject jsonObj = elementAdapter.read(in).getAsJsonObject();
              validateJsonObject(jsonObj);
              return thisAdapter.fromJsonTree(jsonObj);
@@ -208,18 +165,18 @@ public class LimitedProfile {
   }
 
  /**
-  * Create an instance of LimitedProfile given an JSON string
+  * Create an instance of FiscalCodePayload given an JSON string
   *
   * @param jsonString JSON string
-  * @return An instance of LimitedProfile
-  * @throws IOException if the JSON string is invalid with respect to LimitedProfile
+  * @return An instance of FiscalCodePayload
+  * @throws IOException if the JSON string is invalid with respect to FiscalCodePayload
   */
-  public static LimitedProfile fromJson(String jsonString) throws IOException {
-    return JSON.getGson().fromJson(jsonString, LimitedProfile.class);
+  public static FiscalCodePayload fromJson(String jsonString) throws IOException {
+    return JSON.getGson().fromJson(jsonString, FiscalCodePayload.class);
   }
 
  /**
-  * Convert an instance of LimitedProfile to an JSON string
+  * Convert an instance of FiscalCodePayload to an JSON string
   *
   * @return JSON string
   */
