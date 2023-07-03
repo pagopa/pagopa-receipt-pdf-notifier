@@ -66,6 +66,9 @@ class ReceiptToIOTest {
     private ArgumentCaptor<List<Receipt>> receiptCaptor;
 
     @Captor
+    private ArgumentCaptor<String> queueCaptor;
+
+    @Captor
     private ArgumentCaptor<List<IOMessage>> messageCaptor;
 
     @AfterEach
