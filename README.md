@@ -1,8 +1,8 @@
-# pagoPA Receipt-pdf-datastore
+# pagoPA Receipt-pdf-notifier
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pagopa_pagopa-receipt-pdf-datastore&metric=alert_status)](https://sonarcloud.io/dashboard?id=pagopa_pagopa-receipt-pdf-datastore)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pagopa_pagopa-receipt-pdf-notifier&metric=alert_status)](https://sonarcloud.io/dashboard?id=pagopa_pagopa-receipt-pdf-notifier)
 
-Java Azure Function that exposes REST API to generate a PDFA/2a document based on the provided data and HTML template.
+Java Azure Function that notifies to an IO user a message with the previously generated receipt's info.
 
 ---
 
@@ -38,7 +38,7 @@ Java Azure Function that exposes REST API to generate a PDFA/2a document based o
 
 #### Set environment variables
 
-`docker build -t pagopa-receip-pdf-datastore .`
+`docker build -t pagopa-receip-pdf-notifier .`
 
 `cp .env.example .env`
 
@@ -48,7 +48,7 @@ and replace in `.env` with correct values
 
 then type :
 
-`docker run -p 80:80 --env-file=./.env pagopa-receip-pdf-datastore`
+`docker run -p 80:80 --env-file=./.env pagopa-receip-pdf-notifier`
 
 ### Run locally with Maven
 
@@ -65,25 +65,18 @@ On terminal type:
 then replace env variables with correct values
 (if there is NO default value, the variable HAS to be defined)
 
-| VARIABLE                          | USAGE                                                                            |      DEFAULT VALUE      |
-|-----------------------------------|----------------------------------------------------------------------------------|:-----------------------:|
-| `RECEIPT_QUEUE_CONN_STRING`       | Connection string to the Receipt Queue                                           |                         |
-| `RECEIPT_QUEUE_TOPIC`             | Topic name of the Receipt Queue                                                  |                         |
-| `RECEIPT_QUEUE_DELAY`             | Delay, in seconds, the visibility of the messages in the queue                   |           "1"           |
-| `RECEIPT_QUEUE_MAX_RETRY`         | Number of retry to complete the generation process before being tagged as FAILED |           "5"           |
-| `BLOB_STORAGE_ACCOUNT_ENDPOINT`   | Endpoint to the Receipt Blob Storage                                             |                         |
-| `BLOB_STORAGE_CONN_STRING`        | Connection string of the Receipt Blob Storage                                    |                         |
-| `BLOB_STORAGE_CONTAINER_NAME`     | Container name of the Receipt container in the Blob Storage                      |                         |
-| `COSMOS_BIZ_EVENT_CONN_STRING`    | Connection string to the BizEvent CosmosDB                                       |                         |
-| `COSMOS_RECEIPTS_CONN_STRING`     | Connection string to the Receipt CosmosDB                                        |                         |
-| `COSMOS_RECEIPT_SERVICE_ENDPOINT` | Endpoint to the Receipt CosmosDB                                                 |                         |
-| `COSMOS_RECEIPT_KEY`              | Key to the Receipt CosmosDB                                                      |                         |
-| `COSMOS_RECEIPT_DB_NAME`          | Database name of the Receipt database in CosmosDB                                |                         |
-| `COSMOS_RECEIPT_CONTAINER_NAME`   | Container name of the Receipt container in CosmosDB                              |                         |
-| `PDF_ENGINE_ENDPOINT`             | Endpoint to the PDF engine                                                       |                         |
-| `OCP_APIM_SUBSCRIPTION_KEY`       | Auth key for Azure to access the PDF Engine                                      |                         |
-| `COMPLETE_TEMPLATE_FILE_NAME `    | Filename of the complete template                                                | "complete_template.zip" |
-| `PARTIAL_TEMPLATE_FILE_NAME`      | Filename of the partial template                                                 | "partial_template.zip"  |
+| VARIABLE                          | USAGE                                                                            | DEFAULT VALUE |
+|-----------------------------------|----------------------------------------------------------------------------------|:-------------:|
+| `STORAGE_CONN_STRING`             | Connection string to the Receipt Queue                                           |               |
+| `NOTIFIER_QUEUE_TOPIC`            | Topic name of the Receipt Queue                                                  |               |
+| `NOTIFIER_QUEUE_DELAY`            | Delay, in seconds, the visibility of the messages in the queue                   |      "1"      |
+| `NOTIFY_RECEIPT_MAX_RETRY`        | Number of retry to complete the generation process before being tagged as FAILED |      "5"      |
+| `COSMOS_RECEIPTS_CONN_STRING`     | Connection string to the Receipt CosmosDB                                        |               |
+| `COSMOS_RECEIPT_SERVICE_ENDPOINT` | Endpoint to the Receipt CosmosDB                                                 |               |
+| `COSMOS_RECEIPT_KEY`              | Key to the Receipt CosmosDB                                                      |               |
+| `COSMOS_RECEIPT_DB_NAME`          | Database name of the Receipt database in CosmosDB                                |               |
+| `COSMOS_RECEIPT_CONTAINER_NAME`   | Container name of the Receipt container in CosmosDB                              |               |
+| `OCP_APIM_SUBSCRIPTION_KEY`       | Auth key for Azure to access the PDF Engine                                      |               |
 
 > to doc details about AZ fn config
 > see [here](https://stackoverflow.com/questions/62669672/azure-functions-what-is-the-purpose-of-having-host-json-and-local-settings-jso)
