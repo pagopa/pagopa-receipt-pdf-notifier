@@ -11,14 +11,14 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.model.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.model;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.JSON;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.JSON;
 
 import java.io.IOException;
 import java.util.HashSet;

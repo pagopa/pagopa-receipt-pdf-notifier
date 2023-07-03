@@ -11,76 +11,82 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.model.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.model;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.JSON;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.JSON;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
 
 /**
- * MessageContentBase
+ * Describes the citizen&#39;s profile, mostly interesting for preferences attributes.
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class MessageContentBase {
-  public static final String SERIALIZED_NAME_SUBJECT = "subject";
-  @SerializedName(SERIALIZED_NAME_SUBJECT)
-  private String subject;
+public class LimitedProfile {
+  public static final String SERIALIZED_NAME_SENDER_ALLOWED = "sender_allowed";
+  @SerializedName(SERIALIZED_NAME_SENDER_ALLOWED)
+  private Boolean senderAllowed;
 
-  public static final String SERIALIZED_NAME_MARKDOWN = "markdown";
-  @SerializedName(SERIALIZED_NAME_MARKDOWN)
-  private String markdown;
+  public static final String SERIALIZED_NAME_PREFERRED_LANGUAGES = "preferred_languages";
+  @SerializedName(SERIALIZED_NAME_PREFERRED_LANGUAGES)
+  private List<String> preferredLanguages;
 
-  public MessageContentBase() {
+  public LimitedProfile() {
   }
 
-  public MessageContentBase subject(String subject) {
+  public LimitedProfile senderAllowed(Boolean senderAllowed) {
     
-    this.subject = subject;
+    this.senderAllowed = senderAllowed;
     return this;
   }
 
    /**
-   * The (optional) subject of the message - note that only some notification channels support the display of a subject. When a subject is not provided, one gets generated from the client attributes.
-   * @return subject
+   * True in case the service that made the request can send messages to the user identified by this profile (false otherwise).
+   * @return senderAllowed
   **/
   @javax.annotation.Nonnull
-  public String getSubject() {
-    return subject;
+  public Boolean getSenderAllowed() {
+    return senderAllowed;
   }
 
 
-  public void setSubject(String subject) {
-    this.subject = subject;
+  public void setSenderAllowed(Boolean senderAllowed) {
+    this.senderAllowed = senderAllowed;
   }
 
 
-  public MessageContentBase markdown(String markdown) {
+  public LimitedProfile preferredLanguages(List<String> preferredLanguages) {
     
-    this.markdown = markdown;
+    this.preferredLanguages = preferredLanguages;
+    return this;
+  }
+
+  public LimitedProfile addPreferredLanguagesItem(String preferredLanguagesItem) {
+    if (this.preferredLanguages == null) {
+      this.preferredLanguages = new ArrayList<>();
+    }
+    this.preferredLanguages.add(preferredLanguagesItem);
     return this;
   }
 
    /**
-   * The full version of the message, in plain text or Markdown format. The content of this field will be delivered to channels that don&#39;t have any limit in terms of content size (e.g. email, etc...).
-   * @return markdown
+   * Indicates the User&#39;s preferred written or spoken languages in order of preference. Generally used for selecting a localized User interface. Valid values are concatenation of the ISO 639-1 two letter language code, an underscore, and the ISO 3166-1 2 letter country code; e.g., &#39;en_US&#39; specifies the language English and country US.
+   * @return preferredLanguages
   **/
-  @javax.annotation.Nonnull
-  public String getMarkdown() {
-    return markdown;
+  @javax.annotation.Nullable
+  public List<String> getPreferredLanguages() {
+    return preferredLanguages;
   }
 
 
-  public void setMarkdown(String markdown) {
-    this.markdown = markdown;
+  public void setPreferredLanguages(List<String> preferredLanguages) {
+    this.preferredLanguages = preferredLanguages;
   }
 
 
@@ -93,22 +99,22 @@ public class MessageContentBase {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    MessageContentBase messageContentBase = (MessageContentBase) o;
-    return Objects.equals(this.subject, messageContentBase.subject) &&
-        Objects.equals(this.markdown, messageContentBase.markdown);
+    LimitedProfile limitedProfile = (LimitedProfile) o;
+    return Objects.equals(this.senderAllowed, limitedProfile.senderAllowed) &&
+        Objects.equals(this.preferredLanguages, limitedProfile.preferredLanguages);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(subject, markdown);
+    return Objects.hash(senderAllowed, preferredLanguages);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class MessageContentBase {\n");
-    sb.append("    subject: ").append(toIndentedString(subject)).append("\n");
-    sb.append("    markdown: ").append(toIndentedString(markdown)).append("\n");
+    sb.append("class LimitedProfile {\n");
+    sb.append("    senderAllowed: ").append(toIndentedString(senderAllowed)).append("\n");
+    sb.append("    preferredLanguages: ").append(toIndentedString(preferredLanguages)).append("\n");
     sb.append("}");
     return sb.toString();
   }
@@ -131,47 +137,44 @@ public class MessageContentBase {
   static {
     // a set of all properties/fields (JSON key names)
     openapiFields = new HashSet<String>();
-    openapiFields.add("subject");
-    openapiFields.add("markdown");
+    openapiFields.add("sender_allowed");
+    openapiFields.add("preferred_languages");
 
     // a set of required properties/fields (JSON key names)
     openapiRequiredFields = new HashSet<String>();
-    openapiRequiredFields.add("subject");
-    openapiRequiredFields.add("markdown");
+    openapiRequiredFields.add("sender_allowed");
   }
 
  /**
   * Validates the JSON Object and throws an exception if issues found
   *
   * @param jsonObj JSON Object
-  * @throws IOException if the JSON Object is invalid with respect to MessageContentBase
+  * @throws IOException if the JSON Object is invalid with respect to LimitedProfile
   */
   public static void validateJsonObject(JsonObject jsonObj) throws IOException {
       if (jsonObj == null) {
-        if (!MessageContentBase.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
-          throw new IllegalArgumentException(String.format("The required field(s) %s in MessageContentBase is not found in the empty JSON string", MessageContentBase.openapiRequiredFields.toString()));
+        if (!LimitedProfile.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
+          throw new IllegalArgumentException(String.format("The required field(s) %s in LimitedProfile is not found in the empty JSON string", LimitedProfile.openapiRequiredFields.toString()));
         }
       }
 
       Set<Entry<String, JsonElement>> entries = jsonObj.entrySet();
       // check to see if the JSON string contains additional fields
       for (Entry<String, JsonElement> entry : entries) {
-        if (!MessageContentBase.openapiFields.contains(entry.getKey())) {
-          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `MessageContentBase` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
+        if (!LimitedProfile.openapiFields.contains(entry.getKey())) {
+          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `LimitedProfile` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
         }
       }
 
       // check to make sure all required properties/fields are present in the JSON string
-      for (String requiredField : MessageContentBase.openapiRequiredFields) {
+      for (String requiredField : LimitedProfile.openapiRequiredFields) {
         if (jsonObj.get(requiredField) == null) {
           throw new IllegalArgumentException(String.format("The required field `%s` is not found in the JSON string: %s", requiredField, jsonObj.toString()));
         }
       }
-      if (!jsonObj.get("subject").isJsonPrimitive()) {
-        throw new IllegalArgumentException(String.format("Expected the field `subject` to be a primitive type in the JSON string but got `%s`", jsonObj.get("subject").toString()));
-      }
-      if (!jsonObj.get("markdown").isJsonPrimitive()) {
-        throw new IllegalArgumentException(String.format("Expected the field `markdown` to be a primitive type in the JSON string but got `%s`", jsonObj.get("markdown").toString()));
+      // ensure the optional json data is an array if present
+      if (jsonObj.get("preferred_languages") != null && !jsonObj.get("preferred_languages").isJsonArray()) {
+        throw new IllegalArgumentException(String.format("Expected the field `preferred_languages` to be an array in the JSON string but got `%s`", jsonObj.get("preferred_languages").toString()));
       }
   }
 
@@ -179,22 +182,22 @@ public class MessageContentBase {
     @SuppressWarnings("unchecked")
     @Override
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-       if (!MessageContentBase.class.isAssignableFrom(type.getRawType())) {
-         return null; // this class only serializes 'MessageContentBase' and its subtypes
+       if (!LimitedProfile.class.isAssignableFrom(type.getRawType())) {
+         return null; // this class only serializes 'LimitedProfile' and its subtypes
        }
        final TypeAdapter<JsonElement> elementAdapter = gson.getAdapter(JsonElement.class);
-       final TypeAdapter<MessageContentBase> thisAdapter
-                        = gson.getDelegateAdapter(this, TypeToken.get(MessageContentBase.class));
+       final TypeAdapter<LimitedProfile> thisAdapter
+                        = gson.getDelegateAdapter(this, TypeToken.get(LimitedProfile.class));
 
-       return (TypeAdapter<T>) new TypeAdapter<MessageContentBase>() {
+       return (TypeAdapter<T>) new TypeAdapter<LimitedProfile>() {
            @Override
-           public void write(JsonWriter out, MessageContentBase value) throws IOException {
+           public void write(JsonWriter out, LimitedProfile value) throws IOException {
              JsonObject obj = thisAdapter.toJsonTree(value).getAsJsonObject();
              elementAdapter.write(out, obj);
            }
 
            @Override
-           public MessageContentBase read(JsonReader in) throws IOException {
+           public LimitedProfile read(JsonReader in) throws IOException {
              JsonObject jsonObj = elementAdapter.read(in).getAsJsonObject();
              validateJsonObject(jsonObj);
              return thisAdapter.fromJsonTree(jsonObj);
@@ -205,18 +208,18 @@ public class MessageContentBase {
   }
 
  /**
-  * Create an instance of MessageContentBase given an JSON string
+  * Create an instance of LimitedProfile given an JSON string
   *
   * @param jsonString JSON string
-  * @return An instance of MessageContentBase
-  * @throws IOException if the JSON string is invalid with respect to MessageContentBase
+  * @return An instance of LimitedProfile
+  * @throws IOException if the JSON string is invalid with respect to LimitedProfile
   */
-  public static MessageContentBase fromJson(String jsonString) throws IOException {
-    return JSON.getGson().fromJson(jsonString, MessageContentBase.class);
+  public static LimitedProfile fromJson(String jsonString) throws IOException {
+    return JSON.getGson().fromJson(jsonString, LimitedProfile.class);
   }
 
  /**
-  * Convert an instance of MessageContentBase to an JSON string
+  * Convert an instance of LimitedProfile to an JSON string
   *
   * @return JSON string
   */

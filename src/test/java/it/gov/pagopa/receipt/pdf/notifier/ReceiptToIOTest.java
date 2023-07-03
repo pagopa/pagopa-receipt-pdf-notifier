@@ -2,19 +2,18 @@ package it.gov.pagopa.receipt.pdf.notifier;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiException;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiResponse;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.api.IOClient;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.CreatedMessage;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.LimitedProfile;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.CreatedMessage;
+import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,7 +29,6 @@ import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)

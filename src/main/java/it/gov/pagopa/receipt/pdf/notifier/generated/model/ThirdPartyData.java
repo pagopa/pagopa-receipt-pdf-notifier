@@ -11,14 +11,14 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.model.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.model;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.JSON;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.JSON;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -27,112 +27,135 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * PaymentData
+ * Payload containing all information needed to retrieve and visualize third party message details
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class PaymentData {
-  public static final String SERIALIZED_NAME_AMOUNT = "amount";
-  @SerializedName(SERIALIZED_NAME_AMOUNT)
-  private Integer amount;
+public class ThirdPartyData {
+  public static final String SERIALIZED_NAME_ID = "id";
+  @SerializedName(SERIALIZED_NAME_ID)
+  private String id;
 
-  public static final String SERIALIZED_NAME_NOTICE_NUMBER = "notice_number";
-  @SerializedName(SERIALIZED_NAME_NOTICE_NUMBER)
-  private String noticeNumber;
+  public static final String SERIALIZED_NAME_ORIGINAL_SENDER = "original_sender";
+  @SerializedName(SERIALIZED_NAME_ORIGINAL_SENDER)
+  private String originalSender;
 
-  public static final String SERIALIZED_NAME_INVALID_AFTER_DUE_DATE = "invalid_after_due_date";
-  @SerializedName(SERIALIZED_NAME_INVALID_AFTER_DUE_DATE)
-  private Boolean invalidAfterDueDate = false;
+  public static final String SERIALIZED_NAME_ORIGINAL_RECEIPT_DATE = "original_receipt_date";
+  @SerializedName(SERIALIZED_NAME_ORIGINAL_RECEIPT_DATE)
+  private String originalReceiptDate;
 
-  public static final String SERIALIZED_NAME_PAYEE = "payee";
-  @SerializedName(SERIALIZED_NAME_PAYEE)
-  private Payee payee;
+  public static final String SERIALIZED_NAME_HAS_ATTACHMENTS = "has_attachments";
+  @SerializedName(SERIALIZED_NAME_HAS_ATTACHMENTS)
+  private Boolean hasAttachments = false;
 
-  public PaymentData() {
+  public static final String SERIALIZED_NAME_SUMMARY = "summary";
+  @SerializedName(SERIALIZED_NAME_SUMMARY)
+  private String summary;
+
+  public ThirdPartyData() {
   }
 
-  public PaymentData amount(Integer amount) {
+  public ThirdPartyData id(String id) {
     
-    this.amount = amount;
+    this.id = id;
     return this;
   }
 
    /**
-   * Amount of payment in euro cent. PagoPA accepts up to 9999999999 euro cents.
-   * minimum: 1
-   * maximum: 9999999999
-   * @return amount
+   * Unique id for retrieving third party enriched information about the message
+   * @return id
   **/
   @javax.annotation.Nonnull
-  public Integer getAmount() {
-    return amount;
+  public String getId() {
+    return id;
   }
 
 
-  public void setAmount(Integer amount) {
-    this.amount = amount;
+  public void setId(String id) {
+    this.id = id;
   }
 
 
-  public PaymentData noticeNumber(String noticeNumber) {
+  public ThirdPartyData originalSender(String originalSender) {
     
-    this.noticeNumber = noticeNumber;
+    this.originalSender = originalSender;
     return this;
   }
 
    /**
-   * The field [\&quot;Numero Avviso\&quot;](https://pagopa-specifichepagamenti.readthedocs.io/it/latest/_docs/Capitolo7.html#il-numero-avviso-e-larchivio-dei-pagamenti-in-attesa) of pagoPa, needed to identify the payment. Format is &#x60;&lt;aux digit (1n)&gt;[&lt;application code&gt; (2n)]&lt;codice IUV (15|17n)&gt;&#x60;. See [pagoPa specs](https://www.agid.gov.it/sites/default/files/repository_files/specifiche_attuative_pagamenti_1_3_1_0.pdf) for more info on this field and the IUV.
-   * @return noticeNumber
-  **/
-  @javax.annotation.Nonnull
-  public String getNoticeNumber() {
-    return noticeNumber;
-  }
-
-
-  public void setNoticeNumber(String noticeNumber) {
-    this.noticeNumber = noticeNumber;
-  }
-
-
-  public PaymentData invalidAfterDueDate(Boolean invalidAfterDueDate) {
-    
-    this.invalidAfterDueDate = invalidAfterDueDate;
-    return this;
-  }
-
-   /**
-   * Get invalidAfterDueDate
-   * @return invalidAfterDueDate
+   * Either a ServiceId or a simple string representing the sender name
+   * @return originalSender
   **/
   @javax.annotation.Nullable
-  public Boolean getInvalidAfterDueDate() {
-    return invalidAfterDueDate;
+  public String getOriginalSender() {
+    return originalSender;
   }
 
 
-  public void setInvalidAfterDueDate(Boolean invalidAfterDueDate) {
-    this.invalidAfterDueDate = invalidAfterDueDate;
+  public void setOriginalSender(String originalSender) {
+    this.originalSender = originalSender;
   }
 
 
-  public PaymentData payee(Payee payee) {
+  public ThirdPartyData originalReceiptDate(String originalReceiptDate) {
     
-    this.payee = payee;
+    this.originalReceiptDate = originalReceiptDate;
     return this;
   }
 
    /**
-   * Get payee
-   * @return payee
+   * A date-time field in ISO-8601 format and UTC timezone.
+   * @return originalReceiptDate
   **/
   @javax.annotation.Nullable
-  public Payee getPayee() {
-    return payee;
+  public String getOriginalReceiptDate() {
+    return originalReceiptDate;
   }
 
 
-  public void setPayee(Payee payee) {
-    this.payee = payee;
+  public void setOriginalReceiptDate(String originalReceiptDate) {
+    this.originalReceiptDate = originalReceiptDate;
+  }
+
+
+  public ThirdPartyData hasAttachments(Boolean hasAttachments) {
+    
+    this.hasAttachments = hasAttachments;
+    return this;
+  }
+
+   /**
+   * Get hasAttachments
+   * @return hasAttachments
+  **/
+  @javax.annotation.Nullable
+  public Boolean getHasAttachments() {
+    return hasAttachments;
+  }
+
+
+  public void setHasAttachments(Boolean hasAttachments) {
+    this.hasAttachments = hasAttachments;
+  }
+
+
+  public ThirdPartyData summary(String summary) {
+    
+    this.summary = summary;
+    return this;
+  }
+
+   /**
+   * Get summary
+   * @return summary
+  **/
+  @javax.annotation.Nullable
+  public String getSummary() {
+    return summary;
+  }
+
+
+  public void setSummary(String summary) {
+    this.summary = summary;
   }
 
 
@@ -145,26 +168,28 @@ public class PaymentData {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    PaymentData paymentData = (PaymentData) o;
-    return Objects.equals(this.amount, paymentData.amount) &&
-        Objects.equals(this.noticeNumber, paymentData.noticeNumber) &&
-        Objects.equals(this.invalidAfterDueDate, paymentData.invalidAfterDueDate) &&
-        Objects.equals(this.payee, paymentData.payee);
+    ThirdPartyData thirdPartyData = (ThirdPartyData) o;
+    return Objects.equals(this.id, thirdPartyData.id) &&
+        Objects.equals(this.originalSender, thirdPartyData.originalSender) &&
+        Objects.equals(this.originalReceiptDate, thirdPartyData.originalReceiptDate) &&
+        Objects.equals(this.hasAttachments, thirdPartyData.hasAttachments) &&
+        Objects.equals(this.summary, thirdPartyData.summary);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(amount, noticeNumber, invalidAfterDueDate, payee);
+    return Objects.hash(id, originalSender, originalReceiptDate, hasAttachments, summary);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class PaymentData {\n");
-    sb.append("    amount: ").append(toIndentedString(amount)).append("\n");
-    sb.append("    noticeNumber: ").append(toIndentedString(noticeNumber)).append("\n");
-    sb.append("    invalidAfterDueDate: ").append(toIndentedString(invalidAfterDueDate)).append("\n");
-    sb.append("    payee: ").append(toIndentedString(payee)).append("\n");
+    sb.append("class ThirdPartyData {\n");
+    sb.append("    id: ").append(toIndentedString(id)).append("\n");
+    sb.append("    originalSender: ").append(toIndentedString(originalSender)).append("\n");
+    sb.append("    originalReceiptDate: ").append(toIndentedString(originalReceiptDate)).append("\n");
+    sb.append("    hasAttachments: ").append(toIndentedString(hasAttachments)).append("\n");
+    sb.append("    summary: ").append(toIndentedString(summary)).append("\n");
     sb.append("}");
     return sb.toString();
   }
@@ -187,50 +212,55 @@ public class PaymentData {
   static {
     // a set of all properties/fields (JSON key names)
     openapiFields = new HashSet<String>();
-    openapiFields.add("amount");
-    openapiFields.add("notice_number");
-    openapiFields.add("invalid_after_due_date");
-    openapiFields.add("payee");
+    openapiFields.add("id");
+    openapiFields.add("original_sender");
+    openapiFields.add("original_receipt_date");
+    openapiFields.add("has_attachments");
+    openapiFields.add("summary");
 
     // a set of required properties/fields (JSON key names)
     openapiRequiredFields = new HashSet<String>();
-    openapiRequiredFields.add("amount");
-    openapiRequiredFields.add("notice_number");
+    openapiRequiredFields.add("id");
   }
 
  /**
   * Validates the JSON Object and throws an exception if issues found
   *
   * @param jsonObj JSON Object
-  * @throws IOException if the JSON Object is invalid with respect to PaymentData
+  * @throws IOException if the JSON Object is invalid with respect to ThirdPartyData
   */
   public static void validateJsonObject(JsonObject jsonObj) throws IOException {
       if (jsonObj == null) {
-        if (!PaymentData.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
-          throw new IllegalArgumentException(String.format("The required field(s) %s in PaymentData is not found in the empty JSON string", PaymentData.openapiRequiredFields.toString()));
+        if (!ThirdPartyData.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
+          throw new IllegalArgumentException(String.format("The required field(s) %s in ThirdPartyData is not found in the empty JSON string", ThirdPartyData.openapiRequiredFields.toString()));
         }
       }
 
       Set<Entry<String, JsonElement>> entries = jsonObj.entrySet();
       // check to see if the JSON string contains additional fields
       for (Entry<String, JsonElement> entry : entries) {
-        if (!PaymentData.openapiFields.contains(entry.getKey())) {
-          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `PaymentData` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
+        if (!ThirdPartyData.openapiFields.contains(entry.getKey())) {
+          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `ThirdPartyData` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
         }
       }
 
       // check to make sure all required properties/fields are present in the JSON string
-      for (String requiredField : PaymentData.openapiRequiredFields) {
+      for (String requiredField : ThirdPartyData.openapiRequiredFields) {
         if (jsonObj.get(requiredField) == null) {
           throw new IllegalArgumentException(String.format("The required field `%s` is not found in the JSON string: %s", requiredField, jsonObj.toString()));
         }
       }
-      if (!jsonObj.get("notice_number").isJsonPrimitive()) {
-        throw new IllegalArgumentException(String.format("Expected the field `notice_number` to be a primitive type in the JSON string but got `%s`", jsonObj.get("notice_number").toString()));
+      if (!jsonObj.get("id").isJsonPrimitive()) {
+        throw new IllegalArgumentException(String.format("Expected the field `id` to be a primitive type in the JSON string but got `%s`", jsonObj.get("id").toString()));
       }
-      // validate the optional field `payee`
-      if (jsonObj.get("payee") != null && !jsonObj.get("payee").isJsonNull()) {
-        Payee.validateJsonObject(jsonObj.getAsJsonObject("payee"));
+      if ((jsonObj.get("original_sender") != null && !jsonObj.get("original_sender").isJsonNull()) && !jsonObj.get("original_sender").isJsonPrimitive()) {
+        throw new IllegalArgumentException(String.format("Expected the field `original_sender` to be a primitive type in the JSON string but got `%s`", jsonObj.get("original_sender").toString()));
+      }
+      if ((jsonObj.get("original_receipt_date") != null && !jsonObj.get("original_receipt_date").isJsonNull()) && !jsonObj.get("original_receipt_date").isJsonPrimitive()) {
+        throw new IllegalArgumentException(String.format("Expected the field `original_receipt_date` to be a primitive type in the JSON string but got `%s`", jsonObj.get("original_receipt_date").toString()));
+      }
+      if ((jsonObj.get("summary") != null && !jsonObj.get("summary").isJsonNull()) && !jsonObj.get("summary").isJsonPrimitive()) {
+        throw new IllegalArgumentException(String.format("Expected the field `summary` to be a primitive type in the JSON string but got `%s`", jsonObj.get("summary").toString()));
       }
   }
 
@@ -238,22 +268,22 @@ public class PaymentData {
     @SuppressWarnings("unchecked")
     @Override
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-       if (!PaymentData.class.isAssignableFrom(type.getRawType())) {
-         return null; // this class only serializes 'PaymentData' and its subtypes
+       if (!ThirdPartyData.class.isAssignableFrom(type.getRawType())) {
+         return null; // this class only serializes 'ThirdPartyData' and its subtypes
        }
        final TypeAdapter<JsonElement> elementAdapter = gson.getAdapter(JsonElement.class);
-       final TypeAdapter<PaymentData> thisAdapter
-                        = gson.getDelegateAdapter(this, TypeToken.get(PaymentData.class));
+       final TypeAdapter<ThirdPartyData> thisAdapter
+                        = gson.getDelegateAdapter(this, TypeToken.get(ThirdPartyData.class));
 
-       return (TypeAdapter<T>) new TypeAdapter<PaymentData>() {
+       return (TypeAdapter<T>) new TypeAdapter<ThirdPartyData>() {
            @Override
-           public void write(JsonWriter out, PaymentData value) throws IOException {
+           public void write(JsonWriter out, ThirdPartyData value) throws IOException {
              JsonObject obj = thisAdapter.toJsonTree(value).getAsJsonObject();
              elementAdapter.write(out, obj);
            }
 
            @Override
-           public PaymentData read(JsonReader in) throws IOException {
+           public ThirdPartyData read(JsonReader in) throws IOException {
              JsonObject jsonObj = elementAdapter.read(in).getAsJsonObject();
              validateJsonObject(jsonObj);
              return thisAdapter.fromJsonTree(jsonObj);
@@ -264,18 +294,18 @@ public class PaymentData {
   }
 
  /**
-  * Create an instance of PaymentData given an JSON string
+  * Create an instance of ThirdPartyData given an JSON string
   *
   * @param jsonString JSON string
-  * @return An instance of PaymentData
-  * @throws IOException if the JSON string is invalid with respect to PaymentData
+  * @return An instance of ThirdPartyData
+  * @throws IOException if the JSON string is invalid with respect to ThirdPartyData
   */
-  public static PaymentData fromJson(String jsonString) throws IOException {
-    return JSON.getGson().fromJson(jsonString, PaymentData.class);
+  public static ThirdPartyData fromJson(String jsonString) throws IOException {
+    return JSON.getGson().fromJson(jsonString, ThirdPartyData.class);
   }
 
  /**
-  * Convert an instance of PaymentData to an JSON string
+  * Convert an instance of ThirdPartyData to an JSON string
   *
   * @return JSON string
   */

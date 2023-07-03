@@ -11,54 +11,21 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.client.generated.api;
+package it.gov.pagopa.receipt.pdf.notifier.generated.client;
 
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiException;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.ApiResponse;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.CreatedMessage;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.FiscalCodePayload;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.LimitedProfile;
-import it.gov.pagopa.receipt.pdf.notifier.model.generated.NewMessage;
-import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
+public class Configuration {
 
-/**
- * API tests for DefaultApi
- */
-@Disabled
-class IOClientTest {
-
-    private final IOClient api = new IOClient();
+    private static ApiClient defaultApiClient = new ApiClient();
 
     /**
-     * Get a User Profile using POST
+     * Get the default API client, which would be used when creating API
+     * instances without providing an API client.
      *
-     * Returns the preferences for the user identified by the fiscal code provided in the request body. The field &#x60;sender_allowed&#x60; is set fo &#x60;false&#x60; in case the service which is calling the API has been disabled by the user.
-     *
-     * @throws ApiException if the Api call fails
+     * @return Default API client
      */
-    @Test
-    void getProfileByPOSTTest() throws ApiException {
-        FiscalCodePayload payload = null;
-        ApiResponse<LimitedProfile> response = api.getProfileByPOSTWithHttpInfo(payload);
-
-        Assertions.assertEquals(response.getStatusCode(), HttpStatus.SC_OK);
-    }
-
-    /**
-     * Submit a Message passing the user fiscal_code in the request body
-     *
-     * Submits a message to a user with STANDARD or ADVANCED features based on &#x60;feature_level_type&#x60; value. On error, the reason is returned in the response payload. In order to call &#x60;submitMessageforUser&#x60;, before sending any message, the sender MUST call &#x60;getProfile&#x60; and check that the profile exists (for the specified fiscal code) and that the &#x60;sender_allowed&#x60; field of the user&#39;s profile it set to &#x60;true&#x60;.
-     *
-     * @throws ApiException if the Api call fails
-     */
-    @Test
-    void submitMessageforUserWithFiscalCodeInBodyTest() throws ApiException {
-        NewMessage message = null;
-        ApiResponse<CreatedMessage> response = api.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(message);
-        // TODO: test validations
+    public static ApiClient getDefaultApiClient() {
+        return defaultApiClient;
     }
 
 }

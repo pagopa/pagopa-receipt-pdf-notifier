@@ -11,15 +11,16 @@
  */
 
 
-package it.gov.pagopa.receipt.pdf.notifier.model.generated;
+package it.gov.pagopa.receipt.pdf.notifier.generated.model;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import it.gov.pagopa.receipt.pdf.notifier.client.generated.JSON;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.JSON;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -27,44 +28,28 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Payload containing all information needed to retrieve and visualize third party message details
+ * CreatedMessage
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2023-06-23T14:54:01.440130+02:00[Europe/Rome]")
-public class ThirdPartyData {
+public class CreatedMessage {
   public static final String SERIALIZED_NAME_ID = "id";
   @SerializedName(SERIALIZED_NAME_ID)
   private String id;
 
-  public static final String SERIALIZED_NAME_ORIGINAL_SENDER = "original_sender";
-  @SerializedName(SERIALIZED_NAME_ORIGINAL_SENDER)
-  private String originalSender;
-
-  public static final String SERIALIZED_NAME_ORIGINAL_RECEIPT_DATE = "original_receipt_date";
-  @SerializedName(SERIALIZED_NAME_ORIGINAL_RECEIPT_DATE)
-  private String originalReceiptDate;
-
-  public static final String SERIALIZED_NAME_HAS_ATTACHMENTS = "has_attachments";
-  @SerializedName(SERIALIZED_NAME_HAS_ATTACHMENTS)
-  private Boolean hasAttachments = false;
-
-  public static final String SERIALIZED_NAME_SUMMARY = "summary";
-  @SerializedName(SERIALIZED_NAME_SUMMARY)
-  private String summary;
-
-  public ThirdPartyData() {
+  public CreatedMessage() {
   }
 
-  public ThirdPartyData id(String id) {
+  public CreatedMessage id(String id) {
     
     this.id = id;
     return this;
   }
 
    /**
-   * Unique id for retrieving third party enriched information about the message
+   * The identifier of the created message.
    * @return id
   **/
-  @javax.annotation.Nonnull
+  @Nullable
   public String getId() {
     return id;
   }
@@ -72,90 +57,6 @@ public class ThirdPartyData {
 
   public void setId(String id) {
     this.id = id;
-  }
-
-
-  public ThirdPartyData originalSender(String originalSender) {
-    
-    this.originalSender = originalSender;
-    return this;
-  }
-
-   /**
-   * Either a ServiceId or a simple string representing the sender name
-   * @return originalSender
-  **/
-  @javax.annotation.Nullable
-  public String getOriginalSender() {
-    return originalSender;
-  }
-
-
-  public void setOriginalSender(String originalSender) {
-    this.originalSender = originalSender;
-  }
-
-
-  public ThirdPartyData originalReceiptDate(String originalReceiptDate) {
-    
-    this.originalReceiptDate = originalReceiptDate;
-    return this;
-  }
-
-   /**
-   * A date-time field in ISO-8601 format and UTC timezone.
-   * @return originalReceiptDate
-  **/
-  @javax.annotation.Nullable
-  public String getOriginalReceiptDate() {
-    return originalReceiptDate;
-  }
-
-
-  public void setOriginalReceiptDate(String originalReceiptDate) {
-    this.originalReceiptDate = originalReceiptDate;
-  }
-
-
-  public ThirdPartyData hasAttachments(Boolean hasAttachments) {
-    
-    this.hasAttachments = hasAttachments;
-    return this;
-  }
-
-   /**
-   * Get hasAttachments
-   * @return hasAttachments
-  **/
-  @javax.annotation.Nullable
-  public Boolean getHasAttachments() {
-    return hasAttachments;
-  }
-
-
-  public void setHasAttachments(Boolean hasAttachments) {
-    this.hasAttachments = hasAttachments;
-  }
-
-
-  public ThirdPartyData summary(String summary) {
-    
-    this.summary = summary;
-    return this;
-  }
-
-   /**
-   * Get summary
-   * @return summary
-  **/
-  @javax.annotation.Nullable
-  public String getSummary() {
-    return summary;
-  }
-
-
-  public void setSummary(String summary) {
-    this.summary = summary;
   }
 
 
@@ -168,28 +69,20 @@ public class ThirdPartyData {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ThirdPartyData thirdPartyData = (ThirdPartyData) o;
-    return Objects.equals(this.id, thirdPartyData.id) &&
-        Objects.equals(this.originalSender, thirdPartyData.originalSender) &&
-        Objects.equals(this.originalReceiptDate, thirdPartyData.originalReceiptDate) &&
-        Objects.equals(this.hasAttachments, thirdPartyData.hasAttachments) &&
-        Objects.equals(this.summary, thirdPartyData.summary);
+    CreatedMessage createdMessage = (CreatedMessage) o;
+    return Objects.equals(this.id, createdMessage.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, originalSender, originalReceiptDate, hasAttachments, summary);
+    return Objects.hash(id);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ThirdPartyData {\n");
+    sb.append("class CreatedMessage {\n");
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
-    sb.append("    originalSender: ").append(toIndentedString(originalSender)).append("\n");
-    sb.append("    originalReceiptDate: ").append(toIndentedString(originalReceiptDate)).append("\n");
-    sb.append("    hasAttachments: ").append(toIndentedString(hasAttachments)).append("\n");
-    sb.append("    summary: ").append(toIndentedString(summary)).append("\n");
     sb.append("}");
     return sb.toString();
   }
@@ -213,54 +106,33 @@ public class ThirdPartyData {
     // a set of all properties/fields (JSON key names)
     openapiFields = new HashSet<String>();
     openapiFields.add("id");
-    openapiFields.add("original_sender");
-    openapiFields.add("original_receipt_date");
-    openapiFields.add("has_attachments");
-    openapiFields.add("summary");
 
     // a set of required properties/fields (JSON key names)
     openapiRequiredFields = new HashSet<String>();
-    openapiRequiredFields.add("id");
   }
 
  /**
   * Validates the JSON Object and throws an exception if issues found
   *
   * @param jsonObj JSON Object
-  * @throws IOException if the JSON Object is invalid with respect to ThirdPartyData
+  * @throws IOException if the JSON Object is invalid with respect to CreatedMessage
   */
   public static void validateJsonObject(JsonObject jsonObj) throws IOException {
       if (jsonObj == null) {
-        if (!ThirdPartyData.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
-          throw new IllegalArgumentException(String.format("The required field(s) %s in ThirdPartyData is not found in the empty JSON string", ThirdPartyData.openapiRequiredFields.toString()));
+        if (!CreatedMessage.openapiRequiredFields.isEmpty()) { // has required fields but JSON object is null
+          throw new IllegalArgumentException(String.format("The required field(s) %s in CreatedMessage is not found in the empty JSON string", CreatedMessage.openapiRequiredFields.toString()));
         }
       }
 
       Set<Entry<String, JsonElement>> entries = jsonObj.entrySet();
       // check to see if the JSON string contains additional fields
       for (Entry<String, JsonElement> entry : entries) {
-        if (!ThirdPartyData.openapiFields.contains(entry.getKey())) {
-          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `ThirdPartyData` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
+        if (!CreatedMessage.openapiFields.contains(entry.getKey())) {
+          throw new IllegalArgumentException(String.format("The field `%s` in the JSON string is not defined in the `CreatedMessage` properties. JSON: %s", entry.getKey(), jsonObj.toString()));
         }
       }
-
-      // check to make sure all required properties/fields are present in the JSON string
-      for (String requiredField : ThirdPartyData.openapiRequiredFields) {
-        if (jsonObj.get(requiredField) == null) {
-          throw new IllegalArgumentException(String.format("The required field `%s` is not found in the JSON string: %s", requiredField, jsonObj.toString()));
-        }
-      }
-      if (!jsonObj.get("id").isJsonPrimitive()) {
+      if ((jsonObj.get("id") != null && !jsonObj.get("id").isJsonNull()) && !jsonObj.get("id").isJsonPrimitive()) {
         throw new IllegalArgumentException(String.format("Expected the field `id` to be a primitive type in the JSON string but got `%s`", jsonObj.get("id").toString()));
-      }
-      if ((jsonObj.get("original_sender") != null && !jsonObj.get("original_sender").isJsonNull()) && !jsonObj.get("original_sender").isJsonPrimitive()) {
-        throw new IllegalArgumentException(String.format("Expected the field `original_sender` to be a primitive type in the JSON string but got `%s`", jsonObj.get("original_sender").toString()));
-      }
-      if ((jsonObj.get("original_receipt_date") != null && !jsonObj.get("original_receipt_date").isJsonNull()) && !jsonObj.get("original_receipt_date").isJsonPrimitive()) {
-        throw new IllegalArgumentException(String.format("Expected the field `original_receipt_date` to be a primitive type in the JSON string but got `%s`", jsonObj.get("original_receipt_date").toString()));
-      }
-      if ((jsonObj.get("summary") != null && !jsonObj.get("summary").isJsonNull()) && !jsonObj.get("summary").isJsonPrimitive()) {
-        throw new IllegalArgumentException(String.format("Expected the field `summary` to be a primitive type in the JSON string but got `%s`", jsonObj.get("summary").toString()));
       }
   }
 
@@ -268,22 +140,22 @@ public class ThirdPartyData {
     @SuppressWarnings("unchecked")
     @Override
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-       if (!ThirdPartyData.class.isAssignableFrom(type.getRawType())) {
-         return null; // this class only serializes 'ThirdPartyData' and its subtypes
+       if (!CreatedMessage.class.isAssignableFrom(type.getRawType())) {
+         return null; // this class only serializes 'CreatedMessage' and its subtypes
        }
        final TypeAdapter<JsonElement> elementAdapter = gson.getAdapter(JsonElement.class);
-       final TypeAdapter<ThirdPartyData> thisAdapter
-                        = gson.getDelegateAdapter(this, TypeToken.get(ThirdPartyData.class));
+       final TypeAdapter<CreatedMessage> thisAdapter
+                        = gson.getDelegateAdapter(this, TypeToken.get(CreatedMessage.class));
 
-       return (TypeAdapter<T>) new TypeAdapter<ThirdPartyData>() {
+       return (TypeAdapter<T>) new TypeAdapter<CreatedMessage>() {
            @Override
-           public void write(JsonWriter out, ThirdPartyData value) throws IOException {
+           public void write(JsonWriter out, CreatedMessage value) throws IOException {
              JsonObject obj = thisAdapter.toJsonTree(value).getAsJsonObject();
              elementAdapter.write(out, obj);
            }
 
            @Override
-           public ThirdPartyData read(JsonReader in) throws IOException {
+           public CreatedMessage read(JsonReader in) throws IOException {
              JsonObject jsonObj = elementAdapter.read(in).getAsJsonObject();
              validateJsonObject(jsonObj);
              return thisAdapter.fromJsonTree(jsonObj);
@@ -294,18 +166,18 @@ public class ThirdPartyData {
   }
 
  /**
-  * Create an instance of ThirdPartyData given an JSON string
+  * Create an instance of CreatedMessage given an JSON string
   *
   * @param jsonString JSON string
-  * @return An instance of ThirdPartyData
-  * @throws IOException if the JSON string is invalid with respect to ThirdPartyData
+  * @return An instance of CreatedMessage
+  * @throws IOException if the JSON string is invalid with respect to CreatedMessage
   */
-  public static ThirdPartyData fromJson(String jsonString) throws IOException {
-    return JSON.getGson().fromJson(jsonString, ThirdPartyData.class);
+  public static CreatedMessage fromJson(String jsonString) throws IOException {
+    return JSON.getGson().fromJson(jsonString, CreatedMessage.class);
   }
 
  /**
-  * Convert an instance of ThirdPartyData to an JSON string
+  * Convert an instance of CreatedMessage to an JSON string
   *
   * @return JSON string
   */
