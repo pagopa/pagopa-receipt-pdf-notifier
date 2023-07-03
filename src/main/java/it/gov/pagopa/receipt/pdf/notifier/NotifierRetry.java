@@ -22,14 +22,14 @@ public class NotifierRetry {
     /**
      * This function will be invoked when an Azure Storage Queue trigger occurs
      * #
-     * Retrieve receipt with the eventId equals to the decoded queue message
-     * If found the receipt's status is updated as IO_NOTIFIER_RETRY and saved on Cosmos
+     * The queueMessage is mapped to the Receipt class
+     * and updated with the status IO_NOTIFIER_RETRY
      * It will trigger the ReceiptToIO function to retry the notification to user
      *
-     * @param message Message from notification error queue
+     * @param queueMessage Message from notification error queue with receipt's data
      * @param documentReceipts Output binding to save the updated receipt
      * @param context Function Context
-     * @throws ReceiptNotFoundException in case the receipt is not found
+     * @throws JsonProcessingException in case the message can't be mapped to the Receipt class
      */
     @FunctionName("NotifierRetryProcessor")
     public void processNotifierRetry(
