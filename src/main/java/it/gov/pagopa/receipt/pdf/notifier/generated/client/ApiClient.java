@@ -37,7 +37,7 @@ public class ApiClient {
 
     private final Map<String, String> defaultHeaderMap = new HashMap<>();
 
-    private final String OCP_APIM_SUBSCRIPTION_KEY = System.getenv("OCP_APIM_SUBSCRIPTION_KEY");
+    private final String ocpApimSubscriptionKey = System.getenv("OCP_APIM_SUBSCRIPTION_KEY");
 
     private Map<String, Authentication> authentications;
 
@@ -51,7 +51,7 @@ public class ApiClient {
         initHttpClient();
 
         // Setup authentications (key: authentication name, value: authentication).
-        authentications.put(OCP_APIM_SUBSCRIPTION_KEY, new ApiKeyAuth("header", "Ocp-Apim-Subscription-Key"));
+        authentications.put(ocpApimSubscriptionKey, new ApiKeyAuth("header", "Ocp-Apim-Subscription-Key"));
         // Prevent the authentications from being modified.
         authentications = Collections.unmodifiableMap(authentications);
     }

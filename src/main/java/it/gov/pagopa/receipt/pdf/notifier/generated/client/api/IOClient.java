@@ -31,11 +31,11 @@ public class IOClient {
     private final ApiClient localVarApiClient;
     private static IOClient instance = null;
 
-    private final String BASE_PATH = System.getenv().getOrDefault("IO_API_BASE_PATH", "https://api.io.pagopa.it/api/v1");
-    private final String PROFILES_PATH = System.getenv().getOrDefault("IO_API_PROFILES_PATH", "/profiles");
-    private final String MESSAGES_PATH = System.getenv().getOrDefault("IO_API_MESSAGES_PATH", "/messages");
+    private final String apiBasePath = System.getenv().getOrDefault("IO_API_BASE_PATH", "https://api.io.pagopa.it/api/v1");
+    private final String apiProfilesPath = System.getenv().getOrDefault("IO_API_PROFILES_PATH", "/profiles");
+    private final String apiMessagesPath = System.getenv().getOrDefault("IO_API_MESSAGES_PATH", "/messages");
 
-    private final String OCP_APIM_SUBSCRIPTION_KEY = System.getenv("OCP_APIM_SUBSCRIPTION_KEY");
+    private final String ocpApimSubscriptionKey = System.getenv("OCP_APIM_SUBSCRIPTION_KEY");
     private static final String CONTENT_TYPE_JSON = "application/json";
 
     public IOClient() {
@@ -96,10 +96,10 @@ public class IOClient {
             localVarHeaderParams.put("Content-Type", localVarContentType);
         }
 
-        String[] localVarAuthNames = new String[]{OCP_APIM_SUBSCRIPTION_KEY};
+        String[] localVarAuthNames = new String[]{ocpApimSubscriptionKey};
         return localVarApiClient.buildCall(
-                BASE_PATH,
-                PROFILES_PATH,
+                apiBasePath,
+                apiProfilesPath,
                 "POST",
                 payload,
                 localVarHeaderParams,
@@ -149,9 +149,9 @@ public class IOClient {
             localVarHeaderParams.put("Content-Type", localVarContentType);
         }
 
-        String[] localVarAuthNames = new String[]{OCP_APIM_SUBSCRIPTION_KEY};
-        return localVarApiClient.buildCall(BASE_PATH,
-                MESSAGES_PATH,
+        String[] localVarAuthNames = new String[]{ocpApimSubscriptionKey};
+        return localVarApiClient.buildCall(apiBasePath,
+                apiMessagesPath,
                 "POST",
                 message,
                 localVarHeaderParams,
