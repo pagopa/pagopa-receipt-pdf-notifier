@@ -152,7 +152,7 @@ public class ApiClient {
                 return accept;
             }
         }
-        return it.gov.pagopa.receipt.pdf.notifier.client.generated.StringUtil.join(accepts, ",");
+        return StringUtil.join(accepts, ",");
     }
 
     /**
