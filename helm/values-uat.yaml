@@ -1,9 +1,9 @@
 microservice-chart:
-  namespace: "<namespace>" # TODO
+  namespace: "receipts"
   nameOverride: ""
   fullnameOverride: ""
   image:
-    repository: pagopaucommonacr.azurecr.io/pagopa<project-name>  # TODO
+    repository: pagopadcommonacr.azurecr.io/pagopa-receipt-pdf-notifier
     tag: "0.0.1"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
@@ -29,8 +29,8 @@ microservice-chart:
     port: 80
   ingress:
     create: true
-    host: "weuuat.<namespace>.internal.uat.platform.pagopa.it"  # TODO
-    path: /pagopa-<project-name>-service/(.*) # TODO
+    host: "weuuat.receipts.internal.dev.platform.pagopa.it"
+    path: /pagopa-receipt-pdf-notifier/(.*)
   serviceAccount:
     create: false
     annotations: {}
@@ -61,13 +61,39 @@ microservice-chart:
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "75"
   envConfig:
-    WEBSITE_SITE_NAME: "pagopa<project-name>" # required to show cloud role name in application insights # TODO
+    WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
     FUNCTIONS_WORKER_RUNTIME: "java"
   envSecret:
     APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-d-connection-string' # TODO set in kv
   keyvault:
-    name: "pagopa-u-<namespace>-kv" # TODO
+    name: "pagopa-d-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
   nodeSelector: {}
-  tolerations: []
-  affinity: {}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node_type
+                operator: In
+                values:
+                  - user
+  canaryDelivery:
+    create: true
+    ingress:
+      create: true
+      canary:
+        type: header
+        headerName: X-Canary
+        headerValue: canary
+        weightPercent: 0
+    service:
+      create: true
+    deployment:
+      create: true
+      image:
+        repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
+        tag: "0.0.1"
+        pullPolicy: Always
+      envConfig:
+      envSecret:
