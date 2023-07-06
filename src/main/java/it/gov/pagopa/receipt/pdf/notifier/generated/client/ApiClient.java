@@ -13,7 +13,6 @@
 
 package it.gov.pagopa.receipt.pdf.notifier.generated.client;
 
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.auth.ApiKeyAuth;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.auth.Authentication;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -24,10 +23,12 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.net.URI;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 /**
@@ -36,8 +37,6 @@ import java.util.Map.Entry;
 public class ApiClient {
 
     private final Map<String, String> defaultHeaderMap = new HashMap<>();
-
-    private final String ocpApimSubscriptionKey = System.getenv("OCP_APIM_SUBSCRIPTION_KEY");
 
     private Map<String, Authentication> authentications;
 
@@ -49,11 +48,6 @@ public class ApiClient {
     public ApiClient() {
         init();
         initHttpClient();
-
-        // Setup authentications (key: authentication name, value: authentication).
-        authentications.put(ocpApimSubscriptionKey, new ApiKeyAuth("header", "Ocp-Apim-Subscription-Key"));
-        // Prevent the authentications from being modified.
-        authentications = Collections.unmodifiableMap(authentications);
     }
 
     private void initHttpClient() {
@@ -357,12 +351,11 @@ public class ApiClient {
      * @param method                The request method, one of "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH" and "DELETE"
      * @param body                  The request body object
      * @param headerParams          The header parameters
-     * @param authNames             The authentications to apply
      * @return The HTTP call
      * @throws ApiException If fail to serialize the request body object
      */
-    public Call buildCall(String baseUrl, String path, String method, Object body, Map<String, String> headerParams, String[] authNames) throws ApiException {
-        Request request = buildRequest(baseUrl, path, method, body, headerParams, authNames);
+    public Call buildCall(String baseUrl, String path, String method, Object body, Map<String, String> headerParams) throws ApiException {
+        Request request = buildRequest(baseUrl, path, method, body, headerParams);
 
         return httpClient.newCall(request);
     }
@@ -375,11 +368,10 @@ public class ApiClient {
      * @param method                The request method, one of "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH" and "DELETE"
      * @param body                  The request body object
      * @param headerParams          The header parameters
-     * @param authNames             The authentications to apply
      * @return The HTTP request
      * @throws ApiException If fail to serialize the request body object
      */
-    public Request buildRequest(String baseUrl, String path, String method, Object body, Map<String, String> headerParams, String[] authNames) throws ApiException {
+    public Request buildRequest(String baseUrl, String path, String method, Object body, Map<String, String> headerParams) throws ApiException {
 
         final String url = buildUrl(baseUrl, path);
 
@@ -401,12 +393,8 @@ public class ApiClient {
             reqBody = serialize(body, contentType);
         }
 
-        // update parameters with authentication settings
-        updateParamsForAuth(authNames, headerParams, requestBodyToString(reqBody), method, URI.create(url));
-
         final Request.Builder reqBuilder = new Request.Builder().url(url);
         processHeaderParams(headerParams, reqBuilder);
-
 
         return reqBuilder.method(method, reqBody).build();
     }
@@ -442,27 +430,6 @@ public class ApiClient {
             if (!headerParams.containsKey(header.getKey())) {
                 reqBuilder.header(header.getKey(), parameterToString(header.getValue()));
             }
-        }
-    }
-
-    /**
-     * Update query and header parameters based on authentication settings.
-     *
-     * @param authNames    The authentications to apply
-     * @param headerParams Map of header parameters
-     * @param payload      HTTP request body
-     * @param method       HTTP method
-     * @param uri          URI
-     * @throws ApiException If fails to update the parameters
-     */
-    public void updateParamsForAuth(String[] authNames, Map<String, String> headerParams,
-                                    String payload, String method, URI uri) throws ApiException {
-        for (String authName : authNames) {
-            Authentication auth = authentications.get(authName);
-            if (auth == null) {
-                throw new ApiException("Authentication undefined: " + authName);
-            }
-            auth.applyToParams(headerParams, payload, method, uri);
         }
     }
 

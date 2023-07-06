@@ -24,9 +24,10 @@ public class ApiKeyAuth implements Authentication {
     private String apiKey;
     private String apiKeyPrefix;
 
-    public ApiKeyAuth(String location, String paramName) {
+    public ApiKeyAuth(String location, String paramName, String apiKey) {
         this.location = location;
         this.paramName = paramName;
+        this.apiKey = apiKey;
     }
 
     public String getLocation() {
