@@ -36,6 +36,7 @@ public class IOClient {
     private final String apiMessagesPath = System.getenv().getOrDefault("IO_API_MESSAGES_PATH", "/messages");
 
     private final String ocpApimSubscriptionKey = System.getenv("OCP_APIM_SUBSCRIPTION_KEY");
+    private final String ApimKeyHeaderKey = System.getenv().getOrDefault("OCP_APIM_HEADER_KEY", "Ocp-Apim-Subscription-Key");
     private static final String CONTENT_TYPE_JSON = "application/json";
 
     public IOClient() {
@@ -96,14 +97,16 @@ public class IOClient {
             localVarHeaderParams.put("Content-Type", localVarContentType);
         }
 
-        String[] localVarAuthNames = new String[]{ocpApimSubscriptionKey};
+        if (ocpApimSubscriptionKey != null) {
+            localVarHeaderParams.put(ApimKeyHeaderKey, ocpApimSubscriptionKey);
+        }
+
         return localVarApiClient.buildCall(
                 apiBasePath,
                 apiProfilesPath,
                 "POST",
                 payload,
-                localVarHeaderParams,
-                localVarAuthNames
+                localVarHeaderParams
         );
     }
 
@@ -149,13 +152,15 @@ public class IOClient {
             localVarHeaderParams.put("Content-Type", localVarContentType);
         }
 
-        String[] localVarAuthNames = new String[]{ocpApimSubscriptionKey};
+        if (ocpApimSubscriptionKey != null) {
+            localVarHeaderParams.put(ApimKeyHeaderKey, ocpApimSubscriptionKey);
+        }
+
         return localVarApiClient.buildCall(apiBasePath,
                 apiMessagesPath,
                 "POST",
                 message,
-                localVarHeaderParams,
-                localVarAuthNames
+                localVarHeaderParams
         );
     }
 }

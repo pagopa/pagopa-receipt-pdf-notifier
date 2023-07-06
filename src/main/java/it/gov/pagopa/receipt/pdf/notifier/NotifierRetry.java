@@ -1,16 +1,16 @@
 package it.gov.pagopa.receipt.pdf.notifier;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.*;
-import it.gov.pagopa.receipt.pdf.notifier.client.impl.ReceiptCosmosClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ReceiptNotFoundException;
+import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -37,7 +37,7 @@ public class NotifierRetry {
                     name = "QueueReceiptIoNotifierError",
                     queueName = "%NOTIFIER_QUEUE_TOPIC%",
                     connection = "STORAGE_CONN_STRING")
-            String message,
+            String queueMessage,
             @CosmosDBOutput(
                     name = "ReceiptOutputDatastore",
                     databaseName = "db",
@@ -45,7 +45,7 @@ public class NotifierRetry {
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<Receipt>> documentReceipts,
             final ExecutionContext context
-    ) throws ReceiptNotFoundException {
+    ) throws JsonProcessingException {
         Logger logger = context.getLogger();
 
         String logMsg = String.format("NotifierRetry function called at %s", LocalDateTime.now());
@@ -53,13 +53,9 @@ public class NotifierRetry {
 
         List<Receipt> receiptsToRetry = new ArrayList<>();
 
-        if (message != null && !message.isEmpty()) {
+        if (queueMessage != null && !queueMessage.isEmpty()) {
 
-            String bizEventId = new String(Base64.getDecoder().decode(message));
-
-            ReceiptCosmosClientImpl client = ReceiptCosmosClientImpl.getInstance();
-
-            Receipt receipt = client.getReceiptDocument(bizEventId);
+            Receipt receipt = ObjectMapperUtils.mapString(queueMessage, Receipt.class);
 
             if (receipt != null && receipt.getStatus().equals(ReceiptStatusType.IO_ERROR_TO_NOTIFY)) {
                 receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);

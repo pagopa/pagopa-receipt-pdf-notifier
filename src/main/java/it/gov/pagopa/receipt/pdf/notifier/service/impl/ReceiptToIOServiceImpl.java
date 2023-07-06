@@ -2,6 +2,7 @@ package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 
 import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
@@ -19,6 +20,7 @@ import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
+import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 import lombok.NoArgsConstructor;
 import org.apache.http.HttpStatus;
@@ -179,19 +181,19 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * @return 1 if a message has been sent to queue
      */
     @Override
-    public int verifyMessagesNotification(
+    public boolean verifyMessagesNotification(
             Map<String, UserNotifyStatus> usersToBeVerified,
             List<IOMessage> messagesNotified,
             Receipt receipt,
             Logger logger
-    ) {
+    ) throws JsonProcessingException {
         String errorMessage = "";
         EventData eventData = receipt.getEventData();
         String debtorCF = eventData.getDebtorFiscalCode();
         String payerCF = eventData.getPayerFiscalCode();
         UserNotifyStatus debtorNotified = getUserNotifyStatus(debtorCF, usersToBeVerified.get(debtorCF + UserType.DEBTOR));
         UserNotifyStatus payerNotified = getUserNotifyStatus(payerCF, usersToBeVerified.get(payerCF + UserType.PAYER));
-        int queueSent = 0;
+        boolean queueSent = false;
 
         if (receipt.getIoMessageData() != null) {
             IOMessageData messageData = receipt.getIoMessageData();
@@ -315,27 +317,12 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * @param logger       Logger
      * @return 1 if a message has been sent to queue
      */
-    private static int handleErrorMessageNotification(
+    private static boolean handleErrorMessageNotification(
             Receipt receipt, String errorMessage, Logger logger
-    ) {
+    ) throws JsonProcessingException {
 
         int numRetry = receipt.getNotificationNumRetry();
         boolean messageQueueSent = false;
-        if (numRetry < MAX_NUMBER_RETRY) {
-            receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
-
-            NotifierQueueClientImpl client = NotifierQueueClientImpl.getInstance();
-
-            Response<SendMessageResult> response = client.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receipt.getEventId().getBytes()));
-
-            if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
-                messageQueueSent = true;
-            }
-        }
-
-        if (!messageQueueSent) {
-            receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
-        }
 
         ReasonError reasonError = new ReasonError();
         reasonError.setCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -347,6 +334,23 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         String logMsg = String.format("Error sending notification: %s", errorMessage);
         logger.severe(logMsg);
 
-        return 1;
+        if (numRetry < MAX_NUMBER_RETRY) {
+            receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
+
+            NotifierQueueClientImpl client = NotifierQueueClientImpl.getInstance();
+
+            String receiptString = ObjectMapperUtils.writeValueAsString(receipt);
+            Response<SendMessageResult> response = client.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
+
+            if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
+                messageQueueSent = true;
+            }
+        }
+
+        if (!messageQueueSent) {
+            receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
+        }
+
+        return messageQueueSent;
     }
 }
