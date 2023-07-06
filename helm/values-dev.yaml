@@ -67,8 +67,9 @@ microservice-chart:
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-d-weu-receipts-ds-cosmos-account.documents.azure.com:443/",
     COSMOS_RECEIPT_DB_NAME: "db",
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
+    IO_API_BASE_PATH: "https://api.dev.platform.pagopa.it/mock-io/api/v1" #TODO: Update with proper value
   envSecret:
-    APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-d-connection-string' # TODO set in kv
+    APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-d-connection-string'
     COSMOS_RECEIPTS_CONN_STRIN": "cosmos-receipt-connection-string",
     STORAGE_CONN_STRING: "receipts-storage-account-connection-string",
     OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key",
