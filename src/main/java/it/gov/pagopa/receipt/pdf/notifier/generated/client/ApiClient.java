@@ -13,10 +13,8 @@
 
 package it.gov.pagopa.receipt.pdf.notifier.generated.client;
 
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.auth.Authentication;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
-import okio.Buffer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,8 +36,6 @@ public class ApiClient {
 
     private final Map<String, String> defaultHeaderMap = new HashMap<>();
 
-    private Map<String, Authentication> authentications;
-
     private OkHttpClient httpClient;
 
     /**
@@ -60,8 +56,6 @@ public class ApiClient {
     private void init() {
         // Set default User-Agent.
         setUserAgent("OpenAPI-Generator/3.30.3/java");
-
-        authentications = new HashMap<>();
     }
 
     /**
@@ -454,27 +448,5 @@ public class ApiClient {
                 return originalResponse;
             }
         };
-    }
-
-    /**
-     * Convert the HTTP request body to a string.
-     *
-     * @param requestBody The HTTP request object
-     * @return The string representation of the HTTP request body
-     * @throws ApiException If fail to serialize the request body object into a string
-     */
-    private String requestBodyToString(RequestBody requestBody) throws ApiException {
-        if (requestBody != null) {
-            try {
-                final Buffer buffer = new Buffer();
-                requestBody.writeTo(buffer);
-                return buffer.readUtf8();
-            } catch (final IOException e) {
-                throw new ApiException(e);
-            }
-        }
-
-        // empty http request body
-        return "";
     }
 }
