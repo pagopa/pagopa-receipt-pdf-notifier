@@ -3,8 +3,8 @@ microservice-chart:
   nameOverride: ""
   fullnameOverride: ""
   image:
-    repository: pagopadcommonacr.azurecr.io/pagopa<project-name>  # TODO
-    tag: "0.0.1"
+    repository: pagopadcommonacr.azurecr.io/pagopa<project-name> # TODO
+    tag: "0.0.2-PRDP-36-feat-add-notifier-retry-function"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -29,7 +29,7 @@ microservice-chart:
     port: 80
   ingress:
     create: true
-    host: "weudev.<namespace>.internal.dev.platform.pagopa.it"  # TODO
+    host: "weudev.<namespace>.internal.dev.platform.pagopa.it" # TODO
     path: /pagopa-<project-name>-service/(.*) # TODO
   serviceAccount:
     create: false
@@ -71,3 +71,7 @@ microservice-chart:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  canaryDelivery:
+    deployment:
+      image:
+        tag: 0.0.2-PRDP-36-feat-add-notifier-retry-function

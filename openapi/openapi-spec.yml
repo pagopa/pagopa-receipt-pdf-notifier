@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  version: 3.30.3
+  version: 0.0.2-PRDP-36-feat-add-notifier-retry-function
   title: IO API for Public Administration Services
   contact:
     name: PagoPA S.p.A.
@@ -10,47 +10,32 @@ info:
   description: >
     # Warning
 
-    **This is an experimental API that is (most probably) going to change as we
-    evolve the IO platform.**
+    **This is an experimental API that is (most probably) going to change as we evolve the IO platform.**
 
     # Introduction
 
-    This is the documentation of the IO API for 3rd party services. This API
-    enables Public Administration services to integrate with the IO platform. IO
-    enables services to communicate with Italian citizens via the [IO
-    app](https://io.italia.it/).
+    This is the documentation of the IO API for 3rd party services. This API enables Public Administration services to integrate with the IO platform. IO enables services to communicate with Italian citizens via the [IO app](https://io.italia.it/).
 
     # How to get an API key
 
-    To get access to this API, you'll need to register on the [IO Developer
-    Portal](https://developer.io.italia.it/).
+    To get access to this API, you'll need to register on the [IO Developer Portal](https://developer.io.italia.it/).
 
-    After the registration step, you have to click on the button that says
-    `subscribe to the digital citizenship api` to receive the API key that you
-    will use to authenticate the API calls.
+    After the registration step, you have to click on the button that says `subscribe to the digital citizenship api` to receive the API key that you will use to authenticate the API calls.
 
-    You will also receive an email with further instructions, including a fake
-    Fiscal Code that you will be able to use to send test messages. Messages
-    sent to the fake Fiscal Code will be notified to the email address used
-    during the registration process on the developer portal.
+    You will also receive an email with further instructions, including a fake Fiscal Code that you will be able to use to send test messages. Messages sent to the fake Fiscal Code will be notified to the email address used during the registration process on the developer portal.
 
     # Messages
 
     ## What is a message
 
-    Messages are the primary form of communication enabled by the IO APIs.
-    Messages are **personal** communications directed to a **specific citizen**.
-    You will not be able to use this API to broadcast a message to a group of
-    citizens, you will have to create and send a specific, personalized message
-    to each citizen you want to communicate to.
+    Messages are the primary form of communication enabled by the IO APIs. Messages are **personal** communications directed to a **specific citizen**. You will not be able to use this API to broadcast a message to a group of citizens, you will have to create and send a specific, personalized message to each citizen you want to communicate to.
 
-    The recipient of the message (i.e. a citizen) is identified trough his
-    [Fiscal Code](https://it.wikipedia.org/wiki/Codice_fiscale).
+    The recipient of the message (i.e. a citizen) is identified trough his [Fiscal Code](https://it.wikipedia.org/wiki/Codice_fiscale).
 
     ## Message format
 
-    A message is conceptually very similar to an email and, in its simplest
-    form, is composed of the following attributes:
+    A message is conceptually very similar to an email and, in its simplest form, is composed of the following attributes:
+
 
       * A required `subject`: a short description of the topic.
       * A required `markdown` body: a Markdown representation of the body (see
@@ -72,8 +57,8 @@ info:
 
     ## Allowed Markdown formatting
 
-    Not all Markdown formatting is currently available. Currently you can use
-    the following formatting:
+    Not all Markdown formatting is currently available. Currently you can use the following formatting:
+
 
       * Headings
       * Text stylings (bold, italic, etc...)
@@ -81,13 +66,10 @@ info:
 
     ## Sending a message to a citizen
 
-    Not every citizen will be interested in what you have to say and not every
-    citizen you want to communicate to will be registered on IO. For this
-    reason, before sending a message you need to check whether the recipient is
-    registered on the platform and that he has not yet opted out from receiving
-    messages from you.
+    Not every citizen will be interested in what you have to say and not every citizen you want to communicate to will be registered on IO. For this reason, before sending a message you need to check whether the recipient is registered on the platform and that he has not yet opted out from receiving messages from you.
 
     The process for sending a message is made of 3 steps:
+
 
       1. Call [getProfile](#operation/getProfile): if the profile does not exist
          (i.e. you get a 404 response) or if the recipient has opted-out from
@@ -102,15 +84,14 @@ basePath: /api/v1
 schemes:
   - https
 security:
-  - SubscriptionKey: [ ]
+  - SubscriptionKey: []
 paths:
   /messages:
     post:
       operationId: submitMessageforUserWithFiscalCodeInBody
       summary: Submit a Message passing the user fiscal_code in the request body
       description: >-
-        Submits a message to a user with STANDARD or ADVANCED features based on
-        `feature_level_type` value.
+        Submits a message to a user with STANDARD or ADVANCED features based on `feature_level_type` value.
 
         On error, the reason is returned in the response payload.
 
@@ -132,17 +113,13 @@ paths:
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: >-
-                  Nullam dapibus metus sed elementum efficitur. Curabitur
-                  facilisis sagittis risus nec sodales.
+                  Nullam dapibus metus sed elementum efficitur. Curabitur facilisis sagittis risus nec sodales.
 
-                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper
-                  ornare eget nec odio. Pellentesque habitant
+                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
 
-                  morbi tristique senectus et netus et malesuada fames ac turpis
-                  egestas. Praesent nibh ex, mattis sit amet
+                  morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
 
-                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
-                  consectetur adipiscing elit.
+                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
       responses:
         '201':
           description: Message created.
@@ -154,8 +131,7 @@ paths:
               description: >-
                 Location (URL) of created message resource.
 
-                A GET request to this URL returns the message status and
-                details.
+                A GET request to this URL returns the message status and details.
           examples:
             application/json:
               id: 01BX9NSMKVXXS5PSP2FATZMYYY
@@ -163,7 +139,7 @@ paths:
           description: Invalid payload.
           schema:
             $ref: '#/definitions/ProblemJson'
-          examples: { }
+          examples: {}
         '401':
           description: Unauthorized
         '403':
@@ -181,8 +157,7 @@ paths:
       description: >-
         Returns the preferences for the user identified by the
 
-        fiscal code provided in the request body. The field `sender_allowed` is
-        set fo `false` in case
+        fiscal code provided in the request body. The field `sender_allowed` is set fo `false` in case
 
         the service which is calling the API has been disabled by the user.
       parameters:
@@ -242,14 +217,11 @@ definitions:
         description: >-
           Indicates the User's preferred written or spoken languages in order
 
-          of preference. Generally used for selecting a localized User
-          interface. Valid
+          of preference. Generally used for selecting a localized User interface. Valid
 
-          values are concatenation of the ISO 639-1 two letter language code, an
-          underscore,
+          values are concatenation of the ISO 639-1 two letter language code, an underscore,
 
-          and the ISO 3166-1 2 letter country code; e.g., 'en_US' specifies the
-          language
+          and the ISO 3166-1 2 letter country code; e.g., 'en_US' specifies the language
 
           English and country US.
     required:
@@ -276,9 +248,8 @@ definitions:
         type: integer
         format: int32
         description: >-
-          The HTTP status code generated by the origin server for this
-          occurrence
-          
+          The HTTP status code generated by the origin server for this occurrence
+
           of the problem.
         minimum: 100
         maximum: 600
@@ -293,12 +264,7 @@ definitions:
       instance:
         type: string
         format: uri
-        description: >-
-          An absolute URI that identifies the specific occurrence of the
-          problem.
-          
-          It may or may not yield further information if dereferenced. 
-
+        description: "An absolute URI that identifies the specific occurrence of the problem.\nIt may or may not yield further information if dereferenced. "
   NewMessage:
     type: object
     properties:
@@ -337,7 +303,6 @@ definitions:
       This parameter specifies for how long (in seconds) the system will
       try to deliver the message to the channels configured by the user.
     example: 3600
-
   FeatureLevelType:
     type: string
     default: STANDARD
@@ -376,15 +341,13 @@ definitions:
       - nre
   PrescriptionNRE:
     description: >-
-      The field *Numero ricetta elettronica* identifies the medical prescription
-      at national level.
+      The field *Numero ricetta elettronica* identifies the medical prescription at national level.
     type: string
     minLength: 15
     maxLength: 15
   PrescriptionIUP:
     description: >-
-      The field *Identificativo Unico di Prescrizione* identifies the medical
-      prescription at regional level.
+      The field *Identificativo Unico di Prescrizione* identifies the medical prescription at regional level.
     type: string
     minLength: 1
     maxLength: 16
@@ -409,14 +372,12 @@ definitions:
   ThirdPartyData:
     type: object
     description: >-
-      Payload containing all information needed to retrieve and visualize third
-      party message details
+      Payload containing all information needed to retrieve and visualize third party message details
     properties:
       id:
         type: string
         description: >-
-          Unique id for retrieving third party enriched information about the
-          message
+          Unique id for retrieving third party enriched information about the message
         minLength: 1
       original_sender:
         type: string
@@ -438,11 +399,9 @@ definitions:
       subject:
         type: string
         description: >-
-          The (optional) subject of the message - note that only some
-          notification
+          The (optional) subject of the message - note that only some notification
 
-          channels support the display of a subject. When a subject is not
-          provided,
+          channels support the display of a subject. When a subject is not provided,
 
           one gets generated from the client attributes.
         minLength: 10
@@ -453,8 +412,7 @@ definitions:
         description: >-
           The full version of the message, in plain text or Markdown format. The
 
-          content of this field will be delivered to channels that don't have
-          any
+          content of this field will be delivered to channels that don't have any
 
           limit in terms of content size (e.g. email, etc...).
         minLength: 80
@@ -475,26 +433,19 @@ definitions:
         properties:
           payee:
             $ref: '#/definitions/Payee'
-
   PaymentDataBase:
     type: object
     description: Metadata needed to process pagoPA payments.
     properties:
       amount:
         description: >-
-          Amount of payment in euro cent. PagoPA accepts up to 9999999999 euro
-          cents.
+          Amount of payment in euro cent. PagoPA accepts up to 9999999999 euro cents.
         type: integer
         minimum: 1
         maximum: 9999999999
       notice_number:
         description: >-
-          The field ["Numero
-          Avviso"](https://pagopa-specifichepagamenti.readthedocs.io/it/latest/_docs/Capitolo7.html#il-numero-avviso-e-larchivio-dei-pagamenti-in-attesa)
-          of pagoPa, needed to identify the payment. Format is `<aux digit
-          (1n)>[<application code> (2n)]<codice IUV (15|17n)>`. See [pagoPa
-          specs](https://www.agid.gov.it/sites/default/files/repository_files/specifiche_attuative_pagamenti_1_3_1_0.pdf)
-          for more info on this field and the IUV.
+          The field ["Numero Avviso"](https://pagopa-specifichepagamenti.readthedocs.io/it/latest/_docs/Capitolo7.html#il-numero-avviso-e-larchivio-dei-pagamenti-in-attesa) of pagoPa, needed to identify the payment. Format is `<aux digit (1n)>[<application code> (2n)]<codice IUV (15|17n)>`. See [pagoPa specs](https://www.agid.gov.it/sites/default/files/repository_files/specifiche_attuative_pagamenti_1_3_1_0.pdf) for more info on this field and the IUV.
         type: string
         pattern: ^[0123][0-9]{17}$
       invalid_after_due_date:
@@ -533,5 +484,4 @@ securityDefinitions:
     name: Ocp-Apim-Subscription-Key
     in: header
     description: >-
-      The API key obtained through the developer portal or the getService
-      operation.
+      The API key obtained through the developer portal or the getService operation.
