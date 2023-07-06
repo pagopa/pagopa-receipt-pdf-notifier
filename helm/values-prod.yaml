@@ -70,7 +70,7 @@ microservice-chart:
     IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" #TODO: Update with proper value
   envSecret:
     APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-d-connection-string'
-    COSMOS_RECEIPTS_CONN_STRIN": "cosmos-receipt-connection-string"
+    COSMOS_RECEIPTS_CONN_STRING: "cosmos-receipt-connection-string"
     STORAGE_CONN_STRING: "receipts-storage-account-connection-string"
     OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
