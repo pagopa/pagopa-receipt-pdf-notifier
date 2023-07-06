@@ -1,5 +1,6 @@
 package it.gov.pagopa.receipt.pdf.notifier.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
@@ -16,10 +17,10 @@ public interface ReceiptToIOService {
                        Receipt receipt,
                        Logger logger);
 
-    int verifyMessagesNotification(
+    boolean verifyMessagesNotification(
             Map<String, UserNotifyStatus> usersToBeVerified,
             List<IOMessage> messagesNotified,
             Receipt receipt,
             Logger logger
-    );
+    ) throws JsonProcessingException;
 }

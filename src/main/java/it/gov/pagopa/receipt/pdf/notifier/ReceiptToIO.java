@@ -1,5 +1,6 @@
 package it.gov.pagopa.receipt.pdf.notifier;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.*;
@@ -71,7 +72,7 @@ public class ReceiptToIO {
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<IOMessage>> documentMessages,
             final ExecutionContext context
-    ) {
+    ) throws JsonProcessingException {
         Logger logger = context.getLogger();
 
         String logMsg = String.format("ReceiptToIO function called at %s", LocalDateTime.now());
@@ -105,13 +106,16 @@ public class ReceiptToIO {
                     service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt, logger);
                 }
 
-                //Verify notification(s) status
-                queueSent += service.verifyMessagesNotification(
+                boolean boolQueueSent = service.verifyMessagesNotification(
                         usersToBeVerified,
                         messagesNotified,
                         receipt,
                         logger
                 );
+
+                if(boolQueueSent){
+                    queueSent++;
+                }
 
                 receiptsNotified.add(receipt);
             } else {
