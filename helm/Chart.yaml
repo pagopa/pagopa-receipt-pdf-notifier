@@ -2,8 +2,8 @@ apiVersion: v2
 name: pagopa-functions-template
 description: Microservice description
 type: application
-version: 0.3.0
-appVersion: 0.0.4-PRDP-45-feat-configure-for-deploy
+version: 0.4.0
+appVersion: 0.0.4-1-PRDP-45-feat-configure-for-deploy
 dependencies:
   - name: microservice-chart
     version: 1.21.0
