@@ -29,7 +29,7 @@ microservice-chart:
     port: 80
   ingress:
     create: true
-    host: "weuuat.receipts.internal.dev.platform.pagopa.it"
+    host: "weuuat.receipts.internal.uat.platform.pagopa.it"
     path: /pagopa-receipt-pdf-notifier/(.*)
   serviceAccount:
     create: false
