@@ -75,7 +75,7 @@ microservice-chart:
     OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
   keyvault:
-    name: "pagopa-d-receipts-kv"
+    name: "pagopa-u-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
   nodeSelector: {}
   affinity:
