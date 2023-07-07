@@ -6,7 +6,6 @@ import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.*;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
-import it.gov.pagopa.receipt.pdf.notifier.exception.ReceiptNotFoundException;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 
 import java.time.LocalDateTime;
