@@ -65,18 +65,21 @@ On terminal type:
 then replace env variables with correct values
 (if there is NO default value, the variable HAS to be defined)
 
-| VARIABLE                          | USAGE                                                                            | DEFAULT VALUE |
-|-----------------------------------|----------------------------------------------------------------------------------|:-------------:|
-| `STORAGE_CONN_STRING`             | Connection string to the Receipt Queue                                           |               |
-| `NOTIFIER_QUEUE_TOPIC`            | Topic name of the Receipt Queue                                                  |               |
-| `NOTIFIER_QUEUE_DELAY`            | Delay, in seconds, the visibility of the messages in the queue                   |      "1"      |
-| `NOTIFY_RECEIPT_MAX_RETRY`        | Number of retry to complete the generation process before being tagged as FAILED |      "5"      |
-| `COSMOS_RECEIPTS_CONN_STRING`     | Connection string to the Receipt CosmosDB                                        |               |
-| `COSMOS_RECEIPT_SERVICE_ENDPOINT` | Endpoint to the Receipt CosmosDB                                                 |               |
-| `COSMOS_RECEIPT_KEY`              | Key to the Receipt CosmosDB                                                      |               |
-| `COSMOS_RECEIPT_DB_NAME`          | Database name of the Receipt database in CosmosDB                                |               |
-| `COSMOS_RECEIPT_CONTAINER_NAME`   | Container name of the Receipt container in CosmosDB                              |               |
-| `OCP_APIM_SUBSCRIPTION_KEY`       | Auth key for Azure to access the PDF Engine                                      |               |
+| VARIABLE                          | USAGE                                                                            |                    DEFAULT VALUE                    |
+|-----------------------------------|----------------------------------------------------------------------------------|:---------------------------------------------------:|
+| `STORAGE_CONN_STRING`             | Connection string to the Receipt Queue                                           |                                                     |
+| `NOTIFIER_QUEUE_TOPIC`            | Topic name of the Receipt Queue                                                  |                                                     |
+| `NOTIFIER_QUEUE_DELAY`            | Delay, in seconds, the visibility of the messages in the queue                   |                         "1"                         |
+| `NOTIFY_RECEIPT_MAX_RETRY`        | Number of retry to complete the generation process before being tagged as FAILED |                         "5"                         |
+| `COSMOS_RECEIPTS_CONN_STRING`     | Connection string to the Receipt CosmosDB                                        |                                                     |
+| `COSMOS_RECEIPT_SERVICE_ENDPOINT` | Endpoint to the Receipt CosmosDB                                                 |                                                     |
+| `COSMOS_RECEIPT_KEY`              | Key to the Receipt CosmosDB                                                      |                                                     |
+| `COSMOS_RECEIPT_DB_NAME`          | Database name of the Receipt database in CosmosDB                                |                                                     |
+| `COSMOS_RECEIPT_CONTAINER_NAME`   | Container name of the Receipt container in CosmosDB                              |                                                     |
+| `IO_API_BASE_PATH`                | Base path to IO APIs                                                             | "https://api.dev.platform.pagopa.it/mock-io/api/v1" |
+| `IO_API_PROFILES_PATH`            | Path to IO check user API                                                        |                     "/profileZ"                     |
+| `IO_API_MESSAGES_PATH`            | Path to IO send messages API                                                     |                     "/messages"                     |
+| `OCP_APIM_SUBSCRIPTION_KEY`       | Auth key for Azure to access the PDF Engine                                      |                                                     |
 
 > to doc details about AZ fn config
 > see [here](https://stackoverflow.com/questions/62669672/azure-functions-what-is-the-purpose-of-having-host-json-and-local-settings-jso)
