@@ -1,42 +1,127 @@
-# pagoPA Functions template
+# pagoPA Receipt-pdf-notifier
 
-Java template to create an Azure Function.
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pagopa_pagopa-receipt-pdf-notifier&metric=alert_status)](https://sonarcloud.io/dashboard?id=pagopa_pagopa-receipt-pdf-notifier)
 
-## Function examples
-There is an example of a Http Trigger function.
+Java Azure Function that notifies to an IO user a message with the previously generated receipt's info.
 
 ---
 
-## Run locally with Docker
-`docker build -t pagopa-functions-template .`
+## Summary 📖
 
-`docker run -p 8999:80 pagopa-functions-template`
+- [Start Project Locally 🚀](#start-project-locally-)
+  * [Run locally with Docker](#run-locally-with-docker)
+    + [Prerequisites](#prerequisites)
+    + [Run docker container](#run-docker-container)
+  * [Run locally with Maven](#run-locally-with-maven)
+    + [Prerequisites](#prerequisites-1)
+    + [Set environment variables](#set-environment-variables)
+    + [Run the project](#run-the-project)
+  * [Test](#test)
+- [Develop Locally 💻](#develop-locally-)
+  * [Prerequisites](#prerequisites-2)
+  * [Testing 🧪](#testing-)
+    + [Unit testing](#unit-testing)
+    + [Integration testing](#integration-testing)
+    + [Performance testing](#performance-testing)
+- [Contributors 👥](#contributors-)
+  * [Maintainers](#maintainers)
 
-### Test
-`curl http://localhost:8999/example`
+---
 
-## Run locally with Maven
+## Start Project Locally 🚀
+
+### Run locally with Docker
+
+#### Prerequisites
+
+- docker
+
+#### Set environment variables
+
+`docker build -t pagopa-receip-pdf-notifier .`
+
+`cp .env.example .env`
+
+and replace in `.env` with correct values
+
+#### Run docker container
+
+then type :
+
+`docker run -p 80:80 --env-file=./.env pagopa-receip-pdf-notifier`
+
+### Run locally with Maven
+
+#### Prerequisites
+
+- maven
+
+#### Set environment variables
+
+On terminal type:
+
+`cp local.settings.json.example local.settings.json`
+
+then replace env variables with correct values
+(if there is NO default value, the variable HAS to be defined)
+
+| VARIABLE                          | USAGE                                                                            |                    DEFAULT VALUE                    |
+|-----------------------------------|----------------------------------------------------------------------------------|:---------------------------------------------------:|
+| `STORAGE_CONN_STRING`             | Connection string to the Receipt Queue                                           |                                                     |
+| `NOTIFIER_QUEUE_TOPIC`            | Topic name of the Receipt Queue                                                  |                                                     |
+| `NOTIFIER_QUEUE_DELAY`            | Delay, in seconds, the visibility of the messages in the queue                   |                         "1"                         |
+| `NOTIFY_RECEIPT_MAX_RETRY`        | Number of retry to complete the generation process before being tagged as FAILED |                         "5"                         |
+| `COSMOS_RECEIPTS_CONN_STRING`     | Connection string to the Receipt CosmosDB                                        |                                                     |
+| `COSMOS_RECEIPT_SERVICE_ENDPOINT` | Endpoint to the Receipt CosmosDB                                                 |                                                     |
+| `COSMOS_RECEIPT_KEY`              | Key to the Receipt CosmosDB                                                      |                                                     |
+| `COSMOS_RECEIPT_DB_NAME`          | Database name of the Receipt database in CosmosDB                                |                                                     |
+| `COSMOS_RECEIPT_CONTAINER_NAME`   | Container name of the Receipt container in CosmosDB                              |                                                     |
+| `IO_API_BASE_PATH`                | Base path to IO APIs                                                             | "https://api.dev.platform.pagopa.it/mock-io/api/v1" |
+| `IO_API_PROFILES_PATH`            | Path to IO check user API                                                        |                     "/profileZ"                     |
+| `IO_API_MESSAGES_PATH`            | Path to IO send messages API                                                     |                     "/messages"                     |
+| `OCP_APIM_SUBSCRIPTION_KEY`       | Auth key for Azure to access the PDF Engine                                      |                                                     |
+
+> to doc details about AZ fn config
+> see [here](https://stackoverflow.com/questions/62669672/azure-functions-what-is-the-purpose-of-having-host-json-and-local-settings-jso)
+
+#### Run the project
 
 `mvn clean package`
 
 `mvn azure-functions:run`
 
 ### Test
-`curl http://localhost:7071/example` 
+
+`curl http://localhost:8080/info`
 
 ---
 
+## Develop Locally 💻
 
-## TODO
-Once cloned the repo, you should:
-- to deploy on standard Azure service:
-  - rename `deploy-pipelines-standard.yml` to `deploy-pipelines.yml`
-  - remove `helm` folder
-- to deploy on Kubernetes:
-  - rename `deploy-pipelines-aks.yml` to `deploy-pipelines.yml`
-  - customize `helm` configuration
-- configure the following GitHub action in `.github` folder: 
-  - `deploy.yml`
-  - `sonar_analysis.yml`
+### Prerequisites
 
-Configure the SonarCloud project :point_right: [guide](https://pagopa.atlassian.net/wiki/spaces/DEVOPS/pages/147193860/SonarCloud+experimental).
+- git
+- maven
+- jdk-11
+
+### Testing 🧪
+
+#### Unit testing
+
+To run the **Junit** tests:
+
+`mvn clean verify`
+
+#### Integration testing
+
+#### Performance testing
+
+---
+
+## Contributors 👥
+
+Made with ❤️ by PagoPa S.p.A.
+
+### Maintainers
+
+See `CODEOWNERS` file
