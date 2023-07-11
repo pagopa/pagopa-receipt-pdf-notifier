@@ -1177,9 +1177,9 @@ class ReceiptToIOTest {
         receiptList.add(receipt);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) mock(OutputBinding.class);
         @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
+        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) mock(OutputBinding.class);
 
 
         withEnvironmentVariable("CF_FILTER_NOTIFIER", VALID_DEBTOR_CF.concat(",").concat(VALID_PAYER_CF))
