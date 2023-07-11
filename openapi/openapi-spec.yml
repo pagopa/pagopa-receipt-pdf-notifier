@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  version: 0.1.1
+  version: 0.1.1-1
   title: IO API for Public Administration Services
   contact:
     name: PagoPA S.p.A.
@@ -39,6 +39,7 @@ info:
 
 
 
+
       * A required `subject`: a short description of the topic.
       * A required `markdown` body: a Markdown representation of the body (see
         below on what Markdown tags are allowed).
@@ -64,6 +65,7 @@ info:
 
 
 
+
       * Headings
       * Text stylings (bold, italic, etc...)
       * Lists (bullet and numbered)
@@ -73,6 +75,7 @@ info:
     Not every citizen will be interested in what you have to say and not every citizen you want to communicate to will be registered on IO. For this reason, before sending a message you need to check whether the recipient is registered on the platform and that he has not yet opted out from receiving messages from you.
 
     The process for sending a message is made of 3 steps:
+
 
 
 
