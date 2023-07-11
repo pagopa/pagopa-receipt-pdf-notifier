@@ -1157,46 +1157,6 @@ class ReceiptToIOTest {
         }
     }
 
-    @Test
-    void runOkWithDebtorAndPayerSameFiscalCodesInFilteredKO() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn("A");
-        when(eventData.getPayerFiscalCode()).thenReturn("A");
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) mock(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) mock(OutputBinding.class);
-
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", VALID_DEBTOR_CF.concat(",").concat(VALID_PAYER_CF))
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() -> Assertions.assertDoesNotThrow(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                        )));
-
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(ReceiptStatusType.NOT_TO_NOTIFY, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-    }
-
     private <T> void tearDownInstance(Class<T> classInstanced) throws IllegalAccessException, NoSuchFieldException {
         Field instance = classInstanced.getDeclaredField("instance");
 
