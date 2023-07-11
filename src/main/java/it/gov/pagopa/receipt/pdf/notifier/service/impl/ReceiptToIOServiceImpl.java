@@ -39,7 +39,6 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_RECEIPT_MAX_RETRY", "5"));
     private static final List<String> CF_FILTER_NOTIFIER = Arrays.asList(System.getenv().getOrDefault("CF_FILTER_NOTIFIER", "").split(","));
-    private static final boolean CF_FILTER_ENABLED = Boolean.parseBoolean(System.getenv().getOrDefault("CF_FILTER_ENABLED", "false"));
 
     /**
      * Handles IO user validation and notification
@@ -57,11 +56,11 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
         if (fiscalCode != null &&
                 !fiscalCode.isEmpty() &&
+                (CF_FILTER_NOTIFIER.contains("*") || CF_FILTER_NOTIFIER.contains(fiscalCode)) &&
                 (receipt.getIoMessageData() == null ||
-                        ReceiptToIOUtils.verifyMessageIdIsNotPresent(userType, receipt)
-                )
-                && (!CF_FILTER_ENABLED || CF_FILTER_NOTIFIER.contains(fiscalCode))
-        ) {
+                                ReceiptToIOUtils.verifyMessageIdIsNotPresent(userType, receipt)
+                        )
+                ) {
             FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
             IOClient client = IOClient.getInstance();
 

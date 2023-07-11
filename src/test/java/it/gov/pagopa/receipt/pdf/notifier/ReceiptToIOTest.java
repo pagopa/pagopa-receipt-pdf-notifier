@@ -79,7 +79,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runOkWithDebtorAndPayerDifferentFiscalCodes() throws ApiException {
+    void runOkWithDebtorAndPayerDifferentFiscalCodes() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -120,9 +120,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -574,7 +576,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorResponseProfileBothDebtorAndPayer() throws ApiException {
+    void runKoErrorResponseProfileBothDebtorAndPayer() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -612,9 +614,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -779,7 +783,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorResponseMessagesBothDebtorAndPayer() throws ApiException {
+    void runKoErrorResponseMessagesBothDebtorAndPayer() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -823,9 +827,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -840,7 +846,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorResponseMessagesOnDebtor() throws ApiException {
+    void runKoErrorResponseMessagesOnDebtor() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -887,9 +893,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -914,7 +922,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorResponseMessagesOnPayer() throws ApiException {
+    void runKoErrorResponseMessagesOnPayer() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -961,9 +969,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -988,7 +998,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoTooManyRetry() throws ApiException {
+    void runKoTooManyRetry() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -1017,9 +1027,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -1034,7 +1046,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorSendingToQueue() throws ApiException {
+    void runKoErrorSendingToQueue() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -1069,8 +1081,10 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
