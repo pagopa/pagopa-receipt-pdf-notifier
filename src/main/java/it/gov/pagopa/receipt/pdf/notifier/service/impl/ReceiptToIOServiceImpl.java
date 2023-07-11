@@ -22,10 +22,13 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +38,7 @@ import java.util.logging.Logger;
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_RECEIPT_MAX_RETRY", "5"));
+    private static final List<String> CF_FILTER_NOTIFIER = Arrays.asList(System.getenv().getOrDefault("CF_FILTER_NOTIFIER", "").split(","));
 
     /**
      * Handles IO user validation and notification
@@ -52,10 +56,11 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
         if (fiscalCode != null &&
                 !fiscalCode.isEmpty() &&
+                (CF_FILTER_NOTIFIER.contains("*") || CF_FILTER_NOTIFIER.contains(fiscalCode)) &&
                 (receipt.getIoMessageData() == null ||
-                        ReceiptToIOUtils.verifyMessageIdIsNotPresent(userType, receipt)
-                )
-        ) {
+                                ReceiptToIOUtils.verifyMessageIdIsNotPresent(userType, receipt)
+                        )
+                ) {
             FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
             IOClient client = IOClient.getInstance();
 

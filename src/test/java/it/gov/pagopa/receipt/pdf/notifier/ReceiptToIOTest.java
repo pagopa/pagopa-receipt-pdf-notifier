@@ -4,15 +4,14 @@ import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
-import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
 import it.gov.pagopa.receipt.pdf.notifier.generated.model.CreatedMessage;
 import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
 import org.apache.http.HttpStatus;
@@ -25,18 +24,19 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, SystemStubsExtension.class})
 class ReceiptToIOTest {
 
     private static final String VALID_DEBTOR_MESSAGE_ID = "valid debtor message id";
@@ -79,7 +79,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runOkWithDebtorAndPayerDifferentFiscalCodes() throws ApiException {
+    void runOkWithDebtorAndPayerDifferentFiscalCodes() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -120,9 +120,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -574,7 +576,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorResponseProfileBothDebtorAndPayer() throws ApiException {
+    void runKoErrorResponseProfileBothDebtorAndPayer() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -612,9 +614,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -779,7 +783,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorResponseMessagesBothDebtorAndPayer() throws ApiException {
+    void runKoErrorResponseMessagesBothDebtorAndPayer() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -823,9 +827,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -840,7 +846,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorResponseMessagesOnDebtor() throws ApiException {
+    void runKoErrorResponseMessagesOnDebtor() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -887,9 +893,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -914,7 +922,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorResponseMessagesOnPayer() throws ApiException {
+    void runKoErrorResponseMessagesOnPayer() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -961,9 +969,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -988,7 +998,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoTooManyRetry() throws ApiException {
+    void runKoTooManyRetry() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -1017,9 +1027,11 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        ));
 
         //Verify receipts update
         verify(documentReceipts).setValue(receiptCaptor.capture());
@@ -1034,7 +1046,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorSendingToQueue() throws ApiException {
+    void runKoErrorSendingToQueue() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
 
@@ -1069,8 +1081,10 @@ class ReceiptToIOTest {
         @SuppressWarnings("unchecked")
         OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
                 ));
 
         //Verify receipts update
@@ -1082,6 +1096,79 @@ class ReceiptToIOTest {
         assertNotNull(updatedReceipt.getReasonErr());
 
         verify(documentMessages, never()).setValue(any());
+    }
+
+    @Test
+    void runOkWithDebtorAndPayerSameFiscalCodesInFiltered() throws Exception {
+        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
+        when(context.getLogger()).thenReturn(logger);
+
+
+        ///profile
+        @SuppressWarnings("unchecked")
+        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
+        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        LimitedProfile profile = mock(LimitedProfile.class);
+        when(profile.getSenderAllowed()).thenReturn(true);
+        when(getProfileResponse.getData()).thenReturn(profile);
+
+        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
+
+        ///messages
+        @SuppressWarnings("unchecked")
+        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        CreatedMessage createdMessage = mock(CreatedMessage.class);
+        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
+        when(messageResponse.getData()).thenReturn(createdMessage);
+        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
+
+        setMock(IOClient.class, client);
+
+        List<Receipt> receiptList = new ArrayList<>();
+        EventData eventData = mock(EventData.class);
+        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
+        when(eventData.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
+
+        receipt.setEventData(eventData);
+        receipt.setEventId(EVENT_ID);
+        receipt.setStatus(ReceiptStatusType.GENERATED);
+
+        receiptList.add(receipt);
+
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
+
+
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", VALID_DEBTOR_CF.concat(",").concat(VALID_PAYER_CF))
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() -> Assertions.assertDoesNotThrow(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                        )));
+
+
+        //Verify receipts update
+        verify(documentReceipts).setValue(receiptCaptor.capture());
+        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
+        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
+        assertNull(updatedReceipt.getIoMessageData().getIdMessagePayer());
+        assertEquals(EVENT_ID, updatedReceipt.getEventId());
+        assertEquals(0, updatedReceipt.getNotificationNumRetry());
+        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
+        assertNull(updatedReceipt.getReasonErr());
+
+        verify(documentMessages).setValue(messageCaptor.capture());
+        List<IOMessage> messageList = messageCaptor.getValue();
+        assertEquals(1, messageList.size());
+        for(IOMessage message : messageList){
+            assertEquals(EVENT_ID,message.getEventId());
+
+            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
+                fail();
+            }
+        }
     }
 
     private <T> void tearDownInstance(Class<T> classInstanced) throws IllegalAccessException, NoSuchFieldException {
