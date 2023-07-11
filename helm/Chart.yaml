@@ -2,8 +2,9 @@ apiVersion: v2
 name: pagopa-functions-template
 description: Microservice description
 type: application
-appVersion: 0.0.5-PRDP-45-feat-configure-for-deploy
+appVersion: 0.0.6
 dependencies:
   - name: microservice-chart
     version: 1.21.0
     repository: "https://pagopa.github.io/aks-microservice-chart-blueprint"
+version: NaN.1.0

@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.project</groupId>
     <artifactId>pagopa-receipt-pdf-notifier</artifactId>
-    <version>0.0.5-PRDP-45-feat-configure-for-deploy</version>
+    <version>0.0.6</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-notifier</name>
