@@ -26,6 +26,15 @@ async function createDocumentInReceiptsDatastore(id) {
     }
 }
 
+async function createErrorDocumentInReceiptsDatastore(id) {
+    let event = createReceiptForError(id);
+    try {
+        return await container.items.create(event);
+    } catch (err) {
+        console.log(err);
+    }
+}
+
 async function deleteDocumentFromReceiptsDatastore(id, partitionKey) {
     try {
         return await container.item(id, partitionKey).delete();
@@ -37,5 +46,5 @@ async function deleteDocumentFromReceiptsDatastore(id, partitionKey) {
 }
 
 module.exports = {
-    getDocumentByIdFromReceiptsDatastore, createDocumentInReceiptsDatastore, deleteDocumentFromReceiptsDatastore
+    getDocumentByIdFromReceiptsDatastore, createDocumentInReceiptsDatastore, deleteDocumentFromReceiptsDatastore, createErrorDocumentInReceiptsDatastore
 }
