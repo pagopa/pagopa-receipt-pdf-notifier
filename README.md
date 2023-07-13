@@ -114,7 +114,17 @@ To run the **Junit** tests:
 
 #### Integration testing
 
+From `./integration-test/src`
+
+1. `yarn install`
+2. `yarn test`
+
 #### Performance testing
+
+install [k6](https://k6.io/) and then from `./performance-test/src`
+
+1. `k6 run --env VARS=local.environment.json --env TEST_TYPE=./test-types/load.json main_scenario.js`
+
 
 ---
 

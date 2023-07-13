@@ -37,3 +37,6 @@ local.settings.json
 bin/
 obj/
 .vscode/*
+
+**/node_modules
+yarn.lock
