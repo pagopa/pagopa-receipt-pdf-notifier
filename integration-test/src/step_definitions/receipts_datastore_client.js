@@ -1,5 +1,5 @@
 const { CosmosClient } = require("@azure/cosmos");
-const {createReceipt} = require("./common");
+const {createReceipt, createReceiptForError} = require("./common");
 
 const cosmos_db_conn_string  = process.env.RECEIPTS_COSMOS_CONN_STRING || "";
 const databaseId             = process.env.RECEIPT_COSMOS_DB_NAME; 

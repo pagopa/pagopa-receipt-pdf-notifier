@@ -29,7 +29,7 @@ function createReceipt(id) {
 function createReceiptForError(id) {
     let receiptForError = createReceipt(id);
     receiptForError.status = "IO_ERROR_TO_NOTIFY";
-    return createReceiptForError;
+    return receiptForError;
 }
 
 module.exports = {

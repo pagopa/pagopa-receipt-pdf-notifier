@@ -36,7 +36,7 @@ Then('the receipt has not the status {string}', function (targetStatus) {
     assert.notStrictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
 
-Given('a random receipt with id {string} stored on receipt datastore with generated pdf', async function (id) {
+Given('a random receipt with id {string} stored on receipt datastore with generated pdf Scenario 2', async function (id) {
     this.eventId = id;
     // prior cancellation to avoid dirty cases
     await deleteDocumentFromReceiptsDatastore(this.eventId, this.eventId);
@@ -52,7 +52,13 @@ Given('a random receipt with id {string} enqueued on notification error queue', 
     await putMessageOnQueue(event);
 });
 
-Then('the receipt has not the status {string}', function (targetStatus) {
+When('receipt has been properly enqueued into error queue after {int} ms with eventId {string}', async function (time, eventId) {
+    // boundary time spent by azure function to process event
+    await sleep(time);
+    this.responseToCheck = await getDocumentByIdFromReceiptsDatastore(this.eventId);
+});
+
+Then('the receipt has not the status {string} Scenario 2', function (targetStatus) {
     assert.notStrictEqual(this.responseToCheck.resources[0].status, targetStatus);
 })
 
