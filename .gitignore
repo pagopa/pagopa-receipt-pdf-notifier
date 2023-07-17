@@ -40,3 +40,4 @@ obj/
 
 **/node_modules
 yarn.lock
+**/.terraform
