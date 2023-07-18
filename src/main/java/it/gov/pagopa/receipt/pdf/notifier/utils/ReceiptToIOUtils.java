@@ -64,7 +64,7 @@ public class ReceiptToIOUtils {
         thirdPartyData.setId(pdfId);
         thirdPartyData.setHasAttachments(true);
         //TODO set summary ( NOT mandatory )
-        // thirdPartyData.setSummary(null);
+        thirdPartyData.setSummary("Test pagoPA pdf receipt");
 
         content.setThirdPartyData(thirdPartyData);
 
