@@ -64,7 +64,7 @@ public class ReceiptToIOUtils {
         thirdPartyData.setId(pdfId);
         thirdPartyData.setHasAttachments(true);
         //TODO set summary ( NOT mandatory )
-        thirdPartyData.setSummary("");
+        // thirdPartyData.setSummary(null);
 
         content.setThirdPartyData(thirdPartyData);
 
