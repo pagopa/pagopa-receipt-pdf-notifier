@@ -56,14 +56,14 @@ public class ReceiptToIOUtils {
         MessageContent content = new MessageContent();
         //https://pagopa.atlassian.net/wiki/spaces/PPR/pages/719093789/Overview+processo+invio+messaggi+IO
         //TODO subject, markdown
-        content.setSubject("");
-        content.setMarkdown("");
+        content.setSubject("Test pagoPA pdf receipt");
+        content.setMarkdown("A message body markdown Lorem ipsu ... on min 80 character");
 
         ThirdPartyData thirdPartyData = new ThirdPartyData();
         String pdfId = String.format(receipt.getEventId(), fiscalCode);
         thirdPartyData.setId(pdfId);
         thirdPartyData.setHasAttachments(true);
-        //TODO set summary
+        //TODO set summary ( NOT mandatory )
         thirdPartyData.setSummary("");
 
         content.setThirdPartyData(thirdPartyData);
