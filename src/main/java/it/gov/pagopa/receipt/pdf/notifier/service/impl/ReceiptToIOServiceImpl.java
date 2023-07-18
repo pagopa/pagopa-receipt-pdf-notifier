@@ -76,7 +76,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 usersToBeVerified.put(fiscalCode + userType, UserNotifyStatus.NOT_NOTIFIED);
 
                 String logMsg = String.format("Error verifying IO user with fiscal code %s : %s", fiscalCode, e);
-                logger.severe(logMsg);
+                logger.info(logMsg);
             }
         } else {
             usersToBeVerified.put(fiscalCode + userType, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
@@ -337,7 +337,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         receipt.setNotificationNumRetry(numRetry + 1);
 
         String logMsg = String.format("Error sending notification: %s", errorMessage);
-        logger.severe(logMsg);
+        logger.info(logMsg);
 
         if (numRetry < MAX_NUMBER_RETRY) {
             receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
