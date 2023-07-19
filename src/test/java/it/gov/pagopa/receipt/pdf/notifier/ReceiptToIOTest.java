@@ -96,7 +96,7 @@ class ReceiptToIOTest {
         ///messages
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID, VALID_PAYER_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -166,7 +166,7 @@ class ReceiptToIOTest {
         ///messages
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -234,7 +234,7 @@ class ReceiptToIOTest {
         ///messages
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -303,7 +303,7 @@ class ReceiptToIOTest {
         ///messages
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_PAYER_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -457,7 +457,7 @@ class ReceiptToIOTest {
         ///messages
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID, VALID_PAYER_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -525,7 +525,7 @@ class ReceiptToIOTest {
         ///messages
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID, VALID_PAYER_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -650,7 +650,7 @@ class ReceiptToIOTest {
         ///messages
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -725,7 +725,7 @@ class ReceiptToIOTest {
         ///messages
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_PAYER_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -862,7 +862,7 @@ class ReceiptToIOTest {
 
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR, HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR, HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_PAYER_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -938,7 +938,7 @@ class ReceiptToIOTest {
 
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
@@ -1099,6 +1099,56 @@ class ReceiptToIOTest {
     }
 
     @Test
+    void runKoErrorSendingToQueueThowsException() throws Exception {
+        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
+        when(context.getLogger()).thenReturn(logger);
+
+        ///profile
+        @SuppressWarnings("unchecked")
+        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
+        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
+
+        setMock(IOClient.class, client);
+
+        when(queueClient.sendMessageToQueue(anyString())).thenThrow(RuntimeException.class);
+
+        setMock(NotifierQueueClientImpl.class, queueClient);
+
+        List<Receipt> receiptList = new ArrayList<>();
+        EventData eventData = mock(EventData.class);
+        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
+
+        receipt.setEventData(eventData);
+        receipt.setEventId(EVENT_ID);
+        receipt.setStatus(ReceiptStatusType.GENERATED);
+
+        receiptList.add(receipt);
+
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        @SuppressWarnings("unchecked")
+        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
+
+        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
+                .and("CF_FILTER_ENABLED", "true")
+                .execute(() ->
+                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
+                ));
+
+        //Verify receipts update
+        verify(documentReceipts).setValue(receiptCaptor.capture());
+        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
+        assertNull(updatedReceipt.getIoMessageData());
+        assertEquals(EVENT_ID, updatedReceipt.getEventId());
+        assertEquals(ReceiptStatusType.UNABLE_TO_SEND, updatedReceipt.getStatus());
+        assertNotNull(updatedReceipt.getReasonErr());
+
+        verify(documentMessages, never()).setValue(any());
+    }
+
+    @Test
     void runOkWithDebtorAndPayerSameFiscalCodesInFiltered() throws Exception {
         Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
         when(context.getLogger()).thenReturn(logger);
@@ -1117,7 +1167,7 @@ class ReceiptToIOTest {
         ///messages
         @SuppressWarnings("unchecked")
         ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         CreatedMessage createdMessage = mock(CreatedMessage.class);
         when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
         when(messageResponse.getData()).thenReturn(createdMessage);
