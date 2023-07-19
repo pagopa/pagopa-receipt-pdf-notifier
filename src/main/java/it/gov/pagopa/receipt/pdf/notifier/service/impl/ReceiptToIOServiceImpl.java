@@ -22,9 +22,7 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -154,7 +152,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
             if (sendMessageResponse != null) {
                 if (sendMessageResponse.getData() != null &&
-                        sendMessageResponse.getStatusCode() == HttpStatus.SC_OK
+                        sendMessageResponse.getStatusCode() == HttpStatus.SC_CREATED
                 ) {
                     if (userType.equals(UserType.DEBTOR)) {
                         messageData.setIdMessageDebtor(sendMessageResponse.getData().getId());
