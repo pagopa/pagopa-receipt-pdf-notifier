@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @NoArgsConstructor
@@ -73,8 +74,8 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             } catch (Exception e) {
                 usersToBeVerified.put(fiscalCode + userType, UserNotifyStatus.NOT_NOTIFIED);
 
-                String logMsg = String.format("Error verifying IO user with fiscal code %s : %s", fiscalCode, e);
-                logger.info(logMsg);
+                String logMsg = String.format("Error verifying IO user with fiscal code %s", fiscalCode);
+                logger.log(Level.SEVERE, logMsg, e);
             }
         } else {
             usersToBeVerified.put(fiscalCode + userType, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
@@ -169,8 +170,8 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 throw new ErrorToNotifyException("IO /messages failed to respond");
             }
         } catch (Exception e) {
-            String errorMsg = String.format("Error sending notification to IO user with fiscal code %s : %s", fiscalCode, e);
-            throw new ErrorToNotifyException(errorMsg);
+            String errorMsg = String.format("Error sending notification to IO user with fiscal code %s", fiscalCode);
+            throw new ErrorToNotifyException(errorMsg, e);
         }
     }
 
@@ -343,10 +344,15 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             NotifierQueueClientImpl client = NotifierQueueClientImpl.getInstance();
 
             String receiptString = ObjectMapperUtils.writeValueAsString(receipt);
-            Response<SendMessageResult> response = client.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
-
-            if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
-                messageQueueSent = true;
+            Response<SendMessageResult> response;
+            try {
+                response = client.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
+                if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
+                    messageQueueSent = true;
+                }
+            } catch (Exception e) {
+                String errMsg = String.format("Error in sending message to queue for receipt with event id: %s. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId());
+                logger.log(Level.SEVERE, errMsg, e);
             }
         }
 
