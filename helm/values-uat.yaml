@@ -89,18 +89,18 @@ microservice-chart:
                 values:
                   - user
   canaryDelivery:
-    create: true
+    create: false
     ingress:
-      create: true
+      create: false
       canary:
         type: header
         headerName: X-Canary
         headerValue: canary
         weightPercent: 0
     service:
-      create: true
+      create: false
     deployment:
-      create: true
+      create: false
       image:
         repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
         tag: "0.1.12"
