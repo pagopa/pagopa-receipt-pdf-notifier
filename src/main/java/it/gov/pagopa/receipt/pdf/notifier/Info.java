@@ -36,15 +36,14 @@ public class Info {
             final ExecutionContext context) {
 
         return request.createResponseBuilder(HttpStatus.OK)
-                .body(getInfo(context.getLogger(), "/META-INF/maven/it.gov.pagopa.receipt.pdf.notifier/pagopa-receipt-pdf-notifier/pom.properties"))
+                .body(getInfo(context.getLogger()))
                 .build();
     }
-    public synchronized AppInfo getInfo(Logger logger, String path) {
+    public synchronized AppInfo getInfo(Logger logger) {
         String version = null;
         String name = null;
-        try {
+        try (InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("application.properties")) {
             Properties properties = new Properties();
-            InputStream inputStream = getClass().getResourceAsStream(path);
             if (inputStream != null) {
                 properties.load(inputStream);
                 version = properties.getProperty("version", null);
