@@ -2,7 +2,7 @@ import { sleep, check } from 'k6';
 import { SharedArray } from 'k6/data';
 
 import { randomString, createReceipt } from './modules/common.js'
-import { createDocument, deleteDocument, getDocumentByEventId } from "./modules/datastore_client.js";
+import { createDocument, deleteDocument, getDocumentById } from "./modules/datastore_client.js";
 
 export let options = JSON.parse(open(__ENV.TEST_TYPE));
 
@@ -37,10 +37,31 @@ export function teardown(data) {
 	// todo
 }
 
-function postcondition(eventId) {
+export default function () {
+	// publish event
+	let tag = { eventHubMethod: "SaveReceipt" };
+	const id = "performance-test-notifier-" + randomString(15, "abcdefghijklmnopqrstuvwxyz0123456789");
+	let receipt = createReceipt(id);
+
+	let r = createDocument(receiptCosmosDBURI, receiptDatabaseID, receiptContainerID, receiptCosmosDBPrimaryKey, receipt, id);
+	
+	console.log("SaveReceipt call, Status " + r.status);
+
+	check(r, {
+		'SaveReceipt status is 201': (_response) => r.status === 201,
+	}, tag);
+
+	// if the event is published wait and check if it was correctly processed and stored in the datastore
+	if (r.status === 201) {
+		sleep(processTime);
+		postcondition(id);
+	}
+}
+
+function postcondition(id) {
 	// verify that published event have been stored properly in the datastore
 	let tag = { datastoreMethod: "GetDocumentByEventId" };
-	let r = getDocumentByEventId(receiptCosmosDBURI, receiptDatabaseID, receiptContainerID, receiptCosmosDBPrimaryKey, eventId);
+	let r = getDocumentById(receiptCosmosDBURI, receiptDatabaseID, receiptContainerID, receiptCosmosDBPrimaryKey, id);
 
 	console.log("GetDocumentByEventId call, Status " + r.status);
 
@@ -61,26 +82,5 @@ function postcondition(eventId) {
 	if (_count) {
 		let receiptId = receipt.id;
 		deleteDocument(receiptCosmosDBURI, receiptDatabaseID, receiptContainerID, receiptCosmosDBPrimaryKey, receiptId);
-	}
-}
-
-export default function () {
-	// publish event
-	let tag = { eventHubMethod: "SaveReceipt" };
-	const id = randomString(15, "abcdefghijklmnopqrstuvwxyz0123456789");
-	let receipt = createReceipt(id);
-
-	let r = createDocument(receiptCosmosDBURI, receiptDatabaseID, receiptContainerID, receiptCosmosDBPrimaryKey, receipt, id);
-
-	console.log("SaveReceipt call, Status " + r.status);
-
-	check(r, {
-		'SaveReceipt status is 201': (_response) => r.status === 201,
-	}, tag);
-
-	// if the event is published wait and check if it was correctly processed and stored in the datastore
-	if (r.status === 201) {
-		sleep(processTime);
-		postcondition(id);
 	}
 }

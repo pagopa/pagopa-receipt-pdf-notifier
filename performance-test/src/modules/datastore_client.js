@@ -6,7 +6,7 @@ const authorizationType      = "master"
 const authorizationVersion   = "1.0";
 const cosmosDBApiVersion     = "2018-12-31";
 
-export function getDocumentByEventId(cosmosDbURI, databaseId, containerId, authorizationSignature, id) {
+export function getDocumentById(cosmosDbURI, databaseId, containerId, authorizationSignature, id) {
     const path = `dbs/${databaseId}/colls/${containerId}/docs`;
     const resourceLink = `dbs/${databaseId}/colls/${containerId}`;
     const resourceType = "docs";
@@ -18,7 +18,7 @@ export function getDocumentByEventId(cosmosDbURI, databaseId, containerId, autho
     let headers = getCosmosDBAPIHeaders(authorizationToken, date, partitionKeyArray, 'application/query+json', "true");
 
     const query = {
-        "query": "SELECT * FROM c WHERE c.eventId = @id",
+        "query": "SELECT * FROM c WHERE c.id = @id",
         "parameters": [
             {
                 "name":"@id",
