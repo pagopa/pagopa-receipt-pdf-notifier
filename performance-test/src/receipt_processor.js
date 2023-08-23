@@ -2,7 +2,7 @@ import { sleep, check } from 'k6';
 import { SharedArray } from 'k6/data';
 
 import { randomString, createReceipt } from './modules/common.js'
-import { createDocument, deleteDocument, getDocumentById } from "./modules/datastore_client.js";
+import { createDocument, deleteDocument, getDocumentByEventId } from "./modules/datastore_client.js";
 
 export let options = JSON.parse(open(__ENV.TEST_TYPE));
 
@@ -61,7 +61,7 @@ export default function () {
 function postcondition(id) {
 	// verify that published event have been stored properly in the datastore
 	let tag = { datastoreMethod: "GetDocumentByEventId" };
-	let r = getDocumentById(receiptCosmosDBURI, receiptDatabaseID, receiptContainerID, receiptCosmosDBPrimaryKey, id);
+	let r = getDocumentByEventId(receiptCosmosDBURI, receiptDatabaseID, receiptContainerID, receiptCosmosDBPrimaryKey, id);
 
 	console.log("GetDocumentByEventId call, Status " + r.status);
 
