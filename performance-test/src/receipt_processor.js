@@ -71,7 +71,7 @@ function postcondition(id) {
 
 	check(r, {
 		"Assert published receipt is in the datastore and with status IO_NOTIFIED": (_r) => _count === 1 && (
-			receipt.status == "IO_NOTIFIED"
+			receipt.status === "IO_NOTIFIED"
 		) &&
 			receipt.ioMessageData
 			&&
