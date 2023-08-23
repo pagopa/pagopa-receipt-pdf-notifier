@@ -17,7 +17,7 @@ To invoke k6 test passing parameter use -e (or --env) flag:
 Test the receipt notifier function:
 
 ```
-k6 run --env VARS=local.environment.json --env TEST_TYPE=./test-types/load.json --env --env RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY=<your-secret> receipt_processor.js
+k6 run --env VARS=local.environment.json --env TEST_TYPE=./test-types/load.json --env RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY=<your-secret> receipt_processor.js
 ```
 
 where the mean of the environment variables is:
