@@ -123,7 +123,7 @@ From `./integration-test/src`
 
 install [k6](https://k6.io/) and then from `./performance-test/src`
 
-1. `k6 run --env VARS=local.environment.json --env TEST_TYPE=./test-types/load.json main_scenario.js`
+1. `k6 run --env VARS=local.environment.json --env TEST_TYPE=./test-types/load.json --env RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY=<your-secret> receipt_processor.js`
 
 
 ---

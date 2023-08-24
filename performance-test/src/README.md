@@ -1,10 +1,10 @@
-# K6 tests for _ReceiptsToDatastore_ project
+# K6 tests for _ReceiptsNotifier_ project
 
 [k6](https://k6.io/) is a load testing tool. 👀 See [here](https://k6.io/docs/get-started/installation/) to install it.
 
-- [01. Receipt datastore function](#01-receipt-datastore-function)
+- [01. Receipt notifier function](#01-receipt-notifier-function)
 
-This is a set of [k6](https://k6.io) tests related to the _Biz Events to Datastore_ initiative.
+This is a set of [k6](https://k6.io) tests related to the _Receipt PDF Notifier_ initiative.
 
 To invoke k6 test passing parameter use -e (or --env) flag:
 
@@ -12,7 +12,7 @@ To invoke k6 test passing parameter use -e (or --env) flag:
 -e MY_VARIABLE=MY_VALUE
 ```
 
-## 01. Receipt datastore function
+## 01. Receipt notifier function
 
 Test the receipt notifier function:
 
