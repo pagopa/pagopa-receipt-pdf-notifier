@@ -26,7 +26,6 @@ locals {
     "SUBSCRIPTION_ID" : data.azurerm_subscription.current.subscription_id,
     "RECEIPTS_STORAGE_CONN_STRING" : data.azurerm_storage_account.receipts_sa.primary_connection_string,
     "RECEIPTS_COSMOS_CONN_STRING" : "AccountEndpoint=https://pagopa-${var.env_short}-${local.location_short}-${local.domain}-ds-cosmos-account.documents.azure.com:443/;AccountKey=${data.azurerm_cosmosdb_account.receipts_cosmos.primary_key};"
-    "SLACK_WEBHOOK_URL" : data.azurerm_key_vault_secret.key_vault_integration_test_webhook_slack.value
   }
   env_variables = {
     "CONTAINER_APP_ENVIRONMENT_NAME" : local.container_app_environment.name,
@@ -89,3 +88,11 @@ resource "github_actions_environment_variable" "github_environment_runner_variab
    secret_name      = "CUCUMBER_PUBLISH_TOKEN"
    plaintext_value  = data.azurerm_key_vault_secret.key_vault_cucumber_token.value
  }
+
+#tfsec:ignore:github-actions-no-plain-text-action-secrets # not real secret
+resource "github_actions_secret" "secret_slack_webhook" {
+
+  repository      = local.github.repository
+  secret_name     = "SLACK_WEBHOOK_URL"
+  plaintext_value = data.azurerm_key_vault_secret.key_vault_integration_test_webhook_slack.value
+}
