@@ -67,7 +67,7 @@ microservice-chart:
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-u-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
-    IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1"
+    IO_API_BASE_PATH: "https://api.dev.platform.pagopa.it/mock-io/api/v1"
   envSecret:
     APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-u-connection-string'
     COSMOS_RECEIPTS_CONN_STRING: "cosmos-receipt-connection-string"
