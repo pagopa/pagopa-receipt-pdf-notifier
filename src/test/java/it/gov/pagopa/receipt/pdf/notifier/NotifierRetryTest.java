@@ -15,9 +15,9 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,9 +34,6 @@ class NotifierRetryTest {
 
     @Test
     void runOk() throws JsonProcessingException {
-        Logger logger = Logger.getLogger("NotifierRetry-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
 
@@ -54,9 +51,6 @@ class NotifierRetryTest {
 
     @Test
     void runReceiptWrongStatus() throws JsonProcessingException {
-        Logger logger = Logger.getLogger("NotifierRetry-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         @SuppressWarnings("unchecked")
         OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
 
@@ -66,8 +60,6 @@ class NotifierRetryTest {
         String queueReceipt = ObjectMapperUtils.writeValueAsString(receipt);
 
         assertDoesNotThrow(() -> function.processNotifierRetry(queueReceipt, documentReceipts, context));
-
         verify(documentReceipts, never()).setValue(any());
     }
-
 }
