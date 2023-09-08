@@ -10,18 +10,21 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.impl.ReceiptToIOServiceImpl;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Azure Functions with CosmosDB trigger.
  */
 public class ReceiptToIO {
+
+    private final Logger logger = LoggerFactory.getLogger(ReceiptToIO.class);
 
     /**
      * This function will be invoked when a CosmosDB trigger occurs
@@ -73,10 +76,8 @@ public class ReceiptToIO {
             OutputBinding<List<IOMessage>> documentMessages,
             final ExecutionContext context
     ) throws JsonProcessingException {
-        Logger logger = context.getLogger();
 
-        String logMsg = String.format("ReceiptToIO function called at %s", LocalDateTime.now());
-        logger.info(logMsg);
+        logger.info("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
         int discarder = 0;
 
         List<Receipt> receiptsNotified = new ArrayList<>();
@@ -88,8 +89,6 @@ public class ReceiptToIO {
                     receipt.getEventData() != null &&
                     ReceiptToIOUtils.verifyReceiptStatus(receipt)
             ) {
-
-
                 String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
                 String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
 
@@ -99,18 +98,17 @@ public class ReceiptToIO {
 
                 //TODO verify if both fiscal code can be null
                 //Notify to debtor
-                service.notifyMessage(usersToBeVerified, debtorFiscalCode, UserType.DEBTOR, receipt, logger);
+                service.notifyMessage(usersToBeVerified, debtorFiscalCode, UserType.DEBTOR, receipt);
 
                 if(payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode))){
                     //Notify to payer
-                    service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt, logger);
+                    service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt);
                 }
 
                 boolean boolQueueSent = service.verifyMessagesNotification(
                         usersToBeVerified,
                         messagesNotified,
-                        receipt,
-                        logger
+                        receipt
                 );
 
                 if(boolQueueSent){
@@ -124,20 +122,13 @@ public class ReceiptToIO {
         }
 
         //Discarder info
-        logMsg = String.format("itemsDone stat %s function - %d number of events in discarder  ", context.getInvocationId(), discarder);
-        logger.info(logMsg);
-
+        logger.info("itemsDone stat {} function - {} number of events in discarder  ", context.getInvocationId(), discarder);
         //Call to error queue info
-        logMsg = String.format("error messages stat %s function - number of error messages sent to queue %d", context.getInvocationId(), queueSent);
-        logger.info(logMsg);
-
+        logger.info("error messages stat {} function - number of error messages sent to queue {}", context.getInvocationId(), queueSent);
         //Call to receipts' datastore info
-        logMsg = String.format("receipts notified stat %s function - number of receipts updated on the receipts' datastore %d", context.getInvocationId(), receiptsNotified.size());
-        logger.info(logMsg);
-
+        logger.info("receipts notified stat {} function - number of receipts updated on the receipts' datastore {}", context.getInvocationId(), receiptsNotified.size());
         //Call to messages' datastore info
-        logMsg = String.format("messages notified stat %s function - number of messages inserted on the messages' datastore %d", context.getInvocationId(), messagesNotified.size());
-        logger.info(logMsg);
+        logger.info("messages notified stat {} function - number of messages inserted on the messages' datastore {}", context.getInvocationId(), messagesNotified.size());
 
         if (!receiptsNotified.isEmpty()) {
             documentReceipts.setValue(receiptsNotified);
@@ -146,8 +137,5 @@ public class ReceiptToIO {
         if (!messagesNotified.isEmpty()) {
             documentMessages.setValue(messagesNotified);
         }
-
     }
-
-
 }

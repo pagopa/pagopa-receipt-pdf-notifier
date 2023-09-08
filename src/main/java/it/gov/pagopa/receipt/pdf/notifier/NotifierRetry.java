@@ -7,16 +7,19 @@ import com.microsoft.azure.functions.annotation.*;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Azure Functions with Azure Storage Queue trigger.
  */
 public class NotifierRetry {
+
+    private final Logger logger = LoggerFactory.getLogger(NotifierRetry.class);
 
     /**
      * This function will be invoked when an Azure Storage Queue trigger occurs
@@ -45,35 +48,24 @@ public class NotifierRetry {
             OutputBinding<List<Receipt>> documentReceipts,
             final ExecutionContext context
     ) throws JsonProcessingException {
-        Logger logger = context.getLogger();
 
-        String logMsg = String.format("NotifierRetry function called at %s", LocalDateTime.now());
-        logger.info(logMsg);
-
+        logger.info("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
         List<Receipt> receiptsToRetry = new ArrayList<>();
 
         if (queueMessage != null && !queueMessage.isEmpty()) {
-
             Receipt receipt = ObjectMapperUtils.mapString(queueMessage, Receipt.class);
 
             if (receipt != null && receipt.getStatus().equals(ReceiptStatusType.IO_ERROR_TO_NOTIFY)) {
                 receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);
-
                 receiptsToRetry.add(receipt);
             }
-
         }
-
         //Call to receipts' datastore info
-        logMsg = String.format(
-                "receipts retry notify stat %s function - number of receipts updated with state IO_NOTIFY_RETRY on the receipts' datastore %d",
+        logger.info("receipts retry notify stat {} function - number of receipts updated with state IO_NOTIFY_RETRY on the receipts' datastore {}",
                 context.getInvocationId(), receiptsToRetry.size());
-        logger.info(logMsg);
 
         if (!receiptsToRetry.isEmpty()) {
             documentReceipts.setValue(receiptsToRetry);
         }
-
-
     }
 }

@@ -29,7 +29,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -80,9 +79,6 @@ class ReceiptToIOTest {
 
     @Test
     void runOkWithDebtorAndPayerDifferentFiscalCodes() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -150,9 +146,6 @@ class ReceiptToIOTest {
 
     @Test
     void runOkWithDebtorAndPayerSameFiscalCodes() throws ApiException {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -218,9 +211,6 @@ class ReceiptToIOTest {
 
     @Test
     void runOkWithDebtorIOUserPayerNull() throws ApiException {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -287,9 +277,6 @@ class ReceiptToIOTest {
 
     @Test
     void runOkWithDebtorNullPayerIOUser() throws ApiException {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -355,9 +342,6 @@ class ReceiptToIOTest {
 
     @Test
     void runOkWithDebtorAndPayerNotIOUser() throws ApiException {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -404,9 +388,6 @@ class ReceiptToIOTest {
 
     @Test
     void runOkWithDebtorNullAndPayerNull() {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         List<Receipt> receiptList = new ArrayList<>();
         EventData eventData = mock(EventData.class);
         when(eventData.getDebtorFiscalCode()).thenReturn(null);
@@ -441,9 +422,6 @@ class ReceiptToIOTest {
 
     @Test
     void runOkWithStatusSIGNED() throws ApiException {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -509,9 +487,6 @@ class ReceiptToIOTest {
 
     @Test
     void runOkWithStatusIO_NOTIFIER_RETRY() throws ApiException {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -577,9 +552,6 @@ class ReceiptToIOTest {
 
     @Test
     void runKoErrorResponseProfileBothDebtorAndPayer() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -634,9 +606,6 @@ class ReceiptToIOTest {
 
     @Test
     void runKoErrorResponseProfileOnDebtor() throws ApiException {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -709,9 +678,6 @@ class ReceiptToIOTest {
 
     @Test
     void runKoErrorResponseProfileOnPayer() throws ApiException {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -784,9 +750,6 @@ class ReceiptToIOTest {
 
     @Test
     void runKoErrorResponseMessagesBothDebtorAndPayer() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -847,9 +810,6 @@ class ReceiptToIOTest {
 
     @Test
     void runKoErrorResponseMessagesOnDebtor() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -923,9 +883,6 @@ class ReceiptToIOTest {
 
     @Test
     void runKoErrorResponseMessagesOnPayer() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -999,9 +956,6 @@ class ReceiptToIOTest {
 
     @Test
     void runKoTooManyRetry() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -1047,9 +1001,6 @@ class ReceiptToIOTest {
 
     @Test
     void runKoErrorSendingToQueue() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -1099,10 +1050,7 @@ class ReceiptToIOTest {
     }
 
     @Test
-    void runKoErrorSendingToQueueThowsException() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
+    void runKoErrorSendingToQueueThrowsException() throws Exception {
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
@@ -1150,10 +1098,6 @@ class ReceiptToIOTest {
 
     @Test
     void runOkWithDebtorAndPayerSameFiscalCodesInFiltered() throws Exception {
-        Logger logger = Logger.getLogger("ReceiptToIO-test-logger");
-        when(context.getLogger()).thenReturn(logger);
-
-
         ///profile
         @SuppressWarnings("unchecked")
         ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
