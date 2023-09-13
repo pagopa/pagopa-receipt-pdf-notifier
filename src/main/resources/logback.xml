@@ -16,7 +16,7 @@
     <if condition='"TRUE".equalsIgnoreCase("${ENABLE_ECS_CONSOLE}")'>
         <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="co.elastic.logging.logback.EcsEncoder">
-                <serviceName>${ECS_SERVICE_NAME}</serviceName>
+                <serviceName>${name}</serviceName>
                 <serviceVersion>${version}</serviceVersion>
                 <serviceEnvironment>${ENV}</serviceEnvironment>
             </encoder>

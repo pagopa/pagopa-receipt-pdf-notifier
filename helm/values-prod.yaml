@@ -89,7 +89,6 @@ microservice-chart:
     CONSOLE_LOG_THRESHOLD: "DEBUG"
     CONSOLE_LOG_PATTERN: "%d{HH:mm:ss.SSS}[%thread]%-5level%logger{36}-%msg%n"
     CONSOLE_LOG_CHARSET: "UTF-8"
-    ECS_SERVICE_NAME: "pagopareceiptpdfnotifierotl"
     OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopareceiptpdfnotifierotl,deployment.environment=prod"
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
     OTEL_LOGS_EXPORTER: none

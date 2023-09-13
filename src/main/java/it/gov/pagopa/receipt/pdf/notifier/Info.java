@@ -49,7 +49,7 @@ public class Info {
             if (inputStream != null) {
                 properties.load(inputStream);
                 version = properties.getProperty("version", null);
-                name = properties.getProperty("artifactId", null);
+                name = properties.getProperty("name", null);
             }
         } catch (Exception e) {
             logger.error("Impossible to retrieve information from pom.properties file.", e);
