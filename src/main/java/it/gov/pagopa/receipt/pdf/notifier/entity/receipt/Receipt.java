@@ -21,4 +21,7 @@ public class Receipt {
     private int numRetry;
     private ReasonError reasonErr;
     private int notificationNumRetry;
+    private long inserted_at;
+    private long generated_at;
+    private long notified_at;
 }
