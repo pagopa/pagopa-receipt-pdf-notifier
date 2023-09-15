@@ -222,6 +222,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
         } else {
             receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
+            receipt.setNotified_at(System.currentTimeMillis());
         }
         return queueSent;
     }
