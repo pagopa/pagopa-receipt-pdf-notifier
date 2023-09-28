@@ -14,10 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Azure Functions with CosmosDB trigger.
@@ -85,40 +82,38 @@ public class ReceiptToIO {
         int queueSent = 0;
 
         for (Receipt receipt : listReceipts) {
-            if (receipt != null &&
-                    receipt.getEventData() != null &&
-                    ReceiptToIOUtils.verifyReceiptStatus(receipt)
+            if (receipt == null ||
+                    receipt.getEventData() == null ||
+                    !ReceiptToIOUtils.verifyReceiptStatus(receipt)
             ) {
-                String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
-                String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
+                discarder++;
+                continue;
+            }
 
-                Map<String, UserNotifyStatus> usersToBeVerified = new HashMap<>();
+            String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
+            String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
+
+            EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
 
                 ReceiptToIOServiceImpl service = new ReceiptToIOServiceImpl();
 
-                //TODO verify if both fiscal code can be null
-                //Notify to debtor
-                service.notifyMessage(usersToBeVerified, debtorFiscalCode, UserType.DEBTOR, receipt);
+            //Notify to debtor
+            UserNotifyStatus debtorNotifyStatus = service.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
+            usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
 
-                if(payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode))){
-                    //Notify to payer
-                    service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt);
-                }
-
-                boolean boolQueueSent = service.verifyMessagesNotification(
-                        usersToBeVerified,
-                        messagesNotified,
-                        receipt
-                );
-
-                if(boolQueueSent){
-                    queueSent++;
-                }
-
-                receiptsNotified.add(receipt);
-            } else {
-                discarder++;
+            if(payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode))){
+                //Notify to payer
+                UserNotifyStatus payerNotifyStatus = service.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
+                usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
             }
+
+            boolean boolQueueSent = service.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+
+            if(boolQueueSent){
+                queueSent++;
+            }
+
+            receiptsNotified.add(receipt);
         }
 
         //Discarder info

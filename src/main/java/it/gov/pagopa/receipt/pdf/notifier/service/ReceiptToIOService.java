@@ -6,17 +6,14 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 public interface ReceiptToIOService {
-    void notifyMessage(Map<String, UserNotifyStatus> usersToBeVerified,
-                       String fiscalCode,
-                       UserType userType,
-                       Receipt receipt);
+    UserNotifyStatus notifyMessage(String fiscalCode, UserType userType, Receipt receipt);
 
     boolean verifyMessagesNotification(
-            Map<String, UserNotifyStatus> usersToBeVerified,
+            EnumMap<UserType, UserNotifyStatus> usersToBeVerified,
             List<IOMessage> messagesNotified,
             Receipt receipt
     ) throws JsonProcessingException;

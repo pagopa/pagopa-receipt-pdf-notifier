@@ -11,6 +11,7 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
+import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
 import it.gov.pagopa.receipt.pdf.notifier.generated.model.CreatedMessage;
@@ -30,8 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 @NoArgsConstructor
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
@@ -44,83 +45,56 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     /**
      * Handles IO user validation and notification
      *
-     * @param usersToBeVerified Map<FiscalCode, Status> containing user notification status
-     * @param fiscalCode        User fiscal code
-     * @param userType          Enum User type
+     * @param fiscalCode    User fiscal code
+     * @param userType      Enum User type
+     * @param receipt       the Receipt
+     * @return the status of the notification {@link UserNotifyStatus}
      */
     @Override
-    public void notifyMessage(Map<String, UserNotifyStatus> usersToBeVerified,
-                              String fiscalCode,
-                              UserType userType,
-                              Receipt receipt) {
+    public UserNotifyStatus notifyMessage(String fiscalCode, UserType userType, Receipt receipt) {
+        if (!isToBeNotified(fiscalCode, userType, receipt)) {
+            return UserNotifyStatus.NOT_TO_BE_NOTIFIED;
+        }
 
-        if (fiscalCode != null &&
-                !fiscalCode.isEmpty() &&
-                (CF_FILTER_NOTIFIER.contains("*") || CF_FILTER_NOTIFIER.contains(fiscalCode)) &&
-                (receipt.getIoMessageData() == null ||
-                                ReceiptToIOUtils.verifyMessageIdIsNotPresent(userType, receipt))
-                ) {
-            FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
-            IOClient client = IOClient.getInstance();
-
-            fiscalCodePayload.setFiscalCode(fiscalCode);
-            //Verify user is an IO user
-            //IO /profiles
-            ApiResponse<LimitedProfile> getProfileResponse;
-            try {
-                getProfileResponse = client.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
-
-                handleGetProfileResponseAndNotify(usersToBeVerified, fiscalCode, userType, receipt, client, getProfileResponse);
-            } catch (Exception e) {
-                usersToBeVerified.put(fiscalCode + userType, UserNotifyStatus.NOT_NOTIFIED);
-                logger.error("Error verifying IO user with fiscal code {}", fiscalCode, e);
+        IOClient client = IOClient.getInstance();
+        try {
+            boolean isNotifyAllowed = handleGetProfile(fiscalCode, client);
+            if (!isNotifyAllowed) {
+                logger.info("User with fiscal code {} has not to be notified", fiscalCode);
+                return UserNotifyStatus.NOT_TO_BE_NOTIFIED;
             }
-        } else {
-            usersToBeVerified.put(fiscalCode + userType, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
+
+            //Send notification to user
+            handleSendNotificationToUser(fiscalCode, userType, receipt, client);
+            return UserNotifyStatus.NOTIFIED;
+        } catch (Exception e) {
+            logger.error("Error verifying IO user with fiscal code {}", fiscalCode, e);
+            return UserNotifyStatus.NOT_NOTIFIED;
         }
     }
 
     /**
-     * Verify getProfile response's status and in case of success sends notification
+     * Invoke getProfile API and verify its response status
      *
-     * @param usersToBeVerified  Map<FiscalCode, Status> containing user notification status
      * @param fiscalCode         User fiscal code
-     * @param userType           Enum User type
-     * @param receipt            Receipt from CosmosDB
      * @param client             API Client
-     * @param getProfileResponse Response from API /profiles
      * @throws ErrorToNotifyException in case of error notifying user
      */
-    private void handleGetProfileResponseAndNotify(
-            Map<String, UserNotifyStatus> usersToBeVerified,
-            String fiscalCode, UserType userType,
-            Receipt receipt,
-            IOClient client,
-            ApiResponse<LimitedProfile> getProfileResponse
-    ) throws ErrorToNotifyException {
+    private boolean handleGetProfile(String fiscalCode, IOClient client) throws ErrorToNotifyException, ApiException {
+        FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
+        fiscalCodePayload.setFiscalCode(fiscalCode);
+        ApiResponse<LimitedProfile> getProfileResponse = client.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
 
-        if (getProfileResponse != null) {
-            if (getProfileResponse.getData() != null &&
-                            getProfileResponse.getStatusCode() == HttpStatus.SC_OK
-            ) {
-                if (getProfileResponse.getData().getSenderAllowed()) {
-                    //Send notification to user
-                    handleSendNotificationToUser(fiscalCode, userType, receipt, client);
-
-                    usersToBeVerified.put(fiscalCode + userType, UserNotifyStatus.NOTIFIED);
-
-                } else {
-                    usersToBeVerified.put(fiscalCode + userType, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
-
-                    logger.info("User with fiscal code {} has not to be notified", fiscalCode);
-                }
-            } else {
-                String errorMsg = String.format("IO /profiles responded with code %s", getProfileResponse.getStatusCode());
-                throw new ErrorToNotifyException(errorMsg);
-            }
-        } else {
+        if (getProfileResponse == null) {
             throw new ErrorToNotifyException("IO /profiles failed to respond");
         }
+
+        if (getProfileResponse.getData() == null || getProfileResponse.getStatusCode() != HttpStatus.SC_OK) {
+            String errorMsg = String.format("IO /profiles responded with code %s", getProfileResponse.getStatusCode());
+            throw new ErrorToNotifyException(errorMsg);
+        }
+
+        return getProfileResponse.getData().getSenderAllowed();
     }
 
     /**
@@ -140,32 +114,28 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         NewMessage message = ReceiptToIOUtils.buildNewMessage(fiscalCode, receipt);
 
         //IO /messages
+        ApiResponse<CreatedMessage> sendMessageResponse;
         try {
-            ApiResponse<CreatedMessage> sendMessageResponse = client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(message);
-            IOMessageData messageData = receipt.getIoMessageData() != null ? receipt.getIoMessageData() : new IOMessageData();
-
-            if (sendMessageResponse != null) {
-                if (sendMessageResponse.getData() != null &&
-                        sendMessageResponse.getStatusCode() == HttpStatus.SC_CREATED
-                ) {
-                    if (userType.equals(UserType.DEBTOR)) {
-                        messageData.setIdMessageDebtor(sendMessageResponse.getData().getId());
-                    } else {
-                        messageData.setIdMessagePayer(sendMessageResponse.getData().getId());
-                    }
-
-                    receipt.setIoMessageData(messageData);
-                } else {
-                    String errorMsg = String.format("IO /messages responded with code %s", sendMessageResponse.getStatusCode());
-                    throw new ErrorToNotifyException(errorMsg);
-                }
-            } else {
-                throw new ErrorToNotifyException("IO /messages failed to respond");
-            }
+            sendMessageResponse = client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(message);
         } catch (Exception e) {
             String errorMsg = String.format("Error sending notification to IO user with fiscal code %s", fiscalCode);
             throw new ErrorToNotifyException(errorMsg, e);
         }
+
+        IOMessageData messageData = receipt.getIoMessageData() != null ? receipt.getIoMessageData() : new IOMessageData();
+        if (sendMessageResponse == null) {
+            throw new ErrorToNotifyException("IO /messages failed to respond");
+        }
+        if (sendMessageResponse.getData() == null || sendMessageResponse.getStatusCode() != HttpStatus.SC_CREATED) {
+            String errorMsg = String.format("IO /messages responded with code %s", sendMessageResponse.getStatusCode());
+            throw new ErrorToNotifyException(errorMsg);
+        }
+        if (userType.equals(UserType.DEBTOR)) {
+            messageData.setIdMessageDebtor(sendMessageResponse.getData().getId());
+        } else {
+            messageData.setIdMessagePayer(sendMessageResponse.getData().getId());
+        }
+        receipt.setIoMessageData(messageData);
     }
 
     /**
@@ -178,7 +148,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      */
     @Override
     public boolean verifyMessagesNotification(
-            Map<String, UserNotifyStatus> usersToBeVerified,
+            EnumMap<UserType, UserNotifyStatus> usersToBeVerified,
             List<IOMessage> messagesNotified,
             Receipt receipt
     ) throws JsonProcessingException {
@@ -186,8 +156,8 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         EventData eventData = receipt.getEventData();
         String debtorCF = eventData.getDebtorFiscalCode();
         String payerCF = eventData.getPayerFiscalCode();
-        UserNotifyStatus debtorNotified = getUserNotifyStatus(debtorCF, usersToBeVerified.get(debtorCF + UserType.DEBTOR));
-        UserNotifyStatus payerNotified = getUserNotifyStatus(payerCF, usersToBeVerified.get(payerCF + UserType.PAYER));
+        UserNotifyStatus debtorNotified = getUserNotifyStatus(debtorCF, usersToBeVerified.get(UserType.DEBTOR));
+        UserNotifyStatus payerNotified = getUserNotifyStatus(payerCF, usersToBeVerified.get(UserType.PAYER));
         boolean queueSent = false;
 
         if (receipt.getIoMessageData() != null) {
@@ -336,5 +306,12 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         }
 
         return messageQueueSent;
+    }
+
+    private boolean isToBeNotified(String fiscalCode, UserType userType, Receipt receipt) {
+        return fiscalCode != null &&
+                !fiscalCode.isEmpty() &&
+                (CF_FILTER_NOTIFIER.contains("*") || CF_FILTER_NOTIFIER.contains(fiscalCode)) &&
+                (receipt.getIoMessageData() == null || ReceiptToIOUtils.verifyMessageIdIsNotPresent(userType, receipt));
     }
 }
