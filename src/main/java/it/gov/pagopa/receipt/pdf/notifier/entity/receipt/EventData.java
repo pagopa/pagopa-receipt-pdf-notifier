@@ -11,4 +11,6 @@ public class EventData {
     private String payerFiscalCode;
     private String debtorFiscalCode;
     private String transactionCreationDate;
+    private String amount;
+    private Cart cart;
 }
