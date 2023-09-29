@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Cart {
+public class CartItem {
 
     private String subject;
     private String payeeName;

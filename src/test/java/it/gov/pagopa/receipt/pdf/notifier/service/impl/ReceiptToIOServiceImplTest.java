@@ -8,6 +8,7 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
+import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
@@ -15,6 +16,7 @@ import it.gov.pagopa.receipt.pdf.notifier.generated.model.CreatedMessage;
 import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
+import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import lombok.SneakyThrows;
 import org.apache.http.HttpStatus;
@@ -49,13 +51,16 @@ class ReceiptToIOServiceImplTest {
 
     private NotifierQueueClient notifierQueueClientMock;
 
+    private IOMessageService ioMessageServiceMock;
+
     private ReceiptToIOService sut;
 
     @BeforeEach
     void setUp() {
         ioClientMock = mock(IOClient.class);
         notifierQueueClientMock = mock(NotifierQueueClient.class);
-        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock);
+        ioMessageServiceMock = mock(IOMessageService.class);
+        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, ioMessageServiceMock);
     }
 
     @Test
@@ -79,7 +84,6 @@ class ReceiptToIOServiceImplTest {
         assertEquals(VALID_DEBTOR_MESSAGE_ID, receipt.getIoMessageData().getIdMessageDebtor());
 
     }
-
     @Test
     @SneakyThrows
     void notifyPayerWithSuccess() {
@@ -99,6 +103,52 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(receipt.getIoMessageData());
         assertNotNull(receipt.getIoMessageData().getIdMessagePayer());
         assertEquals(VALID_PAYER_MESSAGE_ID, receipt.getIoMessageData().getIdMessagePayer());
+    }
+
+    @Test
+    @SneakyThrows
+    void notifyDebtorWithSuccessWithMessageData() {
+        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+
+        ApiResponse<CreatedMessage> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_DEBTOR_MESSAGE_ID);
+        doReturn(messageResponse).when(ioClientMock).submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any());
+
+        Receipt receipt = new Receipt();
+        receipt.setEventId(EVENT_ID);
+        receipt.setIoMessageData(new IOMessageData());
+
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+
+        assertNotNull(userNotifyStatus);
+        assertEquals(UserNotifyStatus.NOTIFIED, userNotifyStatus);
+        assertNotNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getIoMessageData().getIdMessageDebtor());
+        assertEquals(VALID_DEBTOR_MESSAGE_ID, receipt.getIoMessageData().getIdMessageDebtor());
+
+    }
+
+    @Test
+    @SneakyThrows
+    void notifyPayerWithSuccessWithMessageData() {
+        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+
+        ApiResponse<CreatedMessage> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_PAYER_MESSAGE_ID);
+        doReturn(messageResponse).when(ioClientMock).submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any());
+
+        Receipt receipt = new Receipt();
+        receipt.setEventId(EVENT_ID);
+        receipt.setIoMessageData(new IOMessageData());
+
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_PAYER_CF, UserType.PAYER, receipt);
+
+        assertNotNull(userNotifyStatus);
+        assertEquals(UserNotifyStatus.NOTIFIED, userNotifyStatus);
+        assertNotNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getIoMessageData().getIdMessagePayer());
+        assertEquals(VALID_PAYER_MESSAGE_ID, receipt.getIoMessageData().getIdMessagePayer());
+
     }
 
     @Test
@@ -154,6 +204,24 @@ class ReceiptToIOServiceImplTest {
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, userNotifyStatus);
+        assertNull(receipt.getIoMessageData());
+    }
+
+    @Test
+    @SneakyThrows
+    void notifyFailNotNotifiedBuildMessageException() {
+        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+
+        doThrow(MissingFieldsForNotificationException.class).when(ioMessageServiceMock).buildNewMessage(anyString(), any(), any());
+
+        Receipt receipt = new Receipt();
+        receipt.setEventId(EVENT_ID);
+
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+
+        assertNotNull(userNotifyStatus);
+        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
     }
 

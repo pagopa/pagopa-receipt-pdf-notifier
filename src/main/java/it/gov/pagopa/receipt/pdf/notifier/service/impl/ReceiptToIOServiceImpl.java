@@ -12,6 +12,7 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
+import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
@@ -21,9 +22,9 @@ import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
 import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
+import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
-import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -43,15 +44,18 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
     private final IOClient ioClient;
     private final NotifierQueueClient notifierQueueClient;
+    private final IOMessageService ioMessageService;
 
     public ReceiptToIOServiceImpl() {
         this.ioClient = IOClient.getInstance();
         this.notifierQueueClient = NotifierQueueClientImpl.getInstance();
+        this.ioMessageService = new IOMessageServiceImpl();
     }
 
-    ReceiptToIOServiceImpl(IOClient ioClient, NotifierQueueClient notifierQueueClient) {
+    ReceiptToIOServiceImpl(IOClient ioClient, NotifierQueueClient notifierQueueClient, IOMessageService ioMessageService) {
         this.ioClient = ioClient;
         this.notifierQueueClient = notifierQueueClient;
+        this.ioMessageService = ioMessageService;
     }
 
     /**
@@ -113,8 +117,8 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * @param userType   Enum User type
      * @throws ErrorToNotifyException in case of error during API call
      */
-    private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException {
-        NewMessage message = ReceiptToIOUtils.buildNewMessage(fiscalCode, receipt);
+    private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException, MissingFieldsForNotificationException {
+        NewMessage message = this.ioMessageService.buildNewMessage(fiscalCode, receipt, userType);
 
         //IO /messages
         ApiResponse<CreatedMessage> sendMessageResponse;
@@ -313,6 +317,12 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         return fiscalCode != null &&
                 !fiscalCode.isEmpty() &&
                 (CF_FILTER_NOTIFIER.contains("*") || CF_FILTER_NOTIFIER.contains(fiscalCode)) &&
-                (receipt.getIoMessageData() == null || ReceiptToIOUtils.verifyMessageIdIsNotPresent(userType, receipt));
+                (receipt.getIoMessageData() == null || verifyMessageIdIsNotPresent(userType, receipt));
+    }
+
+    private boolean verifyMessageIdIsNotPresent(UserType userType, Receipt receipt) {
+        return (userType.equals(UserType.DEBTOR) && receipt.getIoMessageData().getIdMessageDebtor() == null)
+                ||
+                (userType.equals(UserType.PAYER) && receipt.getIoMessageData().getIdMessagePayer() == null);
     }
 }
