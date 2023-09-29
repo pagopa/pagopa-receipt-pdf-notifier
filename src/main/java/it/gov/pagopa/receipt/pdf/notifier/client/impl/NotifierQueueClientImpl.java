@@ -30,7 +30,7 @@ public class NotifierQueueClientImpl implements NotifierQueueClient {
                 .buildClient();
     }
 
-    public NotifierQueueClientImpl(QueueClient queueClient) {
+    NotifierQueueClientImpl(QueueClient queueClient) {
         this.queueClient = queueClient;
     }
 
