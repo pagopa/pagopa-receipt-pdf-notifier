@@ -3,6 +3,7 @@ package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
@@ -23,7 +24,6 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
-import lombok.NoArgsConstructor;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -34,13 +34,25 @@ import java.util.Base64;
 import java.util.EnumMap;
 import java.util.List;
 
-@NoArgsConstructor
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
     private final Logger logger = LoggerFactory.getLogger(ReceiptToIOServiceImpl.class);
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_RECEIPT_MAX_RETRY", "5"));
     private static final List<String> CF_FILTER_NOTIFIER = Arrays.asList(System.getenv().getOrDefault("CF_FILTER_NOTIFIER", "").split(","));
+
+    private final IOClient ioClient;
+    private final NotifierQueueClient notifierQueueClient;
+
+    public ReceiptToIOServiceImpl() {
+        this.ioClient = IOClient.getInstance();
+        this.notifierQueueClient = NotifierQueueClientImpl.getInstance();
+    }
+
+    ReceiptToIOServiceImpl(IOClient ioClient, NotifierQueueClient notifierQueueClient) {
+        this.ioClient = ioClient;
+        this.notifierQueueClient = notifierQueueClient;
+    }
 
     /**
      * Handles IO user validation and notification
@@ -55,17 +67,15 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         if (!isToBeNotified(fiscalCode, userType, receipt)) {
             return UserNotifyStatus.NOT_TO_BE_NOTIFIED;
         }
-
-        IOClient client = IOClient.getInstance();
         try {
-            boolean isNotifyAllowed = handleGetProfile(fiscalCode, client);
+            boolean isNotifyAllowed = handleGetProfile(fiscalCode);
             if (!isNotifyAllowed) {
                 logger.info("User with fiscal code {} has not to be notified", fiscalCode);
                 return UserNotifyStatus.NOT_TO_BE_NOTIFIED;
             }
 
             //Send notification to user
-            handleSendNotificationToUser(fiscalCode, userType, receipt, client);
+            handleSendNotificationToUser(fiscalCode, userType, receipt);
             return UserNotifyStatus.NOTIFIED;
         } catch (Exception e) {
             logger.error("Error verifying IO user with fiscal code {}", fiscalCode, e);
@@ -77,13 +87,12 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * Invoke getProfile API and verify its response status
      *
      * @param fiscalCode         User fiscal code
-     * @param client             API Client
      * @throws ErrorToNotifyException in case of error notifying user
      */
-    private boolean handleGetProfile(String fiscalCode, IOClient client) throws ErrorToNotifyException, ApiException {
+    private boolean handleGetProfile(String fiscalCode) throws ErrorToNotifyException, ApiException {
         FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
         fiscalCodePayload.setFiscalCode(fiscalCode);
-        ApiResponse<LimitedProfile> getProfileResponse = client.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
+        ApiResponse<LimitedProfile> getProfileResponse = this.ioClient.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
 
         if (getProfileResponse == null) {
             throw new ErrorToNotifyException("IO /profiles failed to respond");
@@ -102,21 +111,15 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      *
      * @param fiscalCode User fiscal code
      * @param userType   Enum User type
-     * @param client     IO API Client
      * @throws ErrorToNotifyException in case of error during API call
      */
-    private void handleSendNotificationToUser(
-            String fiscalCode,
-            UserType userType,
-            Receipt receipt,
-            IOClient client
-    ) throws ErrorToNotifyException {
+    private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException {
         NewMessage message = ReceiptToIOUtils.buildNewMessage(fiscalCode, receipt);
 
         //IO /messages
         ApiResponse<CreatedMessage> sendMessageResponse;
         try {
-            sendMessageResponse = client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(message);
+            sendMessageResponse = this.ioClient.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(message);
         } catch (Exception e) {
             String errorMsg = String.format("Error sending notification to IO user with fiscal code %s", fiscalCode);
             throw new ErrorToNotifyException(errorMsg, e);
@@ -287,12 +290,10 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         if (numRetry < MAX_NUMBER_RETRY) {
             receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
 
-            NotifierQueueClientImpl client = NotifierQueueClientImpl.getInstance();
-
             String receiptString = ObjectMapperUtils.writeValueAsString(receipt);
             Response<SendMessageResult> response;
             try {
-                response = client.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
+                response = this.notifierQueueClient.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
                 if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
                     messageQueueSent = true;
                 }

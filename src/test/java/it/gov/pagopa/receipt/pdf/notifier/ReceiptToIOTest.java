@@ -17,6 +17,7 @@ import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -69,6 +70,11 @@ class ReceiptToIOTest {
 
     @Captor
     private ArgumentCaptor<List<IOMessage>> messageCaptor;
+
+    @BeforeEach
+    void setUp() {
+        setMock(NotifierQueueClientImpl.class, queueClient);
+    }
 
     @AfterEach
     public void teardown() throws Exception {

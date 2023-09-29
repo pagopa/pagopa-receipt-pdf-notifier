@@ -95,7 +95,7 @@ public class ReceiptToIO {
 
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
 
-                ReceiptToIOServiceImpl service = new ReceiptToIOServiceImpl();
+            ReceiptToIOServiceImpl service = new ReceiptToIOServiceImpl();
 
             //Notify to debtor
             UserNotifyStatus debtorNotifyStatus = service.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
