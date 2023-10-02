@@ -28,13 +28,13 @@ public class IOMessageServiceImpl implements IOMessageService {
         NewMessage message = new NewMessage();
         message.setFiscalCode(fiscalCode);
         message.setFeatureLevelType("ADVANCED");
-        message.setContent(buildMessageContent(fiscalCode, receipt, userType));
+        message.setContent(buildMessageContent(receipt, userType));
 
         return message;
     }
 
     @NotNull
-    private MessageContent buildMessageContent(String fiscalCode, Receipt receipt, UserType userType) throws MissingFieldsForNotificationException {
+    private MessageContent buildMessageContent(Receipt receipt, UserType userType) throws MissingFieldsForNotificationException {
         StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt);
 
         String subject;
@@ -49,15 +49,15 @@ public class IOMessageServiceImpl implements IOMessageService {
         MessageContent content = new MessageContent();
         content.setSubject(subject);
         content.setMarkdown(markdown);
-        content.setThirdPartyData(buildThirdPartyData(fiscalCode, receipt));
+        content.setThirdPartyData(buildThirdPartyData(receipt));
 
         return content;
     }
 
     @NotNull
-    private ThirdPartyData buildThirdPartyData(String fiscalCode, Receipt receipt) {
+    private ThirdPartyData buildThirdPartyData(Receipt receipt) {
         ThirdPartyData thirdPartyData = new ThirdPartyData();
-        thirdPartyData.setId(receipt.getEventId() + fiscalCode);
+        thirdPartyData.setId(receipt.getEventId());
         thirdPartyData.setHasAttachments(true);
         return thirdPartyData;
     }
