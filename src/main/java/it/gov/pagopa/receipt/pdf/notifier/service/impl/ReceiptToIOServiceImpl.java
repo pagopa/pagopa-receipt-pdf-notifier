@@ -82,7 +82,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             handleSendNotificationToUser(fiscalCode, userType, receipt);
             return UserNotifyStatus.NOTIFIED;
         } catch (Exception e) {
-            logger.error("Error verifying IO user with fiscal code {}", fiscalCode, e);
+            logger.error("Error notifying IO user with fiscal code {}", fiscalCode, e);
             return UserNotifyStatus.NOT_NOTIFIED;
         }
     }
