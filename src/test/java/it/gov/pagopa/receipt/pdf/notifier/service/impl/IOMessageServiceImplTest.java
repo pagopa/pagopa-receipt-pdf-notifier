@@ -47,7 +47,7 @@ class IOMessageServiceImplTest {
         assertEquals(SUBJECT_DEBTOR, message.getContent().getSubject());
         assertEquals(MARKDOWN_DEBTOR, message.getContent().getMarkdown());
         assertNotNull(message.getContent().getThirdPartyData());
-        assertEquals(EVENT_ID + VALID_DEBTOR_CF, message.getContent().getThirdPartyData().getId());
+        assertEquals(EVENT_ID, message.getContent().getThirdPartyData().getId());
         assertEquals(Boolean.TRUE, message.getContent().getThirdPartyData().getHasAttachments());
     }
 
@@ -74,7 +74,7 @@ class IOMessageServiceImplTest {
         assertEquals(SUBJECT_PAYER, message.getContent().getSubject());
         assertEquals(MARKDOWN_PAYER, message.getContent().getMarkdown());
         assertNotNull(message.getContent().getThirdPartyData());
-        assertEquals(EVENT_ID + VALID_PAYER_CF, message.getContent().getThirdPartyData().getId());
+        assertEquals(EVENT_ID, message.getContent().getThirdPartyData().getId());
         assertEquals(Boolean.TRUE, message.getContent().getThirdPartyData().getHasAttachments());
     }
 
