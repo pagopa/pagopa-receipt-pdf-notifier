@@ -84,7 +84,7 @@ microservice-chart:
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-p-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
-    IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" #TODO: Update with proper value
+    IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
     ENABLE_ECS_CONSOLE: "true"
     CONSOLE_LOG_THRESHOLD: "DEBUG"
     CONSOLE_LOG_PATTERN: "%d{HH:mm:ss.SSS}[%thread]%-5level%logger{36}-%msg%n"
