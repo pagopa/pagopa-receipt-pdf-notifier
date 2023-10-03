@@ -354,6 +354,9 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 String errMsg = String.format("Error in sending message to queue for receipt with event id: %s. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId());
                 logger.log(Level.SEVERE, errMsg, e);
             }
+        } else {
+            String errMsg = String.format("Maximum number of retries for event with event id: %s. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId());
+            logger.log(Level.SEVERE, errMsg);
         }
 
         if (!messageQueueSent) {
