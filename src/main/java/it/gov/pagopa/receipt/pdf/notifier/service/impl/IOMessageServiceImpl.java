@@ -15,10 +15,10 @@ import java.util.Map;
 
 public class IOMessageServiceImpl implements IOMessageService {
 
-    private static final String SUBJECT_PAYER = System.getenv().getOrDefault("SUBJECT_PAYER", "Ricevuta del pagamento a {cart.items[0].payee.name}");
-    private static final String SUBJECT_DEBTOR = System.getenv().getOrDefault("SUBJECT_DEBTOR", "Ricevuta del pagamento a {cart.items[0].payee.name}");
-    private static final String MARKDOWN_PAYER = System.getenv().getOrDefault("MARKDOWN_PAYER", "Hai pagato **{transaction.amount}** € a **{cart.items[0].payee.name}** per **{cart.items[0].subject}**.\n\nEcco la ricevuta con i dettagli.");
-    private static final String MARKDOWN_DEBTOR = System.getenv().getOrDefault("MARKDOWN_DEBTOR", "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n**Oggetto:** {cart.items[0].subject}\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli.");
+    private static final String SUBJECT_PAYER = System.getenv().getOrDefault("SUBJECT_PAYER", "");
+    private static final String SUBJECT_DEBTOR = System.getenv().getOrDefault("SUBJECT_DEBTOR", "");
+    private static final String MARKDOWN_PAYER = System.getenv().getOrDefault("MARKDOWN_PAYER", "");
+    private static final String MARKDOWN_DEBTOR = System.getenv().getOrDefault("MARKDOWN_DEBTOR", "");
 
     /**
      * {@inheritDoc}
