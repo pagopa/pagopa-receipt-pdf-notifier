@@ -1,1184 +1,155 @@
 package it.gov.pagopa.receipt.pdf.notifier;
 
-import com.azure.core.http.rest.Response;
-import com.azure.storage.queue.models.SendMessageResult;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
-import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.CreatedMessage;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
-import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
+import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
+import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
+import lombok.SneakyThrows;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 
 @ExtendWith({MockitoExtension.class, SystemStubsExtension.class})
 class ReceiptToIOTest {
 
-    private static final String VALID_DEBTOR_MESSAGE_ID = "valid debtor message id";
-    private static final String VALID_PAYER_MESSAGE_ID = "valid payer message id";
     private final String VALID_PAYER_CF = "a valid payer fiscal code";
     private final String VALID_DEBTOR_CF = "a valid debtor fiscal code";
-    private final String EVENT_ID = "a valid id";
 
-    private final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_RECEIPT_MAX_RETRY", "5"));
+    private ReceiptToIOService receiptToIOServiceMock;
 
-    @Spy
-    private Receipt receipt;
+    private OutputBinding<List<Receipt>> documentReceiptsMock;
+    private OutputBinding<List<IOMessage>> documentMessagesMock;
 
-    @Spy
-    private ReceiptToIO function;
+    private ExecutionContext executionContextMock;
 
-    @Mock
-    private ExecutionContext context;
+    private ReceiptToIO sut;
 
-    @Mock
-    private IOClient client;
 
-    @Mock
-    private NotifierQueueClientImpl queueClient;
+    @BeforeEach
+    void setUp() {
+        receiptToIOServiceMock = mock(ReceiptToIOService.class);
+        documentReceiptsMock = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        documentMessagesMock = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
 
-    @Captor
-    private ArgumentCaptor<List<Receipt>> receiptCaptor;
-
-    @Captor
-    private ArgumentCaptor<String> queueCaptor;
-
-    @Captor
-    private ArgumentCaptor<List<IOMessage>> messageCaptor;
-
-    @AfterEach
-    public void teardown() throws Exception {
-        // reset singleton
-        tearDownInstance(IOClient.class);
-        tearDownInstance(NotifierQueueClientImpl.class);
+        executionContextMock = mock(ExecutionContext.class);
+        sut = new ReceiptToIO(receiptToIOServiceMock);
     }
 
     @Test
-    void runOkWithDebtorAndPayerDifferentFiscalCodes() throws Exception {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
+    @SneakyThrows
+    void receiptToIOSuccessWithDebtorAndStatusGenerated() {
+        doReturn(UserNotifyStatus.NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
 
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        ///messages
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID, VALID_PAYER_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
+        Receipt receipt = new Receipt();
+        EventData eventData = new EventData();
+        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
         receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        receiptList.add(receipt);
+        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                        ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertEquals(VALID_PAYER_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(0, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(2, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID) || message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
-                fail();
-            }
-        }
+        verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
     }
 
     @Test
-    void runOkWithDebtorAndPayerSameFiscalCodes() throws ApiException {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
+    @SneakyThrows
+    void receiptToIOSuccessWithDebtorAndStatusSigned() {
+        doReturn(UserNotifyStatus.NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
 
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        ///messages
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-
+        Receipt receipt = new Receipt();
+        EventData eventData = new EventData();
+        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
         receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertNull(updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(0, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(1, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
-                fail();
-            }
-        }
-    }
-
-    @Test
-    void runOkWithDebtorIOUserPayerNull() throws ApiException {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        ///messages
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(null);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertNull(updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(0, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(1, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
-                fail();
-            }
-        }
-
-    }
-
-    @Test
-    void runOkWithDebtorNullPayerIOUser() throws ApiException {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        ///messages
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_PAYER_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(null);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_PAYER_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertNull(updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(0, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(1, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID))){
-                fail();
-            }
-        }
-    }
-
-    @Test
-    void runOkWithDebtorAndPayerNotIOUser() throws ApiException {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(false);
-        when(getProfileResponse.getData()).thenReturn(profile);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertNull(updatedReceipt.getIoMessageData());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(0, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.NOT_TO_NOTIFY, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages, never()).setValue(any());
-    }
-
-    @Test
-    void runOkWithDebtorNullAndPayerNull() {
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(null);
-        when(eventData.getPayerFiscalCode()).thenReturn(null);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertNull(updatedReceipt.getIoMessageData());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(0, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.NOT_TO_NOTIFY, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages, never()).setValue(any());
-    }
-
-    @Test
-    void runOkWithStatusSIGNED() throws ApiException {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        ///messages
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID, VALID_PAYER_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
         receipt.setStatus(ReceiptStatusType.SIGNED);
 
-        receiptList.add(receipt);
+        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertEquals(VALID_PAYER_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(0, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(2, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID) || message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
-                fail();
-            }
-        }
+        verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
     }
 
     @Test
-    void runOkWithStatusIO_NOTIFIER_RETRY() throws ApiException {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
+    @SneakyThrows
+    void receiptToIOSuccessWithDebtorAndStatusIONotifierRetry() {
+        doReturn(UserNotifyStatus.NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
 
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        ///messages
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID, VALID_PAYER_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
+        Receipt receipt = new Receipt();
+        EventData eventData = new EventData();
+        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
         receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
         receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);
 
-        receiptList.add(receipt);
+        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertEquals(VALID_PAYER_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(0, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(2, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID) || message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
-                fail();
-            }
-        }
+        verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
     }
 
     @Test
-    void runKoErrorResponseProfileBothDebtorAndPayer() throws Exception {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(getProfileResponse.getData()).thenReturn(profile);
+    @SneakyThrows
+    void receiptToIOSuccessWithDebtorAndPayer() {
+        doReturn(UserNotifyStatus.NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
 
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        setMock(IOClient.class, client);
-
-        @SuppressWarnings("unchecked")
-        Response<SendMessageResult> queueResponse = mock(Response.class);
-        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
-
-        setMock(NotifierQueueClientImpl.class, queueClient);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
+        Receipt receipt = new Receipt();
+        EventData eventData = new EventData();
+        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
+        eventData.setPayerFiscalCode(VALID_PAYER_CF);
         receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        receiptList.add(receipt);
+        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                        ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertNull(updatedReceipt.getIoMessageData());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
-        assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages, never()).setValue(any());
+        verify(receiptToIOServiceMock, times(2)).notifyMessage(anyString(), any(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
     }
 
     @Test
-    void runKoErrorResponseProfileOnDebtor() throws ApiException {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        ///messages
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        @SuppressWarnings("unchecked")
-        Response<SendMessageResult> queueResponse = mock(Response.class);
-        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
-
-        setMock(NotifierQueueClientImpl.class, queueClient);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
+    @SneakyThrows
+    void receiptToIOFailWithOnlyPayer() {
+        Receipt receipt = new Receipt();
+        EventData eventData = new EventData();
+        eventData.setPayerFiscalCode(VALID_PAYER_CF);
         receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        receiptList.add(receipt);
+        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertNull(updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
-        assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(1, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
-                fail();
-            }
-        }
+        verify(receiptToIOServiceMock, never()).notifyMessage(anyString(), any(), any());
+        verify(receiptToIOServiceMock, never()).verifyMessagesNotification(any(), anyList(), any());
     }
 
     @Test
-    void runKoErrorResponseProfileOnPayer() throws ApiException {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR, HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
+    @SneakyThrows
+    void receiptToIOFailVerifyTriggerRequeue() {
+        doReturn(UserNotifyStatus.NOT_NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        doReturn(true).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
 
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        ///messages
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_PAYER_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        @SuppressWarnings("unchecked")
-        Response<SendMessageResult> queueResponse = mock(Response.class);
-        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
-
-        setMock(NotifierQueueClientImpl.class, queueClient);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
+        Receipt receipt = new Receipt();
+        EventData eventData = new EventData();
+        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
         receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        receiptList.add(receipt);
+        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        Assertions.assertDoesNotThrow(() ->
-                function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertNull(updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertEquals(VALID_PAYER_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
-        assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(1, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID))){
-                fail();
-            }
-        }
-    }
-
-    @Test
-    void runKoErrorResponseMessagesBothDebtorAndPayer() throws Exception {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        @SuppressWarnings("unchecked")
-        Response<SendMessageResult> queueResponse = mock(Response.class);
-        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
-
-        setMock(NotifierQueueClientImpl.class, queueClient);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                        ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertNull(updatedReceipt.getIoMessageData());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
-        assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages, never()).setValue(any());
-    }
-
-    @Test
-    void runKoErrorResponseMessagesOnDebtor() throws Exception {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR, HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_PAYER_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        @SuppressWarnings("unchecked")
-        Response<SendMessageResult> queueResponse = mock(Response.class);
-        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
-
-        setMock(NotifierQueueClientImpl.class, queueClient);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                        ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_PAYER_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertNull(updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
-        assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(1, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_PAYER_MESSAGE_ID))){
-                fail();
-            }
-        }
-    }
-
-    @Test
-    void runKoErrorResponseMessagesOnPayer() throws Exception {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        @SuppressWarnings("unchecked")
-        Response<SendMessageResult> queueResponse = mock(Response.class);
-        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
-
-        setMock(NotifierQueueClientImpl.class, queueClient);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                        ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertNull(updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, updatedReceipt.getStatus());
-        assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(1, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
-                fail();
-            }
-        }
-    }
-
-    @Test
-    void runKoTooManyRetry() throws Exception {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-        receipt.setNotificationNumRetry(MAX_NUMBER_RETRY);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                        ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertNull(updatedReceipt.getIoMessageData());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(MAX_NUMBER_RETRY+1, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.UNABLE_TO_SEND, updatedReceipt.getStatus());
-        assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages, never()).setValue(any());
-    }
-
-    @Test
-    void runKoErrorSendingToQueue() throws Exception {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        setMock(IOClient.class, client);
-
-        @SuppressWarnings("unchecked")
-        Response<SendMessageResult> queueResponse = mock(Response.class);
-        when(queueResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.I_AM_A_TEAPOT.value());
-        when(queueClient.sendMessageToQueue(anyString())).thenReturn(queueResponse);
-
-        setMock(NotifierQueueClientImpl.class, queueClient);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertNull(updatedReceipt.getIoMessageData());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(ReceiptStatusType.UNABLE_TO_SEND, updatedReceipt.getStatus());
-        assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages, never()).setValue(any());
-    }
-
-    @Test
-    void runKoErrorSendingToQueueThrowsException() throws Exception {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        setMock(IOClient.class, client);
-
-        when(queueClient.sendMessageToQueue(anyString())).thenThrow(RuntimeException.class);
-
-        setMock(NotifierQueueClientImpl.class, queueClient);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", "*")
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                ));
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertNull(updatedReceipt.getIoMessageData());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(ReceiptStatusType.UNABLE_TO_SEND, updatedReceipt.getStatus());
-        assertNotNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages, never()).setValue(any());
-    }
-
-    @Test
-    void runOkWithDebtorAndPayerSameFiscalCodesInFiltered() throws Exception {
-        ///profile
-        @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(true);
-        when(getProfileResponse.getData()).thenReturn(profile);
-
-        when(client.getProfileByPOSTWithHttpInfo(any())).thenReturn(getProfileResponse);
-
-        ///messages
-        @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(VALID_DEBTOR_MESSAGE_ID);
-        when(messageResponse.getData()).thenReturn(createdMessage);
-        when(client.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any())).thenReturn(messageResponse);
-
-        setMock(IOClient.class, client);
-
-        List<Receipt> receiptList = new ArrayList<>();
-        EventData eventData = mock(EventData.class);
-        when(eventData.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventData.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-
-        receipt.setEventData(eventData);
-        receipt.setEventId(EVENT_ID);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
-
-        receiptList.add(receipt);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentReceipts = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<IOMessage>> documentMessages = (OutputBinding<List<IOMessage>>) spy(OutputBinding.class);
-
-
-        withEnvironmentVariable("CF_FILTER_NOTIFIER", VALID_DEBTOR_CF.concat(",").concat(VALID_PAYER_CF))
-                .and("CF_FILTER_ENABLED", "true")
-                .execute(() -> Assertions.assertDoesNotThrow(() ->
-                        function.processReceiptToIO(receiptList, documentReceipts, documentMessages, context
-                        )));
-
-
-        //Verify receipts update
-        verify(documentReceipts).setValue(receiptCaptor.capture());
-        Receipt updatedReceipt = receiptCaptor.getValue().get(0);
-        assertEquals(VALID_DEBTOR_MESSAGE_ID, updatedReceipt.getIoMessageData().getIdMessageDebtor());
-        assertNull(updatedReceipt.getIoMessageData().getIdMessagePayer());
-        assertEquals(EVENT_ID, updatedReceipt.getEventId());
-        assertEquals(0, updatedReceipt.getNotificationNumRetry());
-        assertEquals(ReceiptStatusType.IO_NOTIFIED, updatedReceipt.getStatus());
-        assertNull(updatedReceipt.getReasonErr());
-
-        verify(documentMessages).setValue(messageCaptor.capture());
-        List<IOMessage> messageList = messageCaptor.getValue();
-        assertEquals(1, messageList.size());
-        for(IOMessage message : messageList){
-            assertEquals(EVENT_ID,message.getEventId());
-
-            if(!(message.getMessageId().equals(VALID_DEBTOR_MESSAGE_ID))){
-                fail();
-            }
-        }
-    }
-
-    private <T> void tearDownInstance(Class<T> classInstanced) throws IllegalAccessException, NoSuchFieldException {
-        Field instance = classInstanced.getDeclaredField("instance");
-
-        instance.setAccessible(true);
-        instance.set(null, null);
-    }
-
-    private static <T> void setMock(Class<T> classToMock, T mock) {
-        try {
-            Field instance = classToMock.getDeclaredField("instance");
-            instance.setAccessible(true);
-            instance.set(instance, mock);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
     }
 }

@@ -6,18 +6,16 @@ import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.*;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
+import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
+import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.impl.ReceiptToIOServiceImpl;
-import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Azure Functions with CosmosDB trigger.
@@ -25,6 +23,16 @@ import java.util.Map;
 public class ReceiptToIO {
 
     private final Logger logger = LoggerFactory.getLogger(ReceiptToIO.class);
+
+    private final ReceiptToIOService receiptToIOService;
+
+    public ReceiptToIO() {
+        this.receiptToIOService = new ReceiptToIOServiceImpl();
+    }
+
+    ReceiptToIO(ReceiptToIOService receiptToIOService) {
+        this.receiptToIOService = receiptToIOService;
+    }
 
     /**
      * This function will be invoked when a CosmosDB trigger occurs
@@ -85,40 +93,37 @@ public class ReceiptToIO {
         int queueSent = 0;
 
         for (Receipt receipt : listReceipts) {
-            if (receipt != null &&
-                    receipt.getEventData() != null &&
-                    ReceiptToIOUtils.verifyReceiptStatus(receipt)
+            if (receipt == null
+                    || receipt.getEventData() == null
+                    || receipt.getEventData().getDebtorFiscalCode() == null
+                    || !statusCanBeNotified(receipt)
             ) {
-                String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
-                String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
-
-                Map<String, UserNotifyStatus> usersToBeVerified = new HashMap<>();
-
-                ReceiptToIOServiceImpl service = new ReceiptToIOServiceImpl();
-
-                //TODO verify if both fiscal code can be null
-                //Notify to debtor
-                service.notifyMessage(usersToBeVerified, debtorFiscalCode, UserType.DEBTOR, receipt);
-
-                if(payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode))){
-                    //Notify to payer
-                    service.notifyMessage(usersToBeVerified, payerFiscalCode, UserType.PAYER, receipt);
-                }
-
-                boolean boolQueueSent = service.verifyMessagesNotification(
-                        usersToBeVerified,
-                        messagesNotified,
-                        receipt
-                );
-
-                if(boolQueueSent){
-                    queueSent++;
-                }
-
-                receiptsNotified.add(receipt);
-            } else {
                 discarder++;
+                continue;
             }
+
+            String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
+            String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
+
+            EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
+
+            //Notify to debtor
+            UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
+            usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
+
+            if(payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode))){
+                //Notify to payer
+                UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
+                usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
+            }
+
+            boolean boolQueueSent = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+
+            if(boolQueueSent){
+                queueSent++;
+            }
+
+            receiptsNotified.add(receipt);
         }
 
         //Discarder info
@@ -138,4 +143,9 @@ public class ReceiptToIO {
             documentMessages.setValue(messagesNotified);
         }
     }
-}
+
+    public boolean statusCanBeNotified(Receipt receipt) {
+        return receipt.getStatus().equals(ReceiptStatusType.GENERATED) ||
+                receipt.getStatus().equals(ReceiptStatusType.SIGNED) ||
+                receipt.getStatus().equals(ReceiptStatusType.IO_NOTIFIER_RETRY);
+    }}

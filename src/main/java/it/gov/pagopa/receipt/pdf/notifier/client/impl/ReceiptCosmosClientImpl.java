@@ -32,7 +32,7 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
                 .buildClient();
     }
 
-    public ReceiptCosmosClientImpl(CosmosClient cosmosClient) {
+    ReceiptCosmosClientImpl(CosmosClient cosmosClient) {
         this.cosmosClient = cosmosClient;
     }
 
