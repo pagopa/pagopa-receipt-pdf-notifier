@@ -11,7 +11,14 @@ export function createReceipt(id) {
 		"eventId": id,
 		"eventData": {
 			"payerFiscalCode": "AAAAAA00A00A000A",
-			"debtorFiscalCode": "AAAAAA00A00A000A"
+			"debtorFiscalCode": "AAAAAA00A00A000A",
+			"amount": "200",
+			"cart": [
+				{
+					"payeeName": "Comune di Milano",
+					"subject": "ACI"
+				}
+			]
 		},
 		"status": "GENERATED",
 		"numRetry": 0,
