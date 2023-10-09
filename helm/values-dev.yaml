@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: ""
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
-    tag: "0.7.0"
+    tag: "0.7.0-1"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -108,7 +108,6 @@ microservice-chart:
     OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
     CF_FILTER_NOTIFIER: "*"
-
     OTEL_EXPORTER_OTLP_HEADERS: 'elastic-otl-secret-token'
   keyvault:
     name: "pagopa-d-receipts-kv"
