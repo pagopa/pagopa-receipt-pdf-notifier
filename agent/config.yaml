@@ -1,2 +1,3 @@
+excludeObjectNames: ["io.opentelemetry:*"]
 rules:
   - pattern: ".*"
