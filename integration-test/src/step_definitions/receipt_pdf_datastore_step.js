@@ -15,7 +15,7 @@ After( async function () {
 });
 
 
-Given('a random receipt with id {string} stored on receipt datastore with generated pdf', async function (id) {
+Given('a random receipt with id {string} stored on receipt datastore with generated pdf and status GENERATED', async function (id) {
     this.eventId = id;
     // prior cancellation to avoid dirty cases
     await deleteDocumentFromReceiptsDatastore(this.eventId, this.eventId);
