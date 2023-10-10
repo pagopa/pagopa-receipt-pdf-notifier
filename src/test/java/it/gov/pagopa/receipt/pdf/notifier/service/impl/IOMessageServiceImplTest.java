@@ -15,6 +15,7 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
+import java.util.Base64;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,11 +36,10 @@ class IOMessageServiceImplTest {
 
     @SystemStub
     private final EnvironmentVariables environmentVariables = new EnvironmentVariables(
-            "SUBJECT_PAYER", "Ricevuta del pagamento a {cart.items[0].payee.name}",
-            "SUBJECT_DEBTOR", "Ricevuta del pagamento a {cart.items[0].payee.name}",
-            "MARKDOWN_PAYER", "Hai pagato **{transaction.amount}** € a **{cart.items[0].payee.name}** per **{cart.items[0].subject}**.\n\nEcco la ricevuta con i dettagli.",
-            "MARKDOWN_DEBTOR", "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n**Oggetto:** {cart.items[0].subject}\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli.");
-
+            "SUBJECT_PAYER", base64Encode("Ricevuta del pagamento a {cart.items[0].payee.name}"),
+            "SUBJECT_DEBTOR", base64Encode("Ricevuta del pagamento a {cart.items[0].payee.name}"),
+            "MARKDOWN_PAYER", base64Encode("Hai pagato **{transaction.amount}** € a **{cart.items[0].payee.name}** per **{cart.items[0].subject}**.\n\nEcco la ricevuta con i dettagli."),
+            "MARKDOWN_DEBTOR", base64Encode("È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n**Oggetto:** {cart.items[0].subject}\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."));
 
     @BeforeEach
     void setUp() {
@@ -103,5 +103,9 @@ class IOMessageServiceImplTest {
         eventData.setCart(Collections.singletonList(cartItem));
         receipt.setEventData(eventData);
         return receipt;
+    }
+
+    private static String base64Encode(String value) {
+        return Base64.getMimeEncoder().encodeToString(value.getBytes());
     }
 }
