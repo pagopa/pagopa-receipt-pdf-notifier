@@ -84,7 +84,7 @@ microservice-chart:
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-d-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
-    IO_API_BASE_PATH: "https://api.dev.platform.pagopa.it/mock-io/api/v1" #TODO: Update with proper value
+    IO_API_BASE_PATH: "https://api.dev.platform.pagopa.it/mock-io/api/v1"
     ENABLE_ECS_CONSOLE: "true"
     CONSOLE_LOG_THRESHOLD: "DEBUG"
     CONSOLE_LOG_PATTERN: "%d{HH:mm:ss.SSS}[%thread]%-5level%logger{36}-%msg%n"
@@ -102,13 +102,12 @@ microservice-chart:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"
   envSecret:
-    APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-d-connection-string'
+    APPLICATIONINSIGHTS_CONNECTION_STRING: "ai-d-connection-string"
     COSMOS_RECEIPTS_CONN_STRING: "cosmos-receipt-connection-string"
     STORAGE_CONN_STRING: "receipts-storage-account-connection-string"
     OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
-    CF_FILTER_NOTIFIER: "*"
-    OTEL_EXPORTER_OTLP_HEADERS: 'elastic-otl-secret-token'
+    OTEL_EXPORTER_OTLP_HEADERS: "elastic-otl-secret-token"
   keyvault:
     name: "pagopa-d-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
