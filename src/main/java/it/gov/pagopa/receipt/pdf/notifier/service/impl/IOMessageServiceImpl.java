@@ -10,15 +10,16 @@ import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
 import org.apache.commons.text.StringSubstitutor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
 public class IOMessageServiceImpl implements IOMessageService {
 
-    private static final String SUBJECT_PAYER = System.getenv().getOrDefault("SUBJECT_PAYER", "");
-    private static final String SUBJECT_DEBTOR = System.getenv().getOrDefault("SUBJECT_DEBTOR", "");
-    private static final String MARKDOWN_PAYER = System.getenv().getOrDefault("MARKDOWN_PAYER", "");
-    private static final String MARKDOWN_DEBTOR = System.getenv().getOrDefault("MARKDOWN_DEBTOR", "");
+    private static final String SUBJECT_PAYER = new String(Base64.getMimeDecoder().decode(System.getenv().getOrDefault("SUBJECT_PAYER", "")));
+    private static final String SUBJECT_DEBTOR = new String(Base64.getMimeDecoder().decode(System.getenv().getOrDefault("SUBJECT_DEBTOR", "")));
+    private static final String MARKDOWN_PAYER = new String(Base64.getMimeDecoder().decode(System.getenv().getOrDefault("MARKDOWN_PAYER", "")));
+    private static final String MARKDOWN_DEBTOR = new String(Base64.getMimeDecoder().decode(System.getenv().getOrDefault("MARKDOWN_DEBTOR", "")));
 
     /**
      * {@inheritDoc}
