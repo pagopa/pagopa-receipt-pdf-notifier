@@ -10,16 +10,16 @@ import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
 import org.apache.commons.text.StringSubstitutor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 public class IOMessageServiceImpl implements IOMessageService {
 
-    private static final String SUBJECT_PAYER = new String(Base64.getMimeDecoder().decode(System.getenv().getOrDefault("SUBJECT_PAYER", "")));
-    private static final String SUBJECT_DEBTOR = new String(Base64.getMimeDecoder().decode(System.getenv().getOrDefault("SUBJECT_DEBTOR", "")));
-    private static final String MARKDOWN_PAYER = new String(Base64.getMimeDecoder().decode(System.getenv().getOrDefault("MARKDOWN_PAYER", "")));
-    private static final String MARKDOWN_DEBTOR = new String(Base64.getMimeDecoder().decode(System.getenv().getOrDefault("MARKDOWN_DEBTOR", "")));
+    private static final String SUBJECT_PAYER = new String(System.getenv().getOrDefault("SUBJECT_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+    private static final String SUBJECT_DEBTOR = new String(System.getenv().getOrDefault("SUBJECT_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+    private static final String MARKDOWN_PAYER = new String(System.getenv().getOrDefault("MARKDOWN_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+    private static final String MARKDOWN_DEBTOR = new String(System.getenv().getOrDefault("MARKDOWN_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
 
     /**
      * {@inheritDoc}
