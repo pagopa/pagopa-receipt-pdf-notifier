@@ -74,7 +74,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         try {
             boolean isNotifyAllowed = handleGetProfile(fiscalCode);
             if (!isNotifyAllowed) {
-                logger.info("User with fiscal code {} has not to be notified", fiscalCode);
+                logger.info("User {} has not to be notified", userType);
                 return UserNotifyStatus.NOT_TO_BE_NOTIFIED;
             }
 
@@ -82,7 +82,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             handleSendNotificationToUser(fiscalCode, userType, receipt);
             return UserNotifyStatus.NOTIFIED;
         } catch (Exception e) {
-            logger.error("Error notifying IO user with fiscal code {}", fiscalCode, e);
+            logger.error("Error notifying IO user {}", userType, e);
             return UserNotifyStatus.NOT_NOTIFIED;
         }
     }
@@ -125,7 +125,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         try {
             sendMessageResponse = this.ioClient.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(message);
         } catch (Exception e) {
-            String errorMsg = String.format("Error sending notification to IO user with fiscal code %s", fiscalCode);
+            String errorMsg = String.format("Error sending notification to IO user %s", userType);
             throw new ErrorToNotifyException(errorMsg, e);
         }
 
