@@ -15,7 +15,6 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-import java.util.Base64;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,8 +27,8 @@ class IOMessageServiceImplTest {
     private static final String EVENT_ID = "123";
     private static final String SUBJECT_PAYER = "Ricevuta del pagamento a payee";
     private static final String SUBJECT_DEBTOR = "Ricevuta del pagamento a payee";
-    private static final String MARKDOWN_PAYER = "Hai pagato **200** € a **payee** per **subject**.\n\nEcco la ricevuta con i dettagli.";
-    private static final String MARKDOWN_DEBTOR = "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: 200 €\n**Oggetto:** subject\n**Ente creditore**: payee\n\nEcco la ricevuta con i dettagli.";
+    private static final String MARKDOWN_PAYER = "Hai pagato **2.300,55** € a **payee** per **subject**.\n\nEcco la ricevuta con i dettagli.";
+    private static final String MARKDOWN_DEBTOR = "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: 2.300,55 €\n**Oggetto:** subject\n**Ente creditore**: payee\n\nEcco la ricevuta con i dettagli.";
 
 
     private IOMessageService sut;
@@ -96,7 +95,7 @@ class IOMessageServiceImplTest {
         receipt.setEventId(EVENT_ID);
 
         EventData eventData = new EventData();
-        eventData.setAmount("200");
+        eventData.setAmount("2300.55");
         CartItem cartItem = new CartItem();
         cartItem.setPayeeName("payee");
         cartItem.setSubject("subject");
