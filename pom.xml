@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.project</groupId>
     <artifactId>pagopa-receipt-pdf-notifier</artifactId>
-    <version>0.7.5</version>
+    <version>0.7.6</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-notifier</name>
