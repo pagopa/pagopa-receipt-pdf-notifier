@@ -78,6 +78,7 @@ microservice-chart:
           value: "70"
   fileConfig: {}
   envConfig:
+    LANG: "C.UTF-8"
     WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
     FUNCTIONS_WORKER_RUNTIME: "java"
     NOTIFIER_QUEUE_TOPIC: "pagopa-d-weu-receipts-queue-receipt-io-notifier-error"
