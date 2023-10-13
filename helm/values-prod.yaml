@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: ""
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
-    tag: "0.7.3-1"
+    tag: "0.7.6"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -78,6 +78,7 @@ microservice-chart:
           value: "70"
   fileConfig: {}
   envConfig:
+    LANG: "C.UTF-8"
     WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
     FUNCTIONS_WORKER_RUNTIME: "java"
     NOTIFIER_QUEUE_TOPIC: "pagopa-p-weu-receipts-queue-receipt-io-notifier-error"
@@ -85,6 +86,7 @@ microservice-chart:
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
     IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
+    # IO_API_BASE_PATH: "https://api.uat.platform.pagopa.it/mock-io/api/v1"
     ENABLE_ECS_CONSOLE: "true"
     CONSOLE_LOG_THRESHOLD: "DEBUG"
     CONSOLE_LOG_PATTERN: "%d{HH:mm:ss.SSS}[%thread]%-5level%logger{36}-%msg%n"
@@ -94,7 +96,7 @@ microservice-chart:
     OTEL_LOGS_EXPORTER: none
     OTEL_TRACES_SAMPLER: "always_on"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -Xmx768m -XX:+UseG1GC"
-    MARKDOWN_DEBTOR: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n**Oggetto:** {cart.items[0].subject}\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
+    MARKDOWN_DEBTOR: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
     SUBJECT_DEBTOR: "Ricevuta del pagamento a {cart.items[0].payee.name}"
     MARKDOWN_PAYER: "Hai pagato **{transaction.amount}** € a **{cart.items[0].payee.name}** per **{cart.items[0].subject}**.\n\nEcco la ricevuta con i dettagli."
     SUBJECT_PAYER: "Ricevuta del pagamento a {cart.items[0].payee.name}"
@@ -105,8 +107,10 @@ microservice-chart:
     APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-p-connection-string'
     COSMOS_RECEIPTS_CONN_STRING: "cosmos-receipt-connection-string"
     STORAGE_CONN_STRING: "receipts-storage-account-connection-string"
-    OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
+    # OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
+    OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key-official"
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
+    # CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter-nofilter"
     CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter"
     OTEL_EXPORTER_OTLP_HEADERS: 'elastic-otl-secret-token'
   keyvault:
