@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
@@ -26,7 +25,6 @@ import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +80,11 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             handleSendNotificationToUser(fiscalCode, userType, receipt);
             return UserNotifyStatus.NOTIFIED;
         } catch (Exception e) {
+            if (userType.equals(UserType.DEBTOR)) {
+                receipt.setReasonErr(buildReasonError(e.getMessage()));
+            } else {
+                receipt.setReasonErrPayer(buildReasonError(e.getMessage()));
+            }
             logger.error("Error notifying IO user {}", userType, e);
             return UserNotifyStatus.NOT_NOTIFIED;
         }
@@ -151,7 +154,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * @param usersToBeVerified Map<FiscalCode, Status> containing user notification status
      * @param messagesNotified  List of messages with message id to be saved on CosmosDB
      * @param receipt           Receipt to update and save on CosmosDB
-     * @return 1 if a message has been sent to queue
+     * @return true if a message has been sent to queue, false otherwise
      */
     @Override
     public boolean verifyMessagesNotification(
@@ -159,160 +162,56 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             List<IOMessage> messagesNotified,
             Receipt receipt
     ) throws JsonProcessingException {
-        String errorMessage = "";
-        EventData eventData = receipt.getEventData();
-        String debtorCF = eventData.getDebtorFiscalCode();
-        String payerCF = eventData.getPayerFiscalCode();
-        UserNotifyStatus debtorNotified = getUserNotifyStatus(debtorCF, usersToBeVerified.get(UserType.DEBTOR));
-        UserNotifyStatus payerNotified = getUserNotifyStatus(payerCF, usersToBeVerified.get(UserType.PAYER));
-        boolean queueSent = false;
+        UserNotifyStatus debtorNotified =  usersToBeVerified.getOrDefault(UserType.DEBTOR, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
+        UserNotifyStatus payerNotified = usersToBeVerified.getOrDefault(UserType.PAYER, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
 
-        if (receipt.getIoMessageData() != null) {
-            IOMessageData messageData = receipt.getIoMessageData();
-
-            //Verify notification to debtor user
-            errorMessage = handleMessageMetadata(
-                    messagesNotified,
-                    receipt,
-                    debtorNotified,
-                    messageData,
-                    UserType.DEBTOR,
-                    false);
-
-            //Verify notification to payer user
-            errorMessage = handleMessageMetadata(
-                    messagesNotified,
-                    receipt,
-                    payerNotified,
-                    messageData,
-                    UserType.PAYER,
-                    errorMessage != null);
-
+        if (debtorNotified.equals(UserNotifyStatus.NOTIFIED)) {
+            IOMessage ioMessage = getIoMessage(receipt, UserType.DEBTOR);
+            messagesNotified.add(ioMessage);
+        }
+        if (payerNotified.equals(UserNotifyStatus.NOTIFIED)) {
+            IOMessage ioMessage = getIoMessage(receipt, UserType.PAYER);
+            messagesNotified.add(ioMessage);
         }
 
         if (debtorNotified.equals(UserNotifyStatus.NOT_NOTIFIED) || payerNotified.equals(UserNotifyStatus.NOT_NOTIFIED)) {
-            queueSent = handleErrorMessageNotification(receipt, errorMessage);
+            return requeueReceiptForRetry(receipt);
+        }
 
-        } else if (debtorNotified.equals(UserNotifyStatus.NOT_TO_BE_NOTIFIED) &&
-                payerNotified.equals(UserNotifyStatus.NOT_TO_BE_NOTIFIED)) {
+        if (debtorNotified.equals(UserNotifyStatus.NOT_TO_BE_NOTIFIED) && payerNotified.equals(UserNotifyStatus.NOT_TO_BE_NOTIFIED)) {
             receipt.setStatus(ReceiptStatusType.NOT_TO_NOTIFY);
-
-        } else {
-            receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
-            receipt.setNotified_at(System.currentTimeMillis());
+            return false;
         }
-        return queueSent;
+
+        receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
+        receipt.setNotified_at(System.currentTimeMillis());
+        return false;
     }
 
-    /**
-     * Returns the status of the notification process for the given user
-     *
-     * @param fiscalCode User fiscal code
-     * @param userStatus User status from the previous process
-     * @return final userStatus
-     */
-    private UserNotifyStatus getUserNotifyStatus(String fiscalCode, UserNotifyStatus userStatus) {
-        return fiscalCode != null && !fiscalCode.isBlank() && userStatus != null
-                ?
-                userStatus : UserNotifyStatus.NOT_TO_BE_NOTIFIED;
-    }
-
-    /**
-     * Generates message's CosmosDB entry with message id and event id
-     *
-     * @param messagesNotified          List of messages to be saved on CosmosDB
-     * @param receipt                   Receipt containing event id
-     * @param userNotified              User notification status
-     * @param messageData               Message Data containing message id
-     * @param userType                  Enum User Type
-     * @param previousErrorMessageExist Verify if debtor verification went wrong before the payer's one
-     * @return error message if needed
-     */
-    private String handleMessageMetadata(
-            List<IOMessage> messagesNotified,
-            Receipt receipt,
-            UserNotifyStatus userNotified,
-            IOMessageData messageData,
-            UserType userType,
-            boolean previousErrorMessageExist
-    ) {
-        if (userNotified != null && messageData != null) {
-            if (userNotified.equals(UserNotifyStatus.NOTIFIED)) {
-                IOMessage ioMessage = new IOMessage();
-                if (userType.equals(UserType.DEBTOR)) {
-                    ioMessage.setMessageId(messageData.getIdMessageDebtor());
-                } else {
-                    ioMessage.setMessageId(messageData.getIdMessagePayer());
-                }
-                ioMessage.setEventId(receipt.getEventId());
-                messagesNotified.add(ioMessage);
-
-            } else if (userNotified.equals(UserNotifyStatus.NOT_NOTIFIED)) {
-                return generateErrorMessage(userType, previousErrorMessageExist);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Return correct error message
-     *
-     * @param userType                  Enum user type
-     * @param previousErrorMessageExist Boolean that indicates if the previous user also had errors
-     * @return error message
-     */
-    @NotNull
-    private String generateErrorMessage(UserType userType, boolean previousErrorMessageExist) {
-        if (previousErrorMessageExist) {
-            return "Error notifying both users";
-        }
-        if (userType.equals(UserType.DEBTOR)) {
-            return "Error notifying debtor user";
-        }
-        return "Error notifying payer user";
-    }
-
-    /**
-     * Handles final receipt update with error status and message
-     *
-     * @param receipt      Receipt to update
-     * @param errorMessage Error message to be saved on receipt
-     * @return 1 if a message has been sent to queue
-     */
-    private boolean handleErrorMessageNotification(Receipt receipt, String errorMessage) throws JsonProcessingException {
+    private boolean requeueReceiptForRetry(Receipt receipt) throws JsonProcessingException {
         int numRetry = receipt.getNotificationNumRetry();
-        boolean messageQueueSent = false;
-
-        ReasonError reasonError = new ReasonError();
-        reasonError.setCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        reasonError.setMessage(errorMessage);
-        receipt.setReasonErr(reasonError);
-
         receipt.setNotificationNumRetry(numRetry + 1);
-        logger.info("Error sending notification: {}", errorMessage);
 
-        if (numRetry < MAX_NUMBER_RETRY) {
-            receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
-
-            String receiptString = ObjectMapperUtils.writeValueAsString(receipt);
-            Response<SendMessageResult> response;
-            try {
-                response = this.notifierQueueClient.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
-                if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
-                    messageQueueSent = true;
-                }
-            } catch (Exception e) {
-                logger.error("Error in sending message to queue for receipt with event id: {}. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId(), e);
-            }
-        } else {
+        if (numRetry >= MAX_NUMBER_RETRY) {
             logger.error("Maximum number of retries for event with event id: {}. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId());
-        }
-
-        if (!messageQueueSent) {
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
+            return false;
         }
 
-        return messageQueueSent;
+        String receiptString = ObjectMapperUtils.writeValueAsString(receipt);
+        try {
+            Response<SendMessageResult> response = this.notifierQueueClient.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
+            if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
+                receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
+                return true;
+            }
+            receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
+            return false;
+        } catch (Exception e) {
+            logger.error("Error in sending message to queue for receipt with event id: {}. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId(), e);
+            receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
+            return false;
+        }
     }
 
     private boolean isToBeNotified(String fiscalCode, UserType userType, Receipt receipt) {
@@ -326,5 +225,21 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         return (userType.equals(UserType.DEBTOR) && receipt.getIoMessageData().getIdMessageDebtor() == null)
                 ||
                 (userType.equals(UserType.PAYER) && receipt.getIoMessageData().getIdMessagePayer() == null);
+    }
+
+    private IOMessage getIoMessage(Receipt receipt, UserType userType) {
+        IOMessageData ioMessageData = receipt.getIoMessageData();
+        String messageId = userType.equals(UserType.DEBTOR) ? ioMessageData.getIdMessageDebtor() : ioMessageData.getIdMessagePayer();
+        return IOMessage.builder()
+                .messageId(messageId)
+                .eventId(receipt.getEventId())
+                .build();
+    }
+
+    private ReasonError buildReasonError(String errorMessage) {
+        return ReasonError.builder()
+                .code(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+                .message(errorMessage)
+                .build();
     }
 }
