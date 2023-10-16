@@ -57,12 +57,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     }
 
     /**
-     * Handles IO user validation and notification
-     *
-     * @param fiscalCode    User fiscal code
-     * @param userType      Enum User type
-     * @param receipt       the Receipt
-     * @return the status of the notification {@link UserNotifyStatus}
+     * {@inheritDoc}
      */
     @Override
     public UserNotifyStatus notifyMessage(String fiscalCode, UserType userType, Receipt receipt) {
@@ -149,12 +144,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     }
 
     /**
-     * Verifies if all users have been notified
-     *
-     * @param usersToBeVerified Map<FiscalCode, Status> containing user notification status
-     * @param messagesNotified  List of messages with message id to be saved on CosmosDB
-     * @param receipt           Receipt to update and save on CosmosDB
-     * @return true if a message has been sent to queue, false otherwise
+     * {@inheritDoc}
      */
     @Override
     public boolean verifyMessagesNotification(
