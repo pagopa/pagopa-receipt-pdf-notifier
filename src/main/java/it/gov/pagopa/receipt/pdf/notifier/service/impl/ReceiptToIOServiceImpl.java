@@ -33,6 +33,8 @@ import java.util.Base64;
 import java.util.EnumMap;
 import java.util.List;
 
+import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.*;
+
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
     private final Logger logger = LoggerFactory.getLogger(ReceiptToIOServiceImpl.class);
@@ -62,18 +64,18 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     @Override
     public UserNotifyStatus notifyMessage(String fiscalCode, UserType userType, Receipt receipt) {
         if (!isToBeNotified(fiscalCode, userType, receipt)) {
-            return UserNotifyStatus.NOT_TO_BE_NOTIFIED;
+            return NOT_TO_BE_NOTIFIED;
         }
         try {
             boolean isNotifyAllowed = handleGetProfile(fiscalCode);
             if (!isNotifyAllowed) {
                 logger.info("User {} has not to be notified", userType);
-                return UserNotifyStatus.NOT_TO_BE_NOTIFIED;
+                return NOT_TO_BE_NOTIFIED;
             }
 
             //Send notification to user
             handleSendNotificationToUser(fiscalCode, userType, receipt);
-            return UserNotifyStatus.NOTIFIED;
+            return NOTIFIED;
         } catch (Exception e) {
             if (userType.equals(UserType.DEBTOR)) {
                 receipt.setReasonErr(buildReasonError(e.getMessage()));
@@ -81,7 +83,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 receipt.setReasonErrPayer(buildReasonError(e.getMessage()));
             }
             logger.error("Error notifying IO user {}", userType, e);
-            return UserNotifyStatus.NOT_NOTIFIED;
+            return NOT_NOTIFIED;
         }
     }
 
@@ -152,23 +154,23 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             List<IOMessage> messagesNotified,
             Receipt receipt
     ) throws JsonProcessingException {
-        UserNotifyStatus debtorNotified =  usersToBeVerified.getOrDefault(UserType.DEBTOR, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
-        UserNotifyStatus payerNotified = usersToBeVerified.getOrDefault(UserType.PAYER, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
+        UserNotifyStatus debtorNotified =  usersToBeVerified.getOrDefault(UserType.DEBTOR, NOT_TO_BE_NOTIFIED);
+        UserNotifyStatus payerNotified = usersToBeVerified.getOrDefault(UserType.PAYER, NOT_TO_BE_NOTIFIED);
 
-        if (debtorNotified.equals(UserNotifyStatus.NOTIFIED)) {
+        if (debtorNotified.equals(NOTIFIED)) {
             IOMessage ioMessage = getIoMessage(receipt, UserType.DEBTOR);
             messagesNotified.add(ioMessage);
         }
-        if (payerNotified.equals(UserNotifyStatus.NOTIFIED)) {
+        if (payerNotified.equals(NOTIFIED)) {
             IOMessage ioMessage = getIoMessage(receipt, UserType.PAYER);
             messagesNotified.add(ioMessage);
         }
 
-        if (debtorNotified.equals(UserNotifyStatus.NOT_NOTIFIED) || payerNotified.equals(UserNotifyStatus.NOT_NOTIFIED)) {
+        if (debtorNotified.equals(NOT_NOTIFIED) || payerNotified.equals(NOT_NOTIFIED)) {
             return requeueReceiptForRetry(receipt);
         }
 
-        if (debtorNotified.equals(UserNotifyStatus.NOT_TO_BE_NOTIFIED) && payerNotified.equals(UserNotifyStatus.NOT_TO_BE_NOTIFIED)) {
+        if (debtorNotified.equals(NOT_TO_BE_NOTIFIED) && payerNotified.equals(NOT_TO_BE_NOTIFIED)) {
             receipt.setStatus(ReceiptStatusType.NOT_TO_NOTIFY);
             return false;
         }
