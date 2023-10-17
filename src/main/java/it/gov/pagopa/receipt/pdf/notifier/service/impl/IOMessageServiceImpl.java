@@ -94,6 +94,9 @@ public class IOMessageServiceImpl implements IOMessageService {
     private String formatAmount(String amount) {
         BigDecimal valueToFormat = new BigDecimal(amount);
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
+        numberFormat.setMaximumFractionDigits(2);
+        numberFormat.setMinimumFractionDigits(2);
+
         return numberFormat.format(valueToFormat);
     }
 
