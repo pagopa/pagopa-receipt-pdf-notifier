@@ -1,12 +1,12 @@
 package it.gov.pagopa.receipt.pdf.notifier.entity.message;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class IOMessage {
 
     String messageId;

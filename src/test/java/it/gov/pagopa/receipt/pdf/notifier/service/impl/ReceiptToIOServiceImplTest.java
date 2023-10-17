@@ -82,8 +82,10 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(receipt.getIoMessageData());
         assertNotNull(receipt.getIoMessageData().getIdMessageDebtor());
         assertEquals(VALID_DEBTOR_MESSAGE_ID, receipt.getIoMessageData().getIdMessageDebtor());
-
+        assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
+
     @Test
     @SneakyThrows
     void notifyPayerWithSuccess() {
@@ -103,6 +105,8 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(receipt.getIoMessageData());
         assertNotNull(receipt.getIoMessageData().getIdMessagePayer());
         assertEquals(VALID_PAYER_MESSAGE_ID, receipt.getIoMessageData().getIdMessagePayer());
+        assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -125,7 +129,8 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(receipt.getIoMessageData());
         assertNotNull(receipt.getIoMessageData().getIdMessageDebtor());
         assertEquals(VALID_DEBTOR_MESSAGE_ID, receipt.getIoMessageData().getIdMessageDebtor());
-
+        assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -148,7 +153,8 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(receipt.getIoMessageData());
         assertNotNull(receipt.getIoMessageData().getIdMessagePayer());
         assertEquals(VALID_PAYER_MESSAGE_ID, receipt.getIoMessageData().getIdMessagePayer());
-
+        assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -161,10 +167,12 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
+        assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
-    void notifyFailNotNotifiedGetProfileResponseNull() {
+    void notifyFailDebtorNotNotifiedGetProfileResponseNull() {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
@@ -173,6 +181,26 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getReasonErr());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertNull(receipt.getReasonErrPayer());
+    }
+
+    @Test
+    void notifyFailPayerNotNotifiedGetProfileResponseNull() {
+        Receipt receipt = new Receipt();
+        receipt.setEventId(EVENT_ID);
+
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_PAYER_CF, UserType.PAYER, receipt);
+
+        assertNotNull(userNotifyStatus);
+        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
+        assertNull(receipt.getIoMessageData());
+        assertNull(receipt.getReasonErr());
+        assertNotNull(receipt.getReasonErrPayer());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErrPayer().getCode());
+        assertNotNull(receipt.getReasonErrPayer().getMessage());
     }
 
     @Test
@@ -189,6 +217,10 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getReasonErr());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -205,6 +237,8 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
+        assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -213,7 +247,8 @@ class ReceiptToIOServiceImplTest {
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
 
-        doThrow(MissingFieldsForNotificationException.class).when(ioMessageServiceMock).buildNewMessage(anyString(), any(), any());
+        String errorMessage = "error message";
+        doThrow(new MissingFieldsForNotificationException(errorMessage)).when(ioMessageServiceMock).buildNewMessage(anyString(), any(), any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -223,6 +258,10 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getReasonErr());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertEquals(errorMessage, receipt.getReasonErr().getMessage());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -241,6 +280,10 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getReasonErr());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -259,6 +302,10 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getReasonErr());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -278,6 +325,10 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getReasonErr());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -352,9 +403,6 @@ class ReceiptToIOServiceImplTest {
         assertTrue(result);
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertEquals("", receipt.getReasonErr().getMessage());
         assertEquals(1, receipt.getNotificationNumRetry());
     }
 
@@ -380,9 +428,6 @@ class ReceiptToIOServiceImplTest {
         assertTrue(result);
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertEquals("", receipt.getReasonErr().getMessage());
         assertEquals(1, receipt.getNotificationNumRetry());
     }
 
@@ -415,9 +460,6 @@ class ReceiptToIOServiceImplTest {
         assertEquals(1, messagesNotified.size());
         assertEquals(receipt.getEventId(), messagesNotified.get(0).getEventId());
         assertEquals(VALID_PAYER_MESSAGE_ID, messagesNotified.get(0).getMessageId());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        //assertEquals("Error notifying debtor user", receipt.getReasonErr().getMessage()); TODO se debtor fallisce ma payer va in success il payer sovrascrive il messaggio di erore del debtor con NULL
         assertEquals(1, receipt.getNotificationNumRetry());
     }
 
@@ -450,9 +492,6 @@ class ReceiptToIOServiceImplTest {
         assertEquals(1, messagesNotified.size());
         assertEquals(receipt.getEventId(), messagesNotified.get(0).getEventId());
         assertEquals(VALID_DEBTOR_MESSAGE_ID, messagesNotified.get(0).getMessageId());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertEquals("Error notifying payer user", receipt.getReasonErr().getMessage());
         assertEquals(1, receipt.getNotificationNumRetry());
     }
 
@@ -479,9 +518,6 @@ class ReceiptToIOServiceImplTest {
         assertFalse(result);
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertEquals("", receipt.getReasonErr().getMessage());
     }
 
     @Test
@@ -506,9 +542,6 @@ class ReceiptToIOServiceImplTest {
         assertFalse(result);
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertEquals("", receipt.getReasonErr().getMessage());
     }
 
     @Test
@@ -532,9 +565,6 @@ class ReceiptToIOServiceImplTest {
         assertFalse(result);
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertEquals("", receipt.getReasonErr().getMessage());
     }
 
     @NotNull
