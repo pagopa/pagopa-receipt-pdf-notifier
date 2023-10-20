@@ -85,8 +85,8 @@ microservice-chart:
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-p-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
-    IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
-    # IO_API_BASE_PATH: "https://api.uat.platform.pagopa.it/mock-io/api/v1"
+    # IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
+    IO_API_BASE_PATH: "https://api.uat.platform.pagopa.it/mock-io/api/v1"
     ENABLE_ECS_CONSOLE: "true"
     CONSOLE_LOG_THRESHOLD: "DEBUG"
     CONSOLE_LOG_PATTERN: "%d{HH:mm:ss.SSS}[%thread]%-5level%logger{36}-%msg%n"
@@ -98,7 +98,7 @@ microservice-chart:
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx768m -XX:+UseG1GC"
     MARKDOWN_DEBTOR: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
     SUBJECT_DEBTOR: "Ricevuta del pagamento a {cart.items[0].payee.name}"
-    MARKDOWN_PAYER: "Hai pagato **{transaction.amount}** € a **{cart.items[0].payee.name}** per **{cart.items[0].subject}**.\n\nEcco la ricevuta con i dettagli."
+    MARKDOWN_PAYER: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
     SUBJECT_PAYER: "Ricevuta del pagamento a {cart.items[0].payee.name}"
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
@@ -107,11 +107,11 @@ microservice-chart:
     APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-p-connection-string'
     COSMOS_RECEIPTS_CONN_STRING: "cosmos-receipt-connection-string"
     STORAGE_CONN_STRING: "receipts-storage-account-connection-string"
-    # OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
-    OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key-official"
+    OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
+    # OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key-official"
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
-    # CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter-nofilter"
-    CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter"
+    CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter-nofilter"
+    # CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter"
     OTEL_EXPORTER_OTLP_HEADERS: 'elastic-otl-secret-token'
   keyvault:
     name: "pagopa-p-receipts-kv"
