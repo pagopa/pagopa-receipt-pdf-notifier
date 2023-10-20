@@ -98,7 +98,7 @@ microservice-chart:
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -Xmx768m -XX:+UseG1GC"
     MARKDOWN_DEBTOR: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
     SUBJECT_DEBTOR: "Ricevuta del pagamento a {cart.items[0].payee.name}"
-    MARKDOWN_PAYER: "Hai pagato **{transaction.amount}** € a **{cart.items[0].payee.name}** per **{cart.items[0].subject}**.\n\nEcco la ricevuta con i dettagli."
+    MARKDOWN_PAYER: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
     SUBJECT_PAYER: "Ricevuta del pagamento a {cart.items[0].payee.name}"
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
