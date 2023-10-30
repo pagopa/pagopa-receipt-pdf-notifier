@@ -26,9 +26,7 @@ if test -f "$FILE"; then
     rm .env
 fi
 config=$(yq  -r '."microservice-chart".envConfig' ../helm/values-$ENV.yaml)
-for line in $(echo $config | jq -r '. | to_entries[] | select(.key) | "\(.key)=\(.value)"'); do
-    echo $line >> .env
-done
+echo "$config" | jq -r '. | to_entries[] | select(.key) | "\(.key)=\(.value)"' >> .env
 
 keyvault=$(yq  -r '."microservice-chart".keyvault.name' ../helm/values-$ENV.yaml)
 secret=$(yq  -r '."microservice-chart".envSecret' ../helm/values-$ENV.yaml)
@@ -44,11 +42,8 @@ for line in $(echo $secret | jq -r '. | to_entries[] | select(.key) | "\(.key)=\
 #  fi
 done
 
-
 stack_name=$(cd .. && basename "$PWD")
 docker compose -p "${stack_name}" up -d --remove-orphans --force-recreate --build
-#docker build -t receipt-pdf-datastore ../
-# docker run -d -p 60486:80 --name="${stack_name}" receipt-pdf-datastore
 
 # waiting the containers
 printf 'Waiting for the service'

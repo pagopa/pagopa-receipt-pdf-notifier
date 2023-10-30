@@ -95,11 +95,11 @@ microservice-chart:
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
     OTEL_LOGS_EXPORTER: none
     OTEL_TRACES_SAMPLER: "always_on"
-    AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx768m -XX:+UseG1GC"
-    MARKDOWN_DEBTOR: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-    SUBJECT_DEBTOR: "Ricevuta del pagamento a {cart.items[0].payee.name}"
-    MARKDOWN_PAYER: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-    SUBJECT_PAYER: "Ricevuta del pagamento a {cart.items[0].payee.name}"
+    AZURE_FUNCTIONS_MESH_JAVA_OPTS: '-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx768m -XX:+UseG1GC'
+    MARKDOWN_DEBTOR: 'È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli.'
+    SUBJECT_DEBTOR: 'Ricevuta del pagamento a {cart.items[0].payee.name}'
+    MARKDOWN_PAYER: 'Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli.'
+    SUBJECT_PAYER: 'Ricevuta del pagamento a {cart.items[0].payee.name}'
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"
