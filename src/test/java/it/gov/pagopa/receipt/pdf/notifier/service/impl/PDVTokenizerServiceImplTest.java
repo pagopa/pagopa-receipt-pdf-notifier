@@ -28,6 +28,7 @@ class PDVTokenizerServiceImplTest {
 
     private static final String TOKEN = "token";
     private static final String FISCAL_CODE = "fiscalCode";
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private HttpResponse<String> httpResponseMock;

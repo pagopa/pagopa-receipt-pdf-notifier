@@ -13,6 +13,9 @@ import org.apache.http.HttpStatus;
 
 import java.net.http.HttpResponse;
 
+/**
+ * {@inheritDoc}
+ */
 public class PDVTokenizerServiceImpl implements PDVTokenizerService {
 
     private final PDVTokenizerClient pdvTokenizerClient;
@@ -25,6 +28,9 @@ public class PDVTokenizerServiceImpl implements PDVTokenizerService {
         this.pdvTokenizerClient = pdvTokenizerClient;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getToken(String fiscalCode) throws JsonProcessingException, PDVTokenizerException {
         PiiResource piiResource = PiiResource.builder().pii(fiscalCode).build();
@@ -42,6 +48,9 @@ public class PDVTokenizerServiceImpl implements PDVTokenizerService {
         return tokenResource.getToken();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getFiscalCode(String token) throws PDVTokenizerException, JsonProcessingException {
         HttpResponse<String> httpResponse = pdvTokenizerClient.findPIIByToken(token);
@@ -56,6 +65,9 @@ public class PDVTokenizerServiceImpl implements PDVTokenizerService {
         return piiResource.getPii();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String generateTokenForFiscalCode(String fiscalCode) throws PDVTokenizerException, JsonProcessingException {
         PiiResource piiResource = PiiResource.builder().pii(fiscalCode).build();

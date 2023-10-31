@@ -11,6 +11,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+/**
+ * {@inheritDoc}
+ */
 public class PDVTokenizerClientImpl implements PDVTokenizerClient {
 
     private final Logger logger = LoggerFactory.getLogger(PDVTokenizerClientImpl.class);
@@ -45,6 +48,9 @@ public class PDVTokenizerClientImpl implements PDVTokenizerClient {
         this.client = client;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public HttpResponse<String> searchTokenByPII(String piiBody) throws PDVTokenizerException {
         String uri = String.format("%s%s", BASE_PATH, SEARCH_TOKEN_ENDPOINT);
@@ -59,6 +65,9 @@ public class PDVTokenizerClientImpl implements PDVTokenizerClient {
         return makeCall(request);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public HttpResponse<String> findPIIByToken(String token) throws PDVTokenizerException {
         String endpoint = String.format(FIND_PII_ENDPOINT, token);
@@ -73,6 +82,9 @@ public class PDVTokenizerClientImpl implements PDVTokenizerClient {
         return makeCall(request);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public HttpResponse<String> createToken(String piiBody) throws PDVTokenizerException {
         String uri = String.format("%s%s", BASE_PATH, CREATE_TOKEN_ENDPOINT);
