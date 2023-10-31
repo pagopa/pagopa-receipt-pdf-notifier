@@ -87,6 +87,7 @@ microservice-chart:
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
     IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
     # IO_API_BASE_PATH: "https://api.uat.platform.pagopa.it/mock-io/api/v1"
+    PDV_TOKENIZER_BASE_PATH: "https://api.uat.tokenizer.pdv.pagopa.it/tokenizer/v1"
     ENABLE_ECS_CONSOLE: "true"
     CONSOLE_LOG_THRESHOLD: "DEBUG"
     CONSOLE_LOG_PATTERN: "%d{HH:mm:ss.SSS}[%thread]%-5level%logger{36}-%msg%n"
@@ -113,6 +114,7 @@ microservice-chart:
     # CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter-nofilter"
     CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter"
     OTEL_EXPORTER_OTLP_HEADERS: "elastic-otl-secret-token"
+    PDV_TOKENIZER_SUBSCRIPTION_KEY: "" #TODO
   keyvault:
     name: "pagopa-u-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
