@@ -20,7 +20,7 @@ public class PDVTokenizerClientImpl implements PDVTokenizerClient {
 
     private static final String BASE_PATH = System.getenv().getOrDefault("PDV_TOKENIZER_BASE_PATH", "https://api.uat.tokenizer.pdv.pagopa.it/tokenizer/v1");
     private static final String SUBSCRIPTION_KEY = System.getenv().getOrDefault("PDV_TOKENIZER_SUBSCRIPTION_KEY", "");
-    private static final String SUBSCRIPTION_KEY_HEADER =  System.getenv().getOrDefault("OCP_APIM_HEADER_KEY", "Ocp-Apim-Subscription-Key");
+    private static final String SUBSCRIPTION_KEY_HEADER =  System.getenv().getOrDefault("TOKENIZER_APIM_HEADER_KEY", "x-api-key");
     private static final String SEARCH_TOKEN_ENDPOINT = System.getenv().getOrDefault("PDV_TOKENIZER_SEARCH_TOKEN_ENDPOINT", "/tokens/search");
     private static final String FIND_PII_ENDPOINT = System.getenv().getOrDefault("PDV_TOKENIZER_FIND_PII_ENDPOINT", "/tokens/%s/pii");
     private static final String CREATE_TOKEN_ENDPOINT = System.getenv().getOrDefault("PDV_TOKENIZER_CREATE_TOKEN_ENDPOINT", "/tokens");

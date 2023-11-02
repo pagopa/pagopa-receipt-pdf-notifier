@@ -79,8 +79,9 @@ then replace env variables with correct values
 | `IO_API_BASE_PATH`                    | Base path to IO APIs                                                             |  https://api.dev.platform.pagopa.it/mock-io/api/v1   |
 | `IO_API_PROFILES_PATH`                | Path to IO check user API                                                        |                      /profiles                       |
 | `IO_API_MESSAGES_PATH`                | Path to IO send messages API                                                     |                      /messages                       |
-| `PDV_TOKENIZER_BASE_PATH`             | Base path to PDV Tokenizer                                                       | https://api.uat.tokenizer.pdv.pagopa.it/tokenizer/v1 |
 | `OCP_APIM_HEADER_KEY`                 | OCP APIM header key                                                              |              Ocp-Apim-Subscription-Key               |
+| `PDV_TOKENIZER_BASE_PATH`             | Base path to PDV Tokenizer                                                       | https://api.uat.tokenizer.pdv.pagopa.it/tokenizer/v1 |
+| `TOKENIZER_APIM_HEADER_KEY`           | Tokenizer APIM header key                                                        |                      x-api-key                       |
 | `PDV_TOKENIZER_SEARCH_TOKEN_ENDPOINT` | PDV Tokenizer endpoint to search token                                           |                    /tokens/search                    |
 | `PDV_TOKENIZER_FIND_PII_ENDPOINT`     | PDV Tokenizer endpoint to find fiscal code                                       |                 /tokens/{token}/pii                  |
 | `PDV_TOKENIZER_CREATE_TOKEN_ENDPOINT` | PDV Tokenizer endpoint to generate token                                         |                       /tokens                        |
