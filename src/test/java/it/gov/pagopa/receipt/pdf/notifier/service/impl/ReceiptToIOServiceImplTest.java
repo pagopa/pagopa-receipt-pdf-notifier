@@ -3,6 +3,8 @@ package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.gov.pagopa.receipt.pdf.notifier.client.IOClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
@@ -10,16 +12,14 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
+import it.gov.pagopa.receipt.pdf.notifier.exception.IOAPIException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.CreatedMessage;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
+import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfileResponse;
+import it.gov.pagopa.receipt.pdf.notifier.model.io.message.IOMessageResponse;
+import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import lombok.SneakyThrows;
@@ -32,6 +32,7 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.EnumMap;
 
@@ -47,6 +48,8 @@ class ReceiptToIOServiceImplTest {
     private static final String INVALID_CF = "an invalid fiscal code";
     private static final String VALID_DEBTOR_CF = "a valid debtor fiscal code";
     private static final String EVENT_ID = "123";
+    
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @SystemStub
     private EnvironmentVariables environmentVariables = new EnvironmentVariables("CF_FILTER_NOTIFIER", VALID_DEBTOR_CF + "," + VALID_PAYER_CF);
@@ -55,7 +58,7 @@ class ReceiptToIOServiceImplTest {
 
     private NotifierQueueClient notifierQueueClientMock;
 
-    private IOMessageService ioMessageServiceMock;
+    private IOService ioServiceMock;
 
     private PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapperMock;
 
@@ -65,9 +68,9 @@ class ReceiptToIOServiceImplTest {
     void setUp() {
         ioClientMock = mock(IOClient.class);
         notifierQueueClientMock = mock(NotifierQueueClient.class);
-        ioMessageServiceMock = mock(IOMessageService.class);
+        ioServiceMock = mock(IOService.class);
         pdvTokenizerServiceRetryWrapperMock = mock(PDVTokenizerServiceRetryWrapper.class);
-        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, ioMessageServiceMock, pdvTokenizerServiceRetryWrapperMock);
+        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, ioServiceMock, pdvTokenizerServiceRetryWrapperMock);
     }
 
     @Test
@@ -75,11 +78,11 @@ class ReceiptToIOServiceImplTest {
     void notifyDebtorWithSuccess() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
-        ApiResponse<CreatedMessage> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_DEBTOR_MESSAGE_ID);
-        doReturn(messageResponse).when(ioClientMock).submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any());
+        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_DEBTOR_MESSAGE_ID);
+        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -100,11 +103,11 @@ class ReceiptToIOServiceImplTest {
     void notifyPayerWithSuccess() {
         doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
-        ApiResponse<CreatedMessage> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_PAYER_MESSAGE_ID);
-        doReturn(messageResponse).when(ioClientMock).submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any());
+        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_PAYER_MESSAGE_ID);
+        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -125,11 +128,11 @@ class ReceiptToIOServiceImplTest {
     void notifyDebtorWithSuccessWithMessageData() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
-        ApiResponse<CreatedMessage> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_DEBTOR_MESSAGE_ID);
-        doReturn(messageResponse).when(ioClientMock).submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any());
+        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_DEBTOR_MESSAGE_ID);
+        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -151,11 +154,11 @@ class ReceiptToIOServiceImplTest {
     void notifyPayerWithSuccessWithMessageData() {
         doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
-        ApiResponse<CreatedMessage> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_PAYER_MESSAGE_ID);
-        doReturn(messageResponse).when(ioClientMock).submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any());
+        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_PAYER_MESSAGE_ID);
+        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -261,12 +264,32 @@ class ReceiptToIOServiceImplTest {
     }
 
     @Test
+    void notifyFailDebtorNotNotifiedGetProfileThrowsIOAPIException() throws IOAPIException {
+        String errorMessage = "error message";
+        doThrow(new IOAPIException(errorMessage, HttpStatus.SC_BAD_REQUEST)).when(ioClientMock).getProfile(any());
+
+        Receipt receipt = new Receipt();
+        receipt.setEventId(EVENT_ID);
+
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+
+        assertNotNull(userNotifyStatus);
+        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
+        assertNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getReasonErr());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertEquals(errorMessage, receipt.getReasonErr().getMessage());
+        assertNull(receipt.getReasonErrPayer());
+    }
+
+    @Test
     @SneakyThrows
     void notifyFailNotNotifiedGetProfileResponseStatusNotOK() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, false);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, false);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -287,8 +310,8 @@ class ReceiptToIOServiceImplTest {
     void notifyFailNotToBeNotifiedGetProfileResponseNotAllowed() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, false);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, false);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -307,11 +330,11 @@ class ReceiptToIOServiceImplTest {
     void notifyFailNotNotifiedBuildMessageException() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
         String errorMessage = "error message";
-        doThrow(new MissingFieldsForNotificationException(errorMessage)).when(ioMessageServiceMock).buildNewMessage(anyString(), any(), any());
+        doThrow(new MissingFieldsForNotificationException(errorMessage)).when(ioServiceMock).buildMessagePayload(anyString(), any(), any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -329,13 +352,14 @@ class ReceiptToIOServiceImplTest {
 
     @Test
     @SneakyThrows
-    void notifyFailNotNotifiedNotifyReturnException() {
+    void notifyFailNotNotifiedNotifyReturnIOAPIException() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
-        doThrow(ApiException.class).when(ioClientMock).submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any());
+        String errorMessage = "error message";
+        doThrow(new IOAPIException(errorMessage, HttpStatus.SC_BAD_REQUEST)).when(ioClientMock).submitMessage(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -348,6 +372,7 @@ class ReceiptToIOServiceImplTest {
         assertNotNull(receipt.getReasonErr());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
         assertNotNull(receipt.getReasonErr().getMessage());
+        assertEquals(errorMessage, receipt.getReasonErr().getMessage());
         assertNull(receipt.getReasonErrPayer());
     }
 
@@ -356,10 +381,10 @@ class ReceiptToIOServiceImplTest {
     void notifyFailNotNotifiedNotifyResponseNull() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
-        doReturn(null).when(ioClientMock).submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any());
+        doReturn(null).when(ioClientMock).submitMessage(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -380,11 +405,11 @@ class ReceiptToIOServiceImplTest {
     void notifyFailNotNotifiedNotifyResponseStatusNotCreated() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
-        ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
+        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
-        ApiResponse<CreatedMessage> messageResponse = mockNotifyResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
-        doReturn(messageResponse).when(ioClientMock).submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(any());
+        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
+        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -644,25 +669,25 @@ class ReceiptToIOServiceImplTest {
         return queueResponse;
     }
 
+    @SneakyThrows
     @NotNull
-    private ApiResponse<CreatedMessage> mockNotifyResponse(int status, String messageId) {
+    private HttpResponse<String> mockNotifyResponse(int status, String messageId) {
         @SuppressWarnings("unchecked")
-        ApiResponse<CreatedMessage> messageResponse = mock(ApiResponse.class);
-        when(messageResponse.getStatusCode()).thenReturn(status);
-        CreatedMessage createdMessage = mock(CreatedMessage.class);
-        when(createdMessage.getId()).thenReturn(messageId);
-        when(messageResponse.getData()).thenReturn(createdMessage);
+        HttpResponse<String> messageResponse = mock(HttpResponse.class);
+        when(messageResponse.statusCode()).thenReturn(status);
+        IOMessageResponse ioMessageResponse = IOMessageResponse.builder().id(messageId).build();
+        when(messageResponse.body()).thenReturn(objectMapper.writeValueAsString(ioMessageResponse));
         return messageResponse;
     }
 
+    @SneakyThrows
     @NotNull
-    private ApiResponse<LimitedProfile> mockGetProfileResponse(int status, boolean allowed) {
+    private HttpResponse<String> mockGetProfileResponse(int status, boolean allowed) {
         @SuppressWarnings("unchecked")
-        ApiResponse<LimitedProfile> getProfileResponse = mock(ApiResponse.class);
-        when(getProfileResponse.getStatusCode()).thenReturn(status);
-        LimitedProfile profile = mock(LimitedProfile.class);
-        when(profile.getSenderAllowed()).thenReturn(allowed);
-        when(getProfileResponse.getData()).thenReturn(profile);
+        HttpResponse<String> getProfileResponse = mock(HttpResponse.class);
+        when(getProfileResponse.statusCode()).thenReturn(status);
+        IOProfileResponse profile = IOProfileResponse.builder().senderAllowed(allowed).build();
+        when(getProfileResponse.body()).thenReturn(objectMapper.writeValueAsString(profile));
         return getProfileResponse;
     }
 }

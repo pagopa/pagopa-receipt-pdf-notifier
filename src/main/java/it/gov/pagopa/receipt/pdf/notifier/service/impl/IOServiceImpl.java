@@ -4,11 +4,11 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.CartItem;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.MessageContent;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.ThirdPartyData;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
+import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessageContent;
+import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
+import it.gov.pagopa.receipt.pdf.notifier.model.io.message.ThirdPartyData;
+import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
 import org.apache.commons.text.StringSubstitutor;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class IOMessageServiceImpl implements IOMessageService {
+/**
+ * {@inheritDoc}
+ */
+public class IOServiceImpl implements IOService {
 
     private static final String SUBJECT_PAYER = new String(System.getenv().getOrDefault("SUBJECT_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String SUBJECT_DEBTOR = new String(System.getenv().getOrDefault("SUBJECT_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
@@ -31,13 +34,12 @@ public class IOMessageServiceImpl implements IOMessageService {
      * {@inheritDoc}
      */
     @Override
-    public NewMessage buildNewMessage(String fiscalCode, Receipt receipt, UserType userType) throws MissingFieldsForNotificationException {
-        NewMessage message = new NewMessage();
-        message.setFiscalCode(fiscalCode);
-        message.setFeatureLevelType("ADVANCED");
-        message.setContent(buildMessageContent(receipt, userType));
-
-        return message;
+    public MessagePayload buildMessagePayload(String fiscalCode, Receipt receipt, UserType userType) throws MissingFieldsForNotificationException {
+        return MessagePayload.builder()
+                .fiscalCode(fiscalCode)
+                .featureLevelType("ADVANCED")
+                .content(buildMessageContent(receipt, userType))
+                .build();
     }
 
     @NotNull
@@ -53,22 +55,16 @@ public class IOMessageServiceImpl implements IOMessageService {
             subject = stringSubstitutor.replace(SUBJECT_PAYER);
             markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
         }
-        MessageContent content = new MessageContent();
-        content.setSubject(subject);
-        content.setMarkdown(markdown);
-        content.setThirdPartyData(buildThirdPartyData(receipt));
 
-        return content;
+        return MessageContent.builder()
+                .subject(subject)
+                .markdown(markdown)
+                .thirdPartyData(ThirdPartyData.builder()
+                        .id(receipt.getEventId())
+                        .hasAttachments(true)
+                        .build())
+                .build();
     }
-
-    @NotNull
-    private ThirdPartyData buildThirdPartyData(Receipt receipt) {
-        ThirdPartyData thirdPartyData = new ThirdPartyData();
-        thirdPartyData.setId(receipt.getEventId());
-        thirdPartyData.setHasAttachments(true);
-        return thirdPartyData;
-    }
-
 
     @NotNull
     private StringSubstitutor buildStringSubstitutor(EventData eventData, String receiptId) throws MissingFieldsForNotificationException {
