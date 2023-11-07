@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * Model class for the error response of the PDV Tokenizer
+ * Model class for the error response of the PDV Tokenizer for status 400, 500
  */
 @Data
 @Builder
