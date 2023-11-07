@@ -11,7 +11,7 @@ public class PDVTokenizerException extends Exception {
     private final int statusCode;
 
     /**
-     * Constructs new exception with provided message
+     * Constructs new exception with provided message and status code
      *
      * @param message Detail message
      * @param statusCode status code
@@ -22,7 +22,7 @@ public class PDVTokenizerException extends Exception {
     }
 
     /**
-     * Constructs new exception with provided message
+     * Constructs new exception with provided message, status code and cause
      *
      * @param message Detail message
      * @param statusCode status code
