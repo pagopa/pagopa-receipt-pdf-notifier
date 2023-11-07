@@ -19,7 +19,7 @@ import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
-import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerService;
+import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import lombok.SneakyThrows;
 import org.apache.http.HttpStatus;
@@ -56,7 +56,7 @@ class ReceiptToIOServiceImplTest {
 
     private IOMessageService ioMessageServiceMock;
 
-    private PDVTokenizerService pdvTokenizerServiceMock;
+    private PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapperMock;
 
     private ReceiptToIOService sut;
 
@@ -65,14 +65,14 @@ class ReceiptToIOServiceImplTest {
         ioClientMock = mock(IOClient.class);
         notifierQueueClientMock = mock(NotifierQueueClient.class);
         ioMessageServiceMock = mock(IOMessageService.class);
-        pdvTokenizerServiceMock = mock(PDVTokenizerServiceImpl.class);
-        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, ioMessageServiceMock, pdvTokenizerServiceMock);
+        pdvTokenizerServiceRetryWrapperMock = mock(PDVTokenizerServiceRetryWrapper.class);
+        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, ioMessageServiceMock, pdvTokenizerServiceRetryWrapperMock);
     }
 
     @Test
     @SneakyThrows
     void notifyDebtorWithSuccess() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -97,7 +97,7 @@ class ReceiptToIOServiceImplTest {
     @Test
     @SneakyThrows
     void notifyPayerWithSuccess() {
-        doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -122,7 +122,7 @@ class ReceiptToIOServiceImplTest {
     @Test
     @SneakyThrows
     void notifyDebtorWithSuccessWithMessageData() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -148,7 +148,7 @@ class ReceiptToIOServiceImplTest {
     @Test
     @SneakyThrows
     void notifyPayerWithSuccessWithMessageData() {
-        doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -173,7 +173,7 @@ class ReceiptToIOServiceImplTest {
 
     @Test
     void notifyFailCallToTokenizerThrowsPDVTokenizerException() throws PDVTokenizerException, JsonProcessingException {
-        doThrow(new PDVTokenizerException("", HttpStatus.SC_BAD_REQUEST)).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doThrow(new PDVTokenizerException("", HttpStatus.SC_BAD_REQUEST)).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -191,7 +191,7 @@ class ReceiptToIOServiceImplTest {
 
     @Test
     void notifyFailCallToTokenizerThrowsJsonProcessingException() throws PDVTokenizerException, JsonProcessingException {
-        doThrow(JsonProcessingException.class).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doThrow(JsonProcessingException.class).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -209,7 +209,7 @@ class ReceiptToIOServiceImplTest {
 
     @Test
     void notifyFailNotToBeNotifiedFilterBlock() throws PDVTokenizerException, JsonProcessingException {
-        doReturn(INVALID_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(INVALID_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -225,7 +225,7 @@ class ReceiptToIOServiceImplTest {
 
     @Test
     void notifyFailDebtorNotNotifiedGetProfileResponseNull() throws PDVTokenizerException, JsonProcessingException {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -243,7 +243,7 @@ class ReceiptToIOServiceImplTest {
 
     @Test
     void notifyFailPayerNotNotifiedGetProfileResponseNull() throws PDVTokenizerException, JsonProcessingException {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -262,7 +262,7 @@ class ReceiptToIOServiceImplTest {
     @Test
     @SneakyThrows
     void notifyFailNotNotifiedGetProfileResponseStatusNotOK() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, false);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -284,7 +284,7 @@ class ReceiptToIOServiceImplTest {
     @Test
     @SneakyThrows
     void notifyFailNotToBeNotifiedGetProfileResponseNotAllowed() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, false);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -304,7 +304,7 @@ class ReceiptToIOServiceImplTest {
     @Test
     @SneakyThrows
     void notifyFailNotNotifiedBuildMessageException() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -329,7 +329,7 @@ class ReceiptToIOServiceImplTest {
     @Test
     @SneakyThrows
     void notifyFailNotNotifiedNotifyReturnException() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -353,7 +353,7 @@ class ReceiptToIOServiceImplTest {
     @Test
     @SneakyThrows
     void notifyFailNotNotifiedNotifyResponseNull() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -377,7 +377,7 @@ class ReceiptToIOServiceImplTest {
     @Test
     @SneakyThrows
     void notifyFailNotNotifiedNotifyResponseStatusNotCreated() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceMock).getFiscalCode(anyString());
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());

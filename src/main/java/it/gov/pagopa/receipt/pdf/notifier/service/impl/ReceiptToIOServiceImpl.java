@@ -23,7 +23,7 @@ import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
-import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerService;
+import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
@@ -35,7 +35,9 @@ import java.util.Base64;
 import java.util.EnumMap;
 import java.util.List;
 
-import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.*;
+import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOTIFIED;
+import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_NOTIFIED;
+import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_TO_BE_NOTIFIED;
 
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
@@ -47,20 +49,20 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     private final IOClient ioClient;
     private final NotifierQueueClient notifierQueueClient;
     private final IOMessageService ioMessageService;
-    private final PDVTokenizerService pdvTokenizerService;
+    private final PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper;
 
     public ReceiptToIOServiceImpl() {
         this.ioClient = IOClient.getInstance();
         this.notifierQueueClient = NotifierQueueClientImpl.getInstance();
         this.ioMessageService = new IOMessageServiceImpl();
-        this.pdvTokenizerService = new PDVTokenizerServiceImpl();
+        this.pdvTokenizerServiceRetryWrapper = new PDVTokenizerServiceRetryWrapperImpl();
     }
 
-    ReceiptToIOServiceImpl(IOClient ioClient, NotifierQueueClient notifierQueueClient, IOMessageService ioMessageService, PDVTokenizerService pdvTokenizerService) {
+    ReceiptToIOServiceImpl(IOClient ioClient, NotifierQueueClient notifierQueueClient, IOMessageService ioMessageService, PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper) {
         this.ioClient = ioClient;
         this.notifierQueueClient = notifierQueueClient;
         this.ioMessageService = ioMessageService;
-        this.pdvTokenizerService = pdvTokenizerService;
+        this.pdvTokenizerServiceRetryWrapper = pdvTokenizerServiceRetryWrapper;
     }
 
     /**
@@ -69,7 +71,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     @Override
     public UserNotifyStatus notifyMessage(String fiscalCodeToken, UserType userType, Receipt receipt) {
         try {
-            String fiscalCode = pdvTokenizerService.getFiscalCode(fiscalCodeToken);
+            String fiscalCode = pdvTokenizerServiceRetryWrapper.getFiscalCodeWithRetry(fiscalCodeToken);
 
             if (!isToBeNotified(fiscalCode, userType, receipt)) {
                 return NOT_TO_BE_NOTIFIED;
