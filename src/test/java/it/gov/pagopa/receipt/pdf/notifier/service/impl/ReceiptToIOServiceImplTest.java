@@ -264,7 +264,9 @@ class ReceiptToIOServiceImplTest {
     }
 
     @Test
-    void notifyFailDebtorNotNotifiedGetProfileThrowsIOAPIException() throws IOAPIException {
+    void notifyFailDebtorNotNotifiedGetProfileThrowsIOAPIException() throws IOAPIException, PDVTokenizerException, JsonProcessingException {
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+
         String errorMessage = "error message";
         doThrow(new IOAPIException(errorMessage, HttpStatus.SC_BAD_REQUEST)).when(ioClientMock).getProfile(any());
 
@@ -277,7 +279,7 @@ class ReceiptToIOServiceImplTest {
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
         assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, receipt.getReasonErr().getCode());
         assertNotNull(receipt.getReasonErr().getMessage());
         assertEquals(errorMessage, receipt.getReasonErr().getMessage());
         assertNull(receipt.getReasonErrPayer());
@@ -370,7 +372,7 @@ class ReceiptToIOServiceImplTest {
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
         assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, receipt.getReasonErr().getCode());
         assertNotNull(receipt.getReasonErr().getMessage());
         assertEquals(errorMessage, receipt.getReasonErr().getMessage());
         assertNull(receipt.getReasonErrPayer());

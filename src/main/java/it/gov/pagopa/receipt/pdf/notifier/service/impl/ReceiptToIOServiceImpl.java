@@ -19,7 +19,6 @@ import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotification
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfilePayload;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfileResponse;
@@ -261,6 +260,9 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     private int getCodeOrDefault(Exception e) {
         if (e instanceof PDVTokenizerException pdvTokenizerException) {
             return pdvTokenizerException.getStatusCode();
+        }
+        if (e instanceof IOAPIException ioapiException) {
+            return ioapiException.getStatusCode();
         }
         if (e instanceof JsonProcessingException) {
             return ReasonErrorCode.ERROR_PDV_MAPPING.getCode();
