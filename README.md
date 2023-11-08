@@ -85,10 +85,10 @@ then replace env variables with correct values
 | `PDV_TOKENIZER_SEARCH_TOKEN_ENDPOINT` | PDV Tokenizer endpoint to search token                                            |                    /tokens/search                    |
 | `PDV_TOKENIZER_FIND_PII_ENDPOINT`     | PDV Tokenizer endpoint to find fiscal code                                        |                 /tokens/{token}/pii                  |
 | `PDV_TOKENIZER_CREATE_TOKEN_ENDPOINT` | PDV Tokenizer endpoint to generate token                                          |                       /tokens                        |
-| `PDV_TOKENIZER_INITIAL_INTERVAL`      | PDV Tokenizer initial interval for retry a request that fail with 429 status code |                         1000                         |
+| `PDV_TOKENIZER_INITIAL_INTERVAL`      | PDV Tokenizer initial interval for retry a request that fail with 429 status code |                         200                          |
 | `PDV_TOKENIZER_MULTIPLIER`            | PDV Tokenizer interval multiplier for subsequent request retry                    |                         2.0                          |
 | `PDV_TOKENIZER_RANDOMIZATION_FACTOR`  | PDV Tokenizer randomization factor for interval retry calculation                 |                         0.6                          |
-| `PDV_TOKENIZER_MAX_RETRIES`           | PDV Tokenizer max request retry                                                   |                          4                           |
+| `PDV_TOKENIZER_MAX_RETRIES`           | PDV Tokenizer max request retry                                                   |                          3                           |
 
 > to doc details about AZ fn config
 > see [here](https://stackoverflow.com/questions/62669672/azure-functions-what-is-the-purpose-of-having-host-json-and-local-settings-jso)

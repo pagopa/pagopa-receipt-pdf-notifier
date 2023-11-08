@@ -16,10 +16,10 @@ import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrappe
  */
 public class PDVTokenizerServiceRetryWrapperImpl implements PDVTokenizerServiceRetryWrapper {
 
-    private static final Long INITIAL_INTERVAL = Long.parseLong(System.getenv().getOrDefault("PDV_TOKENIZER_INITIAL_INTERVAL", "1000"));
+    private static final Long INITIAL_INTERVAL = Long.parseLong(System.getenv().getOrDefault("PDV_TOKENIZER_INITIAL_INTERVAL", "200"));
     private static final Double MULTIPLIER = Double.parseDouble(System.getenv().getOrDefault("PDV_TOKENIZER_MULTIPLIER", "2.0"));
     private static final Double RANDOMIZATION_FACTOR = Double.parseDouble(System.getenv().getOrDefault("PDV_TOKENIZER_RANDOMIZATION_FACTOR", "0.6"));
-    private static final Integer MAX_RETRIES = Integer.parseInt(System.getenv().getOrDefault("PDV_TOKENIZER_MAX_RETRIES", "4"));
+    private static final Integer MAX_RETRIES = Integer.parseInt(System.getenv().getOrDefault("PDV_TOKENIZER_MAX_RETRIES", "3"));
 
     private final PDVTokenizerService pdvTokenizerService;
     private final Retry retry;
