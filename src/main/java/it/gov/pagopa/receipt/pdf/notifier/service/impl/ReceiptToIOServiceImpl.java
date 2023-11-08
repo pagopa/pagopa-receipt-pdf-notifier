@@ -71,7 +71,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     @Override
     public UserNotifyStatus notifyMessage(String fiscalCodeToken, UserType userType, Receipt receipt) {
         try {
-            String fiscalCode = pdvTokenizerServiceRetryWrapper.getFiscalCodeWithRetry(fiscalCodeToken);
+            String fiscalCode = getFiscalCode(fiscalCodeToken);
 
             if (!isToBeNotified(fiscalCode, userType, receipt)) {
                 return NOT_TO_BE_NOTIFIED;
@@ -250,5 +250,14 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             return pdvTokenizerException.getStatusCode();
         }
         return HttpStatus.SC_INTERNAL_SERVER_ERROR;
+    }
+
+    private String getFiscalCode(String fiscalCodeToken) throws PDVTokenizerException, JsonProcessingException {
+        try {
+            return pdvTokenizerServiceRetryWrapper.getFiscalCodeWithRetry(fiscalCodeToken);
+        } catch (Exception e) {
+            logger.error("Failed to call tokenizer service");
+            throw e;
+        }
     }
 }
