@@ -12,6 +12,7 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
+import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
@@ -22,6 +23,7 @@ import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
+import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
@@ -33,7 +35,9 @@ import java.util.Base64;
 import java.util.EnumMap;
 import java.util.List;
 
-import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.*;
+import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOTIFIED;
+import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_NOTIFIED;
+import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_TO_BE_NOTIFIED;
 
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
@@ -45,28 +49,33 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     private final IOClient ioClient;
     private final NotifierQueueClient notifierQueueClient;
     private final IOMessageService ioMessageService;
+    private final PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper;
 
     public ReceiptToIOServiceImpl() {
         this.ioClient = IOClient.getInstance();
         this.notifierQueueClient = NotifierQueueClientImpl.getInstance();
         this.ioMessageService = new IOMessageServiceImpl();
+        this.pdvTokenizerServiceRetryWrapper = new PDVTokenizerServiceRetryWrapperImpl();
     }
 
-    ReceiptToIOServiceImpl(IOClient ioClient, NotifierQueueClient notifierQueueClient, IOMessageService ioMessageService) {
+    ReceiptToIOServiceImpl(IOClient ioClient, NotifierQueueClient notifierQueueClient, IOMessageService ioMessageService, PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper) {
         this.ioClient = ioClient;
         this.notifierQueueClient = notifierQueueClient;
         this.ioMessageService = ioMessageService;
+        this.pdvTokenizerServiceRetryWrapper = pdvTokenizerServiceRetryWrapper;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public UserNotifyStatus notifyMessage(String fiscalCode, UserType userType, Receipt receipt) {
-        if (!isToBeNotified(fiscalCode, userType, receipt)) {
-            return NOT_TO_BE_NOTIFIED;
-        }
+    public UserNotifyStatus notifyMessage(String fiscalCodeToken, UserType userType, Receipt receipt) {
         try {
+            String fiscalCode = getFiscalCode(fiscalCodeToken);
+
+            if (!isToBeNotified(fiscalCode, userType, receipt)) {
+                return NOT_TO_BE_NOTIFIED;
+            }
             boolean isNotifyAllowed = handleGetProfile(fiscalCode);
             if (!isNotifyAllowed) {
                 logger.info("User {} has not to be notified", userType);
@@ -77,10 +86,11 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             handleSendNotificationToUser(fiscalCode, userType, receipt);
             return NOTIFIED;
         } catch (Exception e) {
+            int code = getCodeOrDefault(e);
             if (userType.equals(UserType.DEBTOR)) {
-                receipt.setReasonErr(buildReasonError(e.getMessage()));
+                receipt.setReasonErr(buildReasonError(e.getMessage(), code));
             } else {
-                receipt.setReasonErrPayer(buildReasonError(e.getMessage()));
+                receipt.setReasonErrPayer(buildReasonError(e.getMessage(), code));
             }
             logger.error("Error notifying IO user {}", userType, e);
             return NOT_NOTIFIED;
@@ -228,10 +238,26 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 .build();
     }
 
-    private ReasonError buildReasonError(String errorMessage) {
+    private ReasonError buildReasonError(String errorMessage, int code) {
         return ReasonError.builder()
-                .code(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+                .code(code)
                 .message(errorMessage)
                 .build();
+    }
+
+    private int getCodeOrDefault(Exception e) {
+        if (e instanceof PDVTokenizerException pdvTokenizerException) {
+            return pdvTokenizerException.getStatusCode();
+        }
+        return HttpStatus.SC_INTERNAL_SERVER_ERROR;
+    }
+
+    private String getFiscalCode(String fiscalCodeToken) throws PDVTokenizerException, JsonProcessingException {
+        try {
+            return pdvTokenizerServiceRetryWrapper.getFiscalCodeWithRetry(fiscalCodeToken);
+        } catch (Exception e) {
+            logger.error("Failed to call tokenizer service");
+            throw e;
+        }
     }
 }

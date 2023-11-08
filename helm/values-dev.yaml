@@ -87,6 +87,11 @@ microservice-chart:
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
     IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
     # IO_API_BASE_PATH: "https://api.uat.platform.pagopa.it/mock-io/api/v1"
+    PDV_TOKENIZER_BASE_PATH: "https://api.uat.tokenizer.pdv.pagopa.it/tokenizer/v1"
+    PDV_TOKENIZER_INITIAL_INTERVAL: "200"
+    PDV_TOKENIZER_MULTIPLIER: "2.0"
+    PDV_TOKENIZER_RANDOMIZATION_FACTOR: "0.6"
+    PDV_TOKENIZER_MAX_RETRIES: "3"
     ENABLE_ECS_CONSOLE: "true"
     CONSOLE_LOG_THRESHOLD: "DEBUG"
     CONSOLE_LOG_PATTERN: "%d{HH:mm:ss.SSS}[%thread]%-5level%logger{36}-%msg%n"
@@ -95,11 +100,11 @@ microservice-chart:
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
     OTEL_LOGS_EXPORTER: none
     OTEL_TRACES_SAMPLER: "always_on"
-    AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx768m -XX:+UseG1GC"
-    MARKDOWN_DEBTOR: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-    SUBJECT_DEBTOR: "Ricevuta del pagamento a {cart.items[0].payee.name}"
-    MARKDOWN_PAYER: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-    SUBJECT_PAYER: "Ricevuta del pagamento a {cart.items[0].payee.name}"
+    AZURE_FUNCTIONS_MESH_JAVA_OPTS: '-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx768m -XX:+UseG1GC'
+    MARKDOWN_DEBTOR: 'È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli.'
+    SUBJECT_DEBTOR: 'Ricevuta del pagamento a {cart.items[0].payee.name}'
+    MARKDOWN_PAYER: 'Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli.'
+    SUBJECT_PAYER: 'Ricevuta del pagamento a {cart.items[0].payee.name}'
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"
@@ -113,6 +118,7 @@ microservice-chart:
     # CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter-nofilter"
     CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter"
     OTEL_EXPORTER_OTLP_HEADERS: "elastic-otl-secret-token"
+    PDV_TOKENIZER_SUBSCRIPTION_KEY: "tokenizer-api-key"
   keyvault:
     name: "pagopa-d-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"

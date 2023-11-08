@@ -10,8 +10,8 @@ export function createReceipt(id) {
 	{
 		"eventId": id,
 		"eventData": {
-			"payerFiscalCode": "AAAAAA00A00A000A",
-			"debtorFiscalCode": "AAAAAA00A00A000A",
+			"payerFiscalCode": "cd07268c-73e8-4df4-8305-a35085e32eff",
+			"debtorFiscalCode": "cd07268c-73e8-4df4-8305-a35085e32eff",
 			"amount": "200",
 			"cart": [
 				{

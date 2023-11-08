@@ -4,7 +4,7 @@ package it.gov.pagopa.receipt.pdf.notifier.exception;
 public class ReceiptNotFoundException extends Exception{
 
     /**
-     * Constructs new exception with provided message and cause
+     * Constructs new exception with provided message
      *
      * @param message Detail message
      */
