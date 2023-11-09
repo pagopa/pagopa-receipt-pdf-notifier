@@ -87,7 +87,7 @@ microservice-chart:
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
     IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
     # IO_API_BASE_PATH: "https://api.uat.platform.pagopa.it/mock-io/api/v1"
-    PDV_TOKENIZER_BASE_PATH: "https://api.tokenizer.pdv.pagopa.it"
+    PDV_TOKENIZER_BASE_PATH: "https://api.tokenizer.pdv.pagopa.it/tokenizer/v1"
     PDV_TOKENIZER_INITIAL_INTERVAL: "200"
     PDV_TOKENIZER_MULTIPLIER: "2.0"
     PDV_TOKENIZER_RANDOMIZATION_FACTOR: "0.6"
