@@ -1,5 +1,7 @@
 package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 
+import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.CartItem;
+import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.model.MessageContent;
@@ -14,6 +16,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -39,7 +42,7 @@ public class IOMessageServiceImpl implements IOMessageService {
 
     @NotNull
     private MessageContent buildMessageContent(Receipt receipt, UserType userType) throws MissingFieldsForNotificationException {
-        StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt);
+        StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
 
         String subject;
         String markdown;
@@ -68,24 +71,24 @@ public class IOMessageServiceImpl implements IOMessageService {
 
 
     @NotNull
-    private StringSubstitutor buildStringSubstitutor(Receipt receipt) throws MissingFieldsForNotificationException {
-        if (receipt.getEventData() == null
-                || receipt.getEventData().getAmount() == null
-                || receipt.getEventData().getCart() == null
-                || receipt.getEventData().getCart().isEmpty()
-                || receipt.getEventData().getCart().get(0).getPayeeName() == null
-                || receipt.getEventData().getCart().get(0).getSubject() == null
-        ) {
-            String errMsg = String.format("Unable to build the notification message for receipt with id %s, there are missing fields in receipt necessary for subject and markdown", receipt.getId());
-            throw new MissingFieldsForNotificationException(errMsg);
+    private StringSubstitutor buildStringSubstitutor(EventData eventData, String receiptId) throws MissingFieldsForNotificationException {
+        if (eventData == null
+                || eventData.getAmount() == null
+                || eventData.getCart() == null
+                || eventData.getCart().isEmpty()
+                || eventData.getCart().get(0).getPayeeName() == null) {
+            throw new MissingFieldsForNotificationException(
+                    String.format(
+                            "Unable to build the notification message for receipt with id %s, there are missing fields in receipt necessary for subject and markdown",
+                            receiptId));
         }
 
-
+        List<CartItem> cart = eventData.getCart();
         // Build map
         Map<String, String> valuesMap = new HashMap<>();
-        valuesMap.put("cart.items[0].payee.name", receipt.getEventData().getCart().get(0).getPayeeName());
-        valuesMap.put("transaction.amount", formatAmount(receipt.getEventData().getAmount()));
-        valuesMap.put("cart.items[0].subject", receipt.getEventData().getCart().get(0).getSubject());
+        valuesMap.put("cart.items[0].payee.name", cart.get(0).getPayeeName());
+        valuesMap.put("transaction.amount", formatAmount(eventData.getAmount()));
+        valuesMap.put("cart.items[0].subject", cart.get(0).getSubject() != null ? cart.get(0).getSubject() : "-");
 
         // Build StringSubstitutor
         return new StringSubstitutor(valuesMap, "{", "}");
@@ -96,9 +99,6 @@ public class IOMessageServiceImpl implements IOMessageService {
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
         numberFormat.setMaximumFractionDigits(2);
         numberFormat.setMinimumFractionDigits(2);
-
         return numberFormat.format(valueToFormat);
     }
-
-
 }
