@@ -44,19 +44,8 @@ public class PDVTokenizerServiceImpl implements PDVTokenizerService {
 
         HttpResponse<String> httpResponse = pdvTokenizerClient.searchTokenByPII(tokenizerBody);
 
-        if (httpResponse.statusCode() == HttpStatus.SC_BAD_REQUEST
-                || httpResponse.statusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-            ErrorResponse response = ObjectMapperUtils.mapString(httpResponse.body(), ErrorResponse.class);
-            String errMsg = String.format("PDV Tokenizer getToken invocation failed with status %s and message: %s. Error description: %s (%s)",
-                    response.getStatus(), response.getTitle(), response.getDetail(), response.getType());
-            throw new PDVTokenizerException(errMsg, response.getStatus());
-        }
-        if (httpResponse.statusCode() != HttpStatus.SC_OK) {
-            ErrorMessage response = ObjectMapperUtils.mapString(httpResponse.body(), ErrorMessage.class);
-            String errMsg = String.format("PDV Tokenizer getToken invocation failed with status %s and message: %s.",
-                    httpResponse.statusCode(), response.getMessage());
-            throw new PDVTokenizerException(errMsg, httpResponse.statusCode());
-        }
+        handleErrorResponse(httpResponse, "getToken");
+
         TokenResource tokenResource = ObjectMapperUtils.mapString(httpResponse.body(), TokenResource.class);
         logger.debug("PDV Tokenizer getToken invocation completed");
         return tokenResource.getToken();
@@ -70,19 +59,8 @@ public class PDVTokenizerServiceImpl implements PDVTokenizerService {
         logger.debug("PDV Tokenizer getFiscalCode called");
         HttpResponse<String> httpResponse = pdvTokenizerClient.findPIIByToken(token);
 
-        if (httpResponse.statusCode() == HttpStatus.SC_BAD_REQUEST
-                || httpResponse.statusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-            ErrorResponse response = ObjectMapperUtils.mapString(httpResponse.body(), ErrorResponse.class);
-            String errMsg = String.format("PDV Tokenizer getFiscalCode invocation failed with status %s and message: %s. Error description: %s (%s)",
-                    response.getStatus(), response.getTitle(), response.getDetail(), response.getType());
-            throw new PDVTokenizerException(errMsg, response.getStatus());
-        }
-        if (httpResponse.statusCode() != HttpStatus.SC_OK) {
-            ErrorMessage response = ObjectMapperUtils.mapString(httpResponse.body(), ErrorMessage.class);
-            String errMsg = String.format("PDV Tokenizer getFiscalCode invocation failed with status %s and message: %s.",
-                    httpResponse.statusCode(), response.getMessage());
-            throw new PDVTokenizerException(errMsg, httpResponse.statusCode());
-        }
+        handleErrorResponse(httpResponse, "getFiscalCode");
+
         PiiResource piiResource = ObjectMapperUtils.mapString(httpResponse.body(), PiiResource.class);
         logger.debug("PDV Tokenizer getFiscalCode invocation completed");
         return piiResource.getPii();
@@ -115,5 +93,23 @@ public class PDVTokenizerServiceImpl implements PDVTokenizerService {
         TokenResource tokenResource = ObjectMapperUtils.mapString(httpResponse.body(), TokenResource.class);
         logger.debug("PDV Tokenizer generateTokenForFiscalCode invocation completed");
         return tokenResource.getToken();
+    }
+
+
+    private void handleErrorResponse(HttpResponse<String> httpResponse, String serviceName) throws JsonProcessingException, PDVTokenizerException {
+        if (httpResponse.statusCode() == HttpStatus.SC_BAD_REQUEST
+                || httpResponse.statusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR
+                || httpResponse.statusCode() == HttpStatus.SC_NOT_FOUND) {
+            ErrorResponse response = ObjectMapperUtils.mapString(httpResponse.body(), ErrorResponse.class);
+            String errMsg = String.format("PDV Tokenizer %s invocation failed with status %s and message: %s. Error description: %s (%s)",
+                    serviceName, response.getStatus(), response.getTitle(), response.getDetail(), response.getType());
+            throw new PDVTokenizerException(errMsg, response.getStatus());
+        }
+        if (httpResponse.statusCode() != HttpStatus.SC_OK) {
+            ErrorMessage response = ObjectMapperUtils.mapString(httpResponse.body(), ErrorMessage.class);
+            String errMsg = String.format("PDV Tokenizer %s invocation failed with status %s and message: %s.",
+                    serviceName, httpResponse.statusCode(), response.getMessage());
+            throw new PDVTokenizerException(errMsg, httpResponse.statusCode());
+        }
     }
 }
