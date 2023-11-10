@@ -70,7 +70,7 @@ class IOServiceImplTest {
     void buildMessageDebtorWithoutSubjectSuccess() {
         Receipt receipt = buildReceipt(false);
 
-        NewMessage message = sut.buildNewMessage(VALID_DEBTOR_CF, receipt, UserType.DEBTOR);
+        MessagePayload message = sut.buildMessagePayload(VALID_DEBTOR_CF, receipt, UserType.DEBTOR);
 
         assertNotNull(message);
         assertEquals(VALID_DEBTOR_CF, message.getFiscalCode());
@@ -115,7 +115,7 @@ class IOServiceImplTest {
     void buildMessagePayerWithoutSubjectSuccess() {
         Receipt receipt = buildReceipt(false);
 
-        NewMessage message = sut.buildNewMessage(VALID_PAYER_CF, receipt, UserType.PAYER);
+        MessagePayload message = sut.buildMessagePayload(VALID_PAYER_CF, receipt, UserType.PAYER);
 
         assertNotNull(message);
         assertEquals(VALID_PAYER_CF, message.getFiscalCode());
