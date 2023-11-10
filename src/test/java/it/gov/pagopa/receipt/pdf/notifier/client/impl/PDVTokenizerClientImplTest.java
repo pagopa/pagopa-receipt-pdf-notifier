@@ -1,6 +1,7 @@
 package it.gov.pagopa.receipt.pdf.notifier.client.impl;
 
 import it.gov.pagopa.receipt.pdf.notifier.client.PDVTokenizerClient;
+import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.http.HttpClient;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
@@ -52,7 +54,9 @@ class PDVTokenizerClientImplTest {
     void searchTokenByPIIFailThrowsIOException() throws IOException, InterruptedException {
         doThrow(IOException.class).when(clientMock).send(any(), any());
 
-        assertThrows(PDVTokenizerException.class, () -> sut.searchTokenByPII(anyString()));
+        PDVTokenizerException e = assertThrows(PDVTokenizerException.class, () -> sut.searchTokenByPII(anyString()));
+
+        assertEquals(ReasonErrorCode.ERROR_PDV_IO.getCode(), e.getStatusCode());
 
         verify(clientMock).send(any(), any());
     }
@@ -61,7 +65,9 @@ class PDVTokenizerClientImplTest {
     void searchTokenByPIIFailThrowsInterruptedException() throws IOException, InterruptedException {
         doThrow(InterruptedException.class).when(clientMock).send(any(), any());
 
-        assertThrows(PDVTokenizerException.class, () -> sut.searchTokenByPII(anyString()));
+        PDVTokenizerException e = assertThrows(PDVTokenizerException.class, () -> sut.searchTokenByPII(anyString()));
+
+        assertEquals(ReasonErrorCode.ERROR_PDV_UNEXPECTED.getCode(), e.getStatusCode());
 
         verify(clientMock).send(any(), any());
     }
@@ -70,7 +76,9 @@ class PDVTokenizerClientImplTest {
     void findPIIByTokenFailThrowsIOException() throws IOException, InterruptedException {
         doThrow(IOException.class).when(clientMock).send(any(), any());
 
-        assertThrows(PDVTokenizerException.class, () -> sut.findPIIByToken(anyString()));
+        PDVTokenizerException e = assertThrows(PDVTokenizerException.class, () -> sut.findPIIByToken(anyString()));
+
+        assertEquals(ReasonErrorCode.ERROR_PDV_IO.getCode(), e.getStatusCode());
 
         verify(clientMock).send(any(), any());
     }
@@ -79,7 +87,9 @@ class PDVTokenizerClientImplTest {
     void findPIIByTokenFailThrowsInterruptedException() throws IOException, InterruptedException {
         doThrow(InterruptedException.class).when(clientMock).send(any(), any());
 
-        assertThrows(PDVTokenizerException.class, () -> sut.findPIIByToken(anyString()));
+        PDVTokenizerException e = assertThrows(PDVTokenizerException.class, () -> sut.findPIIByToken(anyString()));
+
+        assertEquals(ReasonErrorCode.ERROR_PDV_UNEXPECTED.getCode(), e.getStatusCode());
 
         verify(clientMock).send(any(), any());
     }
@@ -88,7 +98,9 @@ class PDVTokenizerClientImplTest {
     void createTokenFailThrowsIOException() throws IOException, InterruptedException {
         doThrow(IOException.class).when(clientMock).send(any(), any());
 
-        assertThrows(PDVTokenizerException.class, () -> sut.createToken(anyString()));
+        PDVTokenizerException e = assertThrows(PDVTokenizerException.class, () -> sut.createToken(anyString()));
+
+        assertEquals(ReasonErrorCode.ERROR_PDV_IO.getCode(), e.getStatusCode());
 
         verify(clientMock).send(any(), any());
     }
@@ -97,7 +109,9 @@ class PDVTokenizerClientImplTest {
     void createTokenFailThrowsInterruptedException() throws IOException, InterruptedException {
         doThrow(InterruptedException.class).when(clientMock).send(any(), any());
 
-        assertThrows(PDVTokenizerException.class, () -> sut.createToken(anyString()));
+        PDVTokenizerException e = assertThrows(PDVTokenizerException.class, () -> sut.createToken(anyString()));
+
+        assertEquals(ReasonErrorCode.ERROR_PDV_UNEXPECTED.getCode(), e.getStatusCode());
 
         verify(clientMock).send(any(), any());
     }
