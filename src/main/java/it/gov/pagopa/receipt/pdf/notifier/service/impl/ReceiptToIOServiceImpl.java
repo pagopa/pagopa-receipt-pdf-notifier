@@ -9,6 +9,7 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
+import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
@@ -248,6 +249,9 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     private int getCodeOrDefault(Exception e) {
         if (e instanceof PDVTokenizerException pdvTokenizerException) {
             return pdvTokenizerException.getStatusCode();
+        }
+        if (e instanceof JsonProcessingException) {
+            return ReasonErrorCode.ERROR_PDV_MAPPING.getCode();
         }
         return HttpStatus.SC_INTERNAL_SERVER_ERROR;
     }
