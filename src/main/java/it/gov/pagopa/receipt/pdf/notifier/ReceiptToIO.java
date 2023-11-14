@@ -70,7 +70,7 @@ public class ReceiptToIO {
                     leaseCollectionName = "receipts-leases",
                     leaseCollectionPrefix = "materialized",
                     createLeaseCollectionIfNotExists = true,
-                    maxItemsPerInvocation = 100,
+                    maxItemsPerInvocation = 300,
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             List<Receipt> listReceipts,
             @CosmosDBOutput(

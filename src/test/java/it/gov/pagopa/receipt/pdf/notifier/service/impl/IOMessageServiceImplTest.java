@@ -28,7 +28,9 @@ class IOMessageServiceImplTest {
     private static final String SUBJECT_PAYER = "Ricevuta del pagamento a payee";
     private static final String SUBJECT_DEBTOR = "Ricevuta del pagamento a payee";
     private static final String MARKDOWN_PAYER = "Hai pagato **2.300,55** € a **payee** per **subject**.\n\nEcco la ricevuta con i dettagli.";
+    private static final String MARKDOWN_PAYER_WITHOUT_SUBJECT = "Hai pagato **2.300,55** € a **payee** per **-**.\n\nEcco la ricevuta con i dettagli.";
     private static final String MARKDOWN_DEBTOR = "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: 2.300,55 €\n**Oggetto:** subject\n**Ente creditore**: payee\n\nEcco la ricevuta con i dettagli.";
+    private static final String MARKDOWN_DEBTOR_WITHOUT_SUBJECT = "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: 2.300,55 €\n**Oggetto:** -\n**Ente creditore**: payee\n\nEcco la ricevuta con i dettagli.";
 
 
     private IOMessageService sut;
@@ -47,8 +49,8 @@ class IOMessageServiceImplTest {
 
     @Test
     @SneakyThrows
-    void buildMessageDebtorWithSuccess() {
-        Receipt receipt = buildReceipt();
+    void buildMessageDebtorSuccess() {
+        Receipt receipt = buildReceipt(true);
 
         NewMessage message = sut.buildNewMessage(VALID_DEBTOR_CF, receipt, UserType.DEBTOR);
 
@@ -65,7 +67,25 @@ class IOMessageServiceImplTest {
 
     @Test
     @SneakyThrows
-    void buildMessageDebtorWithException() {
+    void buildMessageDebtorWithoutSubjectSuccess() {
+        Receipt receipt = buildReceipt(false);
+
+        NewMessage message = sut.buildNewMessage(VALID_DEBTOR_CF, receipt, UserType.DEBTOR);
+
+        assertNotNull(message);
+        assertEquals(VALID_DEBTOR_CF, message.getFiscalCode());
+        assertEquals("ADVANCED", message.getFeatureLevelType());
+        assertNotNull(message.getContent());
+        assertEquals(SUBJECT_DEBTOR, message.getContent().getSubject());
+        assertEquals(MARKDOWN_DEBTOR_WITHOUT_SUBJECT, message.getContent().getMarkdown());
+        assertNotNull(message.getContent().getThirdPartyData());
+        assertEquals(EVENT_ID, message.getContent().getThirdPartyData().getId());
+        assertEquals(Boolean.TRUE, message.getContent().getThirdPartyData().getHasAttachments());
+    }
+
+    @Test
+    @SneakyThrows
+    void buildMessageDebtorFailThrowsMissingFieldsForNotificationException() {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
@@ -74,8 +94,8 @@ class IOMessageServiceImplTest {
 
     @Test
     @SneakyThrows
-    void buildMessagePayerWithSuccess() {
-        Receipt receipt = buildReceipt();
+    void buildMessagePayerSuccess() {
+        Receipt receipt = buildReceipt(true);
 
         NewMessage message = sut.buildNewMessage(VALID_PAYER_CF, receipt, UserType.PAYER);
 
@@ -90,7 +110,25 @@ class IOMessageServiceImplTest {
         assertEquals(Boolean.TRUE, message.getContent().getThirdPartyData().getHasAttachments());
     }
 
-    private Receipt buildReceipt() {
+    @Test
+    @SneakyThrows
+    void buildMessagePayerWithoutSubjectSuccess() {
+        Receipt receipt = buildReceipt(false);
+
+        NewMessage message = sut.buildNewMessage(VALID_PAYER_CF, receipt, UserType.PAYER);
+
+        assertNotNull(message);
+        assertEquals(VALID_PAYER_CF, message.getFiscalCode());
+        assertEquals("ADVANCED", message.getFeatureLevelType());
+        assertNotNull(message.getContent());
+        assertEquals(SUBJECT_PAYER, message.getContent().getSubject());
+        assertEquals(MARKDOWN_PAYER_WITHOUT_SUBJECT, message.getContent().getMarkdown());
+        assertNotNull(message.getContent().getThirdPartyData());
+        assertEquals(EVENT_ID, message.getContent().getThirdPartyData().getId());
+        assertEquals(Boolean.TRUE, message.getContent().getThirdPartyData().getHasAttachments());
+    }
+
+    private Receipt buildReceipt(boolean withSubject) {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
@@ -98,7 +136,7 @@ class IOMessageServiceImplTest {
         eventData.setAmount("2300.55");
         CartItem cartItem = new CartItem();
         cartItem.setPayeeName("payee");
-        cartItem.setSubject("subject");
+        cartItem.setSubject(withSubject ? "subject" : null);
         eventData.setCart(Collections.singletonList(cartItem));
         receipt.setEventData(eventData);
         return receipt;
