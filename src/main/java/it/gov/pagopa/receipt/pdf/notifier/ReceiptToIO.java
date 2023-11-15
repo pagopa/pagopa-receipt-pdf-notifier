@@ -102,6 +102,7 @@ public class ReceiptToIO {
                     || !statusCanBeNotified(receipt)
             ) {
                 discarder.getAndIncrement();
+                return;
             }
 
             String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
