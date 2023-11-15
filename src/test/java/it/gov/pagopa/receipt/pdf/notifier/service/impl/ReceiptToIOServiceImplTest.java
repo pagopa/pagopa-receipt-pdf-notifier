@@ -1,6 +1,7 @@
 package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 
 import com.azure.core.http.rest.Response;
+import com.azure.cosmos.implementation.apachecommons.lang.tuple.Pair;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
@@ -84,7 +85,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOTIFIED, userNotifyStatus);
@@ -109,7 +110,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_PAYER_CF, UserType.PAYER, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_PAYER_CF, UserType.PAYER, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOTIFIED, userNotifyStatus);
@@ -135,7 +136,7 @@ class ReceiptToIOServiceImplTest {
         receipt.setEventId(EVENT_ID);
         receipt.setIoMessageData(new IOMessageData());
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOTIFIED, userNotifyStatus);
@@ -161,7 +162,7 @@ class ReceiptToIOServiceImplTest {
         receipt.setEventId(EVENT_ID);
         receipt.setIoMessageData(new IOMessageData());
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_PAYER_CF, UserType.PAYER, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_PAYER_CF, UserType.PAYER, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOTIFIED, userNotifyStatus);
@@ -179,7 +180,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
@@ -197,7 +198,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
@@ -215,7 +216,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(INVALID_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(INVALID_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, userNotifyStatus);
@@ -231,7 +232,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
@@ -249,7 +250,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_PAYER_CF, UserType.PAYER, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_PAYER_CF, UserType.PAYER, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
@@ -271,7 +272,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
@@ -293,7 +294,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, userNotifyStatus);
@@ -316,7 +317,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
@@ -340,7 +341,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
@@ -364,7 +365,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
@@ -389,7 +390,7 @@ class ReceiptToIOServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt).getRight();
 
         assertNotNull(userNotifyStatus);
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
@@ -421,9 +422,9 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        Pair<Receipt,Boolean> result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
-        assertFalse(result);
+        assertFalse(result.getRight());
         assertEquals(ReceiptStatusType.IO_NOTIFIED, receipt.getStatus());
         assertEquals(2, messagesNotified.size());
     }
@@ -443,9 +444,9 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        Pair<Receipt,Boolean> result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
-        assertFalse(result);
+        assertFalse(result.getRight());
         assertEquals(ReceiptStatusType.NOT_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
     }
@@ -467,9 +468,9 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        Pair<Receipt,Boolean> result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
-        assertTrue(result);
+        assertTrue(result.getRight());
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
         assertEquals(1, receipt.getNotificationNumRetry());
@@ -492,9 +493,9 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        Pair<Receipt,Boolean> result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
-        assertTrue(result);
+        assertTrue(result.getRight());
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
         assertEquals(1, receipt.getNotificationNumRetry());
@@ -522,9 +523,9 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        Pair<Receipt,Boolean> result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
-        assertTrue(result);
+        assertTrue(result.getRight());
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertEquals(1, messagesNotified.size());
         assertEquals(receipt.getEventId(), messagesNotified.get(0).getEventId());
@@ -554,9 +555,9 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        Pair<Receipt,Boolean> result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
-        assertTrue(result);
+        assertTrue(result.getRight());
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertEquals(1, messagesNotified.size());
         assertEquals(receipt.getEventId(), messagesNotified.get(0).getEventId());
@@ -582,9 +583,9 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        Pair<Receipt,Boolean> result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
-        assertFalse(result);
+        assertFalse(result.getRight());
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
     }
@@ -606,9 +607,9 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        Pair<Receipt,Boolean> result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
-        assertFalse(result);
+        assertFalse(result.getRight());
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
     }
@@ -629,9 +630,9 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        Pair<Receipt,Boolean> result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
-        assertFalse(result);
+        assertFalse(result.getRight());
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
     }
