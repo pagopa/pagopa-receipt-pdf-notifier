@@ -1,15 +1,14 @@
 package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 
 import com.azure.core.http.rest.Response;
+import com.azure.cosmos.implementation.apachecommons.lang.tuple.Pair;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
@@ -39,6 +38,8 @@ import java.util.List;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_TO_BE_NOTIFIED;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.buildReasonError;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.getCodeOrDefault;
 
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
@@ -70,22 +71,22 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * {@inheritDoc}
      */
     @Override
-    public UserNotifyStatus notifyMessage(String fiscalCodeToken, UserType userType, Receipt receipt) {
+    public Pair<Receipt, UserNotifyStatus> notifyMessage(String fiscalCodeToken, UserType userType, Receipt receipt) {
         try {
             String fiscalCode = getFiscalCode(fiscalCodeToken);
 
             if (!isToBeNotified(fiscalCode, userType, receipt)) {
-                return NOT_TO_BE_NOTIFIED;
+                return Pair.of(receipt,NOT_TO_BE_NOTIFIED);
             }
             boolean isNotifyAllowed = handleGetProfile(fiscalCode);
             if (!isNotifyAllowed) {
                 logger.info("User {} has not to be notified", userType);
-                return NOT_TO_BE_NOTIFIED;
+                return Pair.of(receipt,NOT_TO_BE_NOTIFIED);
             }
 
             //Send notification to user
             handleSendNotificationToUser(fiscalCode, userType, receipt);
-            return NOTIFIED;
+            return Pair.of(receipt,NOTIFIED);
         } catch (Exception e) {
             int code = getCodeOrDefault(e);
             if (userType.equals(UserType.DEBTOR)) {
@@ -94,7 +95,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 receipt.setReasonErrPayer(buildReasonError(e.getMessage(), code));
             }
             logger.error("Error notifying IO user {}", userType, e);
-            return NOT_NOTIFIED;
+            return Pair.of(receipt,NOT_NOTIFIED);
         }
     }
 
@@ -160,7 +161,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * {@inheritDoc}
      */
     @Override
-    public boolean verifyMessagesNotification(
+    public Pair<Receipt, Boolean> verifyMessagesNotification(
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified,
             List<IOMessage> messagesNotified,
             Receipt receipt
@@ -178,17 +179,17 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         }
 
         if (debtorNotified.equals(NOT_NOTIFIED) || payerNotified.equals(NOT_NOTIFIED)) {
-            return requeueReceiptForRetry(receipt);
+            return Pair.of(receipt,requeueReceiptForRetry(receipt));
         }
 
         if (debtorNotified.equals(NOT_TO_BE_NOTIFIED) && payerNotified.equals(NOT_TO_BE_NOTIFIED)) {
             receipt.setStatus(ReceiptStatusType.NOT_TO_NOTIFY);
-            return false;
+            return Pair.of(receipt,false);
         }
 
         receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
         receipt.setNotified_at(System.currentTimeMillis());
-        return false;
+        return Pair.of(receipt,false);
     }
 
     private boolean requeueReceiptForRetry(Receipt receipt) throws JsonProcessingException {
@@ -237,23 +238,6 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 .messageId(messageId)
                 .eventId(receipt.getEventId())
                 .build();
-    }
-
-    private ReasonError buildReasonError(String errorMessage, int code) {
-        return ReasonError.builder()
-                .code(code)
-                .message(errorMessage)
-                .build();
-    }
-
-    private int getCodeOrDefault(Exception e) {
-        if (e instanceof PDVTokenizerException pdvTokenizerException) {
-            return pdvTokenizerException.getStatusCode();
-        }
-        if (e instanceof JsonProcessingException) {
-            return ReasonErrorCode.ERROR_PDV_MAPPING.getCode();
-        }
-        return HttpStatus.SC_INTERNAL_SERVER_ERROR;
     }
 
     private String getFiscalCode(String fiscalCodeToken) throws PDVTokenizerException, JsonProcessingException {
