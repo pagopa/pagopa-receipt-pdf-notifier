@@ -38,6 +38,8 @@ import java.util.List;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_TO_BE_NOTIFIED;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.buildReasonError;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.getCodeOrDefault;
 
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
@@ -236,23 +238,6 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 .messageId(messageId)
                 .eventId(receipt.getEventId())
                 .build();
-    }
-
-    private ReasonError buildReasonError(String errorMessage, int code) {
-        return ReasonError.builder()
-                .code(code)
-                .message(errorMessage)
-                .build();
-    }
-
-    private int getCodeOrDefault(Exception e) {
-        if (e instanceof PDVTokenizerException pdvTokenizerException) {
-            return pdvTokenizerException.getStatusCode();
-        }
-        if (e instanceof JsonProcessingException) {
-            return ReasonErrorCode.ERROR_PDV_MAPPING.getCode();
-        }
-        return HttpStatus.SC_INTERNAL_SERVER_ERROR;
     }
 
     private String getFiscalCode(String fiscalCodeToken) throws PDVTokenizerException, JsonProcessingException {
