@@ -26,7 +26,6 @@ import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
-import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,11 +86,11 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             handleSendNotificationToUser(fiscalCode, userType, receipt);
             return Pair.of(receipt,NOTIFIED);
         } catch (Exception e) {
-            int code = ReceiptToIOUtils.getCodeOrDefault(e);
+            int code = getCodeOrDefault(e);
             if (userType.equals(UserType.DEBTOR)) {
-                receipt.setReasonErr(ReceiptToIOUtils.buildReasonError(e.getMessage(), code));
+                receipt.setReasonErr(buildReasonError(e.getMessage(), code));
             } else {
-                receipt.setReasonErrPayer(ReceiptToIOUtils.buildReasonError(e.getMessage(), code));
+                receipt.setReasonErrPayer(buildReasonError(e.getMessage(), code));
             }
             logger.error("Error notifying IO user {}", userType, e);
             return Pair.of(receipt,NOT_NOTIFIED);
@@ -191,8 +190,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         return Pair.of(receipt,false);
     }
 
-    @Override
-    public boolean requeueReceiptForRetry(Receipt receipt) throws JsonProcessingException {
+    private boolean requeueReceiptForRetry(Receipt receipt) throws JsonProcessingException {
         int numRetry = receipt.getNotificationNumRetry();
         receipt.setNotificationNumRetry(numRetry + 1);
 
@@ -238,6 +236,23 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 .messageId(messageId)
                 .eventId(receipt.getEventId())
                 .build();
+    }
+
+    private ReasonError buildReasonError(String errorMessage, int code) {
+        return ReasonError.builder()
+                .code(code)
+                .message(errorMessage)
+                .build();
+    }
+
+    private int getCodeOrDefault(Exception e) {
+        if (e instanceof PDVTokenizerException pdvTokenizerException) {
+            return pdvTokenizerException.getStatusCode();
+        }
+        if (e instanceof JsonProcessingException) {
+            return ReasonErrorCode.ERROR_PDV_MAPPING.getCode();
+        }
+        return HttpStatus.SC_INTERNAL_SERVER_ERROR;
     }
 
     private String getFiscalCode(String fiscalCodeToken) throws PDVTokenizerException, JsonProcessingException {

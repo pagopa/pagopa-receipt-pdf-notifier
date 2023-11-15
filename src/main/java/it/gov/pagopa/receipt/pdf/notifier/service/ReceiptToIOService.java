@@ -35,6 +35,4 @@ public interface ReceiptToIOService {
             List<IOMessage> messagesNotified,
             Receipt receipt
     ) throws JsonProcessingException;
-
-    boolean requeueReceiptForRetry(Receipt receipt) throws JsonProcessingException;
 }
