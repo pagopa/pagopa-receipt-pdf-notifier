@@ -1,6 +1,7 @@
 package it.gov.pagopa.receipt.pdf.notifier.client.impl;
 
 import it.gov.pagopa.receipt.pdf.notifier.client.PDVTokenizerClient;
+import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +25,6 @@ public class PDVTokenizerClientImpl implements PDVTokenizerClient {
     private static final String SEARCH_TOKEN_ENDPOINT = System.getenv().getOrDefault("PDV_TOKENIZER_SEARCH_TOKEN_ENDPOINT", "/tokens/search");
     private static final String FIND_PII_ENDPOINT = System.getenv().getOrDefault("PDV_TOKENIZER_FIND_PII_ENDPOINT", "/tokens/%s/pii");
     private static final String CREATE_TOKEN_ENDPOINT = System.getenv().getOrDefault("PDV_TOKENIZER_CREATE_TOKEN_ENDPOINT", "/tokens");
-    private static final int PDV_IO_ERROR = 800;
-    private static final int PDV_UNEXPECTED_ERROR = 801;
 
     private final HttpClient client;
 
@@ -103,11 +102,11 @@ public class PDVTokenizerClientImpl implements PDVTokenizerClient {
         try {
             return client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new PDVTokenizerException("I/O error when invoking PDV Tokenizer", PDV_IO_ERROR, e);
+            throw new PDVTokenizerException("I/O error when invoking PDV Tokenizer", ReasonErrorCode.ERROR_PDV_IO.getCode(), e);
         } catch (InterruptedException e) {
             logger.warn("This thread was interrupted, restoring the state");
             Thread.currentThread().interrupt();
-            throw new PDVTokenizerException("Unexpected error when invoking PDV Tokenizer, the thread was interrupted", PDV_UNEXPECTED_ERROR, e);
+            throw new PDVTokenizerException("Unexpected error when invoking PDV Tokenizer, the thread was interrupted", ReasonErrorCode.ERROR_PDV_UNEXPECTED.getCode(), e);
         }
     }
 }
