@@ -138,7 +138,7 @@ microservice-chart:
           podAffinityTerm:
             labelSelector:
               matchLabels:
-                app.kubernetes.io/instance: pagopa-receipt-pdf-notifier
+                app.kubernetes.io/instance: pagopareceiptpdfnotifier
             namespaces: [ "receipts" ]
             topologyKey: topology.kubernetes.io/zone
   canaryDelivery:
