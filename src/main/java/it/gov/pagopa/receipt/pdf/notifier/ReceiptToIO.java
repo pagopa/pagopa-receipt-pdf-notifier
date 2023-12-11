@@ -86,7 +86,7 @@ public class ReceiptToIO {
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<IOMessage>> documentMessages,
             final ExecutionContext context
-    ) throws JsonProcessingException {
+    ) {
 
         logger.info("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
         AtomicInteger discarder = new AtomicInteger();

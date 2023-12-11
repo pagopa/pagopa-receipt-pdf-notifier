@@ -9,9 +9,7 @@ import it.gov.pagopa.receipt.pdf.notifier.client.impl.IOClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.IOAPIException;
@@ -19,12 +17,12 @@ import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotification
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfilePayload;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfileResponse;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.IOMessageResponse;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
 import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
+import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
@@ -40,6 +38,8 @@ import java.util.List;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_TO_BE_NOTIFIED;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.buildReasonError;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.getCodeOrDefault;
 
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
@@ -219,6 +219,8 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
                 return true;
             }
+            logger.error("Error in sending message to queue for receipt with event id: {}, queue responded with status {}. Receipt updated with status UNABLE_TO_SEND",
+                    receipt.getEventId(), response.getStatusCode());
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
             return false;
         } catch (Exception e) {
@@ -248,26 +250,6 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 .messageId(messageId)
                 .eventId(receipt.getEventId())
                 .build();
-    }
-
-    private ReasonError buildReasonError(String errorMessage, int code) {
-        return ReasonError.builder()
-                .code(code)
-                .message(errorMessage)
-                .build();
-    }
-
-    private int getCodeOrDefault(Exception e) {
-        if (e instanceof PDVTokenizerException pdvTokenizerException) {
-            return pdvTokenizerException.getStatusCode();
-        }
-        if (e instanceof IOAPIException ioapiException) {
-            return ioapiException.getStatusCode();
-        }
-        if (e instanceof JsonProcessingException) {
-            return ReasonErrorCode.ERROR_PDV_MAPPING.getCode();
-        }
-        return HttpStatus.SC_INTERNAL_SERVER_ERROR;
     }
 
     private String getFiscalCode(String fiscalCodeToken) throws PDVTokenizerException, JsonProcessingException {
