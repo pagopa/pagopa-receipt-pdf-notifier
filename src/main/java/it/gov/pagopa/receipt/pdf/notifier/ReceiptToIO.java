@@ -1,23 +1,24 @@
 package it.gov.pagopa.receipt.pdf.notifier;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
-import com.microsoft.azure.functions.annotation.*;
+import com.microsoft.azure.functions.annotation.CosmosDBOutput;
+import com.microsoft.azure.functions.annotation.CosmosDBTrigger;
+import com.microsoft.azure.functions.annotation.FunctionName;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.impl.ReceiptToIOServiceImpl;
-import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -120,14 +121,7 @@ public class ReceiptToIO {
                 usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
             }
 
-            boolean boolQueueSent = false;
-            try {
-                boolQueueSent = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
-            } catch (JsonProcessingException e) {
-                receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
-                int code = ReceiptToIOUtils.getCodeOrDefault(e);
-                ReceiptToIOUtils.buildReasonError(e.getMessage(), code);
-            }
+            boolean boolQueueSent = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
             if(boolQueueSent){
                 queueSent.getAndIncrement();

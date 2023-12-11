@@ -12,7 +12,8 @@ import java.net.http.HttpResponse;
 public interface IOClient {
 
     /**
-     * Get a User Profile using POST
+     * Get a User Profile.
+     * <p>
      * Returns the preferences for the user identified by the fiscal code provided in the request body.
      * The field &#x60;sender_allowed&#x60; is set fo &#x60;false&#x60; in case the service which is calling the API has been disabled by the user.
      *
@@ -24,9 +25,11 @@ public interface IOClient {
 
     /**
      * Submit a Message passing the user fiscal_code in the request body
+     * <p>
      * Submits a message to a user with STANDARD or ADVANCED features based on &#x60;feature_level_type&#x60; value.
      * On error, the reason is returned in the response payload. In order to call &#x60;submitMessageforUser&#x60;,
-     * before sending any message, the sender MUST call &#x60;getProfile&#x60; and check that the profile exists (for the specified fiscal code) and that the &#x60;sender_allowed&#x60; field of the user&#39;s profile it set to &#x60;true&#x60;.
+     * before sending any message, the sender MUST call &#x60;getProfile&#x60; and check that the profile exists
+     * (for the specified fiscal code) and that the &#x60;sender_allowed&#x60; field of the user&#39;s profile it set to &#x60;true&#x60;.
      *
      * @param messagePayload the {@link MessagePayload} serialized as String
      * @return the {@link HttpResponse} of the IO API

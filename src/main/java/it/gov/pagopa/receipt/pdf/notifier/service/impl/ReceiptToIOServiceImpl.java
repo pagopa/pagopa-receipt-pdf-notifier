@@ -119,7 +119,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified,
             List<IOMessage> messagesNotified,
             Receipt receipt
-    ) throws JsonProcessingException {
+    ) {
         UserNotifyStatus debtorNotified =  usersToBeVerified.getOrDefault(UserType.DEBTOR, NOT_TO_BE_NOTIFIED);
         UserNotifyStatus payerNotified = usersToBeVerified.getOrDefault(UserType.PAYER, NOT_TO_BE_NOTIFIED);
 
@@ -202,7 +202,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         }
     }
 
-    private boolean requeueReceiptForRetry(Receipt receipt) throws JsonProcessingException {
+    private boolean requeueReceiptForRetry(Receipt receipt) {
         int numRetry = receipt.getNotificationNumRetry();
         receipt.setNotificationNumRetry(numRetry + 1);
 
@@ -212,7 +212,14 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             return false;
         }
 
-        String receiptString = ObjectMapperUtils.writeValueAsString(receipt);
+        String receiptString;
+        try {
+            receiptString = ObjectMapperUtils.writeValueAsString(receipt);
+        } catch (JsonProcessingException e) {
+            logger.error("Unable to requeue for retry the event with event id: {}. Receipt updated with status IO_ERROR_TO_NOTIFY", receipt.getEventId(), e);
+            receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
+            return false;
+        }
         try {
             Response<SendMessageResult> response = this.notifierQueueClient.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
             if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
