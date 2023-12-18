@@ -43,9 +43,9 @@ class ReceiptToIOServiceImplTest {
 
     private static final String VALID_DEBTOR_MESSAGE_ID = "valid debtor message id";
     private static final String VALID_PAYER_MESSAGE_ID = "valid payer message id";
-    private static final String VALID_PAYER_CF = "a valid payer fiscal code";
+    private static final String VALID_PAYER_CF = "JHNDOE80D45E507N";
     private static final String INVALID_CF = "an invalid fiscal code";
-    private static final String VALID_DEBTOR_CF = "a valid debtor fiscal code";
+    private static final String VALID_DEBTOR_CF = "JHNDOE80D05B157Y";
     private static final String EVENT_ID = "123";
 
     @SystemStub
@@ -221,6 +221,46 @@ class ReceiptToIOServiceImplTest {
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
         assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
+    }
+
+    @Test
+    void notifyFailDebtorNotNotifiedGetProfileResponse404() throws PDVTokenizerException, JsonProcessingException, ApiException {
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+
+        doThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "not found"))
+                .when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+
+        Receipt receipt = new Receipt();
+        receipt.setEventId(EVENT_ID);
+
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+
+        assertNotNull(userNotifyStatus);
+        assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, userNotifyStatus);
+        assertNull(receipt.getIoMessageData());
+        assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
+    }
+
+    @Test
+    void notifyFailDebtorNotNotifiedGetProfileResponse400() throws PDVTokenizerException, JsonProcessingException, ApiException {
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+
+        doThrow(new ApiException(HttpStatus.SC_BAD_REQUEST, "bad request"))
+                .when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+
+        Receipt receipt = new Receipt();
+        receipt.setEventId(EVENT_ID);
+
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+
+        assertNotNull(userNotifyStatus);
+        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
+        assertNull(receipt.getIoMessageData());
+        assertNotNull(receipt.getReasonErr());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+        assertNotNull(receipt.getReasonErr().getMessage());
         assertNull(receipt.getReasonErrPayer());
     }
 
