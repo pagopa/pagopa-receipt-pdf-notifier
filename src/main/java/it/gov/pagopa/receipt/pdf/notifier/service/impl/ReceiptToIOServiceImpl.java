@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_NOTIFIED;
@@ -104,10 +106,18 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * @param fiscalCode         User fiscal code
      * @throws ErrorToNotifyException in case of error notifying user
      */
-    private boolean handleGetProfile(String fiscalCode) throws ErrorToNotifyException, ApiException {
+    private boolean handleGetProfile(String fiscalCode) throws ErrorToNotifyException {
         FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
         fiscalCodePayload.setFiscalCode(fiscalCode);
-        ApiResponse<LimitedProfile> getProfileResponse = this.ioClient.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
+        ApiResponse<LimitedProfile> getProfileResponse;
+        try {
+            getProfileResponse = this.ioClient.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
+        } catch (ApiException e) {
+            if (e.getCode() == HttpStatus.SC_NOT_FOUND) {
+                return false;
+            }
+            throw new ErrorToNotifyException("IO /profiles failed", e);
+        }
 
         if (getProfileResponse == null) {
             throw new ErrorToNotifyException("IO /profiles failed to respond");
@@ -218,10 +228,18 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     }
 
     private boolean isToBeNotified(String fiscalCode, UserType userType, Receipt receipt) {
-        return fiscalCode != null &&
-                !fiscalCode.isEmpty() &&
+        return  isValidFiscalCode(fiscalCode) &&
                 (CF_FILTER_NOTIFIER.contains("*") || CF_FILTER_NOTIFIER.contains(fiscalCode)) &&
                 (receipt.getIoMessageData() == null || verifyMessageIdIsNotPresent(userType, receipt));
+    }
+
+    private boolean isValidFiscalCode(String fiscalCode) {
+        if (fiscalCode != null && !fiscalCode.isEmpty()) {
+            Pattern pattern = Pattern.compile("^[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$");
+            Matcher matcher = pattern.matcher(fiscalCode);
+            return matcher.find();
+        }
+        return false;
     }
 
     private boolean verifyMessageIdIsNotPresent(UserType userType, Receipt receipt) {
