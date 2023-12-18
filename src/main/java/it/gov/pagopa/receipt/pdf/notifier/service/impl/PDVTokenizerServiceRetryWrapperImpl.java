@@ -6,6 +6,7 @@ import io.github.resilience4j.core.functions.CheckedFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
+import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerUnexpectedException;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerService;
@@ -33,7 +34,9 @@ public class PDVTokenizerServiceRetryWrapperImpl implements PDVTokenizerServiceR
         RetryConfig config = RetryConfig.custom()
                 .maxAttempts(MAX_RETRIES)
                 .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(INITIAL_INTERVAL, MULTIPLIER, RANDOMIZATION_FACTOR))
-                .retryOnException(e -> (e instanceof PDVTokenizerException tokenizerException) && tokenizerException.getStatusCode() == 429)
+                .retryOnException(e ->
+                        (e instanceof PDVTokenizerException tokenizerException) &&
+                                (tokenizerException.getStatusCode() == 429 || tokenizerException.getStatusCode() == ReasonErrorCode.ERROR_PDV_IO.getCode()))
                 .build();
 
         RetryRegistry registry = RetryRegistry.of(config);
