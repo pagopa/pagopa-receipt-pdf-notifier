@@ -3,21 +3,23 @@ package it.gov.pagopa.receipt.pdf.notifier;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
-import com.microsoft.azure.functions.annotation.*;
+import com.microsoft.azure.functions.annotation.CosmosDBOutput;
+import com.microsoft.azure.functions.annotation.CosmosDBTrigger;
+import com.microsoft.azure.functions.annotation.FunctionName;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.impl.ReceiptToIOServiceImpl;
-import it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -86,7 +88,7 @@ public class ReceiptToIO {
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<IOMessage>> documentMessages,
             final ExecutionContext context
-    ) throws JsonProcessingException {
+    ) {
 
         logger.info("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
         AtomicInteger discarder = new AtomicInteger();
@@ -96,11 +98,7 @@ public class ReceiptToIO {
         AtomicInteger queueSent = new AtomicInteger();
 
         listReceipts.parallelStream().forEach(receipt ->  {
-            if (receipt == null
-                    || receipt.getEventData() == null
-                    || receipt.getEventData().getDebtorFiscalCode() == null
-                    || !statusCanBeNotified(receipt)
-            ) {
+            if (isReceiptNotValid(receipt)) {
                 discarder.getAndIncrement();
                 return;
             }
@@ -111,8 +109,12 @@ public class ReceiptToIO {
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
 
             //Notify to debtor
-            UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
-            usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
+            if (!"ANONIMO".equals(debtorFiscalCode)) {
+                UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
+                usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
+            } else {
+                usersToBeVerified.put(UserType.DEBTOR, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
+            }
 
             if(payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode))){
                 //Notify to payer
@@ -125,8 +127,8 @@ public class ReceiptToIO {
                 boolQueueSent = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
             } catch (JsonProcessingException e) {
                 receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
-                int code = ReceiptToIOUtils.getCodeOrDefault(e);
-                ReceiptToIOUtils.buildReasonError(e.getMessage(), code);
+                logger.error("[{}] Error on requeue receipt with id {} and event id {} for retry",
+                        context.getFunctionName(), receipt.getId(), receipt.getEventId(), e);
             }
 
             if(boolQueueSent){
@@ -143,6 +145,13 @@ public class ReceiptToIO {
         if (!messagesNotified.isEmpty()) {
             documentMessages.setValue(messagesNotified);
         }
+    }
+
+    private boolean isReceiptNotValid(Receipt receipt) {
+        return receipt == null
+                || receipt.getEventData() == null
+                || receipt.getEventData().getDebtorFiscalCode() == null
+                || !statusCanBeNotified(receipt);
     }
 
     public boolean statusCanBeNotified(Receipt receipt) {
