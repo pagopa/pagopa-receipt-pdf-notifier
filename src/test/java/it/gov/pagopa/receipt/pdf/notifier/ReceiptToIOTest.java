@@ -28,9 +28,9 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
 
 @ExtendWith({MockitoExtension.class, SystemStubsExtension.class})
 class ReceiptToIOTest {
@@ -54,7 +54,6 @@ class ReceiptToIOTest {
     @BeforeEach
     public void openMocks() {
         closeable = MockitoAnnotations.openMocks(this);
-        sut = spy(new ReceiptToIO(receiptToIOServiceMock));
     }
 
     @AfterEach
@@ -74,7 +73,11 @@ class ReceiptToIOTest {
         receipt.setEventData(eventData);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
 
         verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
         verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
@@ -92,7 +95,11 @@ class ReceiptToIOTest {
         receipt.setEventData(eventData);
         receipt.setStatus(ReceiptStatusType.SIGNED);
 
-        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
 
         verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
         verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
@@ -110,7 +117,11 @@ class ReceiptToIOTest {
         receipt.setEventData(eventData);
         receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);
 
-        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
 
         verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
         verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
@@ -129,7 +140,11 @@ class ReceiptToIOTest {
         receipt.setEventData(eventData);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
 
         verify(receiptToIOServiceMock, times(2)).notifyMessage(anyString(), any(), any());
         verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
@@ -146,7 +161,11 @@ class ReceiptToIOTest {
         receipt.setEventData(eventData);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
 
         verify(receiptToIOServiceMock, never()).notifyMessage(anyString(), any(), any());
         verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
@@ -161,7 +180,11 @@ class ReceiptToIOTest {
         receipt.setEventData(eventData);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
 
         verify(receiptToIOServiceMock, never()).notifyMessage(anyString(), any(), any());
         verify(receiptToIOServiceMock, never()).verifyMessagesNotification(any(), anyList(), any());
@@ -179,7 +202,11 @@ class ReceiptToIOTest {
         receipt.setEventData(eventData);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
 
         verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
         verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
@@ -197,9 +224,58 @@ class ReceiptToIOTest {
         receipt.setEventData(eventData);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
-        sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
 
         verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+    }
+
+    @Test
+    @SneakyThrows
+    void receiptToIOPayerNotNotifiedBecauseDisabled() {
+        doReturn(UserNotifyStatus.NOT_NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+
+        Receipt receipt = new Receipt();
+        EventData eventData = new EventData();
+        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
+        eventData.setPayerFiscalCode(VALID_PAYER_CF);
+        receipt.setEventData(eventData);
+        receipt.setStatus(ReceiptStatusType.GENERATED);
+
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "true")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
+
+        verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+    }
+
+    @Test
+    @SneakyThrows
+    void receiptToIONotNotifiedBecausePayerEqualDebtor() {
+        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+
+        Receipt receipt = new Receipt();
+        EventData eventData = new EventData();
+        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
+        eventData.setPayerFiscalCode(VALID_DEBTOR_CF);
+        receipt.setEventData(eventData);
+        receipt.setStatus(ReceiptStatusType.GENERATED);
+
+        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "true")
+                .execute(() -> {
+                    sut = new ReceiptToIO(receiptToIOServiceMock);
+                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
+                });
+
+        verify(receiptToIOServiceMock, never()).notifyMessage(anyString(), any(), any());
         verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
     }
 }

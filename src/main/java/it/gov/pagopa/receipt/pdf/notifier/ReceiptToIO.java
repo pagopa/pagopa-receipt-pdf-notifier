@@ -29,6 +29,8 @@ public class ReceiptToIO {
 
     private final Logger logger = LoggerFactory.getLogger(ReceiptToIO.class);
 
+    private final Boolean payerNotifyDisabled = Boolean.parseBoolean(System.getenv().getOrDefault("PAYER_NOTIFY_DISABLED", "true"));
+
     private final ReceiptToIOService receiptToIOService;
 
     public ReceiptToIO() {
@@ -109,17 +111,17 @@ public class ReceiptToIO {
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
 
             //Notify to debtor
-            if (!"ANONIMO".equals(debtorFiscalCode)) {
+            if (!"ANONIMO".equals(debtorFiscalCode) && !(Boolean.TRUE.equals(payerNotifyDisabled) && debtorFiscalCode.equals(payerFiscalCode))) {
                 UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
                 usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
-            } else {
-                usersToBeVerified.put(UserType.DEBTOR, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
             }
 
-            if(payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode))){
-                //Notify to payer
-                UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
-                usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
+            if (!Boolean.TRUE.equals(payerNotifyDisabled)
+                    && (payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode)))
+            ) {
+                    //Notify to payer
+                    UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
+                    usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
             }
 
             boolean boolQueueSent = false;
