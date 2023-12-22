@@ -98,11 +98,7 @@ public class ReceiptToIO {
         AtomicInteger queueSent = new AtomicInteger();
 
         listReceipts.parallelStream().forEach(receipt ->  {
-            if (receipt == null
-                    || receipt.getEventData() == null
-                    || receipt.getEventData().getDebtorFiscalCode() == null
-                    || !statusCanBeNotified(receipt)
-            ) {
+            if (isReceiptNotValid(receipt)) {
                 discarder.getAndIncrement();
                 return;
             }
@@ -149,6 +145,13 @@ public class ReceiptToIO {
         if (!messagesNotified.isEmpty()) {
             documentMessages.setValue(messagesNotified);
         }
+    }
+
+    private boolean isReceiptNotValid(Receipt receipt) {
+        return receipt == null
+                || receipt.getEventData() == null
+                || receipt.getEventData().getDebtorFiscalCode() == null
+                || !statusCanBeNotified(receipt);
     }
 
     public boolean statusCanBeNotified(Receipt receipt) {
