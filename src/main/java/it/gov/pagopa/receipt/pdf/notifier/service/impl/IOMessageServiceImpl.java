@@ -12,12 +12,9 @@ import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
 import org.apache.commons.text.StringSubstitutor;
 import org.jetbrains.annotations.NotNull;
 
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class IOMessageServiceImpl implements IOMessageService {
@@ -87,18 +84,10 @@ public class IOMessageServiceImpl implements IOMessageService {
         // Build map
         Map<String, String> valuesMap = new HashMap<>();
         valuesMap.put("cart.items[0].payee.name", cart.get(0).getPayeeName());
-        valuesMap.put("transaction.amount", formatAmount(eventData.getAmount()));
+        valuesMap.put("transaction.amount", eventData.getAmount());
         valuesMap.put("cart.items[0].subject", cart.get(0).getSubject() != null ? cart.get(0).getSubject() : "-");
 
         // Build StringSubstitutor
         return new StringSubstitutor(valuesMap, "{", "}");
-    }
-
-    private String formatAmount(String amount) {
-        BigDecimal valueToFormat = new BigDecimal(amount);
-        NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
-        numberFormat.setMaximumFractionDigits(2);
-        numberFormat.setMinimumFractionDigits(2);
-        return numberFormat.format(valueToFormat);
     }
 }
