@@ -122,6 +122,7 @@ microservice-chart:
     CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter"
     OTEL_EXPORTER_OTLP_HEADERS: "elastic-otl-secret-token"
     PDV_TOKENIZER_SUBSCRIPTION_KEY: "tokenizer-api-key"
+    IO_CONFIGURATION_ID: "IO-CONFIGURATION-ID"
   keyvault:
     name: "pagopa-p-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
