@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 public class IOMessageServiceImpl implements IOMessageService {
-
+    private static final String IO_CONFIGURATION_ID = System.getenv().getOrDefault("IO_CONFIGURATION_ID", "");
     private static final String SUBJECT_PAYER = new String(System.getenv().getOrDefault("SUBJECT_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String SUBJECT_DEBTOR = new String(System.getenv().getOrDefault("SUBJECT_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String MARKDOWN_PAYER = new String(System.getenv().getOrDefault("MARKDOWN_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
@@ -63,6 +63,7 @@ public class IOMessageServiceImpl implements IOMessageService {
         ThirdPartyData thirdPartyData = new ThirdPartyData();
         thirdPartyData.setId(receipt.getEventId());
         thirdPartyData.setHasAttachments(true);
+        thirdPartyData.setConfigurationId(IO_CONFIGURATION_ID);
         return thirdPartyData;
     }
 
