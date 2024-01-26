@@ -106,7 +106,6 @@ microservice-chart:
     SUBJECT_DEBTOR: "Ricevuta del pagamento a {cart.items[0].payee.name}"
     MARKDOWN_PAYER: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
     SUBJECT_PAYER: "Ricevuta del pagamento a {cart.items[0].payee.name}"
-    IO_CONFIGURATION_ID: "01HMVMCDD3JFYTPKT4ZN4WQ73B"
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"
@@ -121,6 +120,7 @@ microservice-chart:
     CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter"
     OTEL_EXPORTER_OTLP_HEADERS: "elastic-otl-secret-token"
     PDV_TOKENIZER_SUBSCRIPTION_KEY: "tokenizer-api-key"
+    IO_CONFIGURATION_ID: "IO-CONFIGURATION-ID"    
   keyvault:
     name: "pagopa-u-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
