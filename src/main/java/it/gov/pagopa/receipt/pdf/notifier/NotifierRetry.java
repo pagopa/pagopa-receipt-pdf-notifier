@@ -43,8 +43,8 @@ public class NotifierRetry {
             @CosmosDBOutput(
                     name = "ReceiptOutputDatastore",
                     databaseName = "db",
-                    collectionName = "receipts",
-                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
+                    containerName = "receipts",
+                    connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<Receipt>> documentReceipts,
             final ExecutionContext context
     ) throws JsonProcessingException {
