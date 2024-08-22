@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.project</groupId>
     <artifactId>pagopa-receipt-pdf-notifier</artifactId>
-    <version>0.12.4</version>
+    <version>0.12.4-1-PAGOPA-2017</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-notifier</name>
@@ -13,8 +13,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>17</java.version>
-        <azure.functions.maven.plugin.version>1.15.0</azure.functions.maven.plugin.version>
-        <azure.functions.java.library.version>1.4.2</azure.functions.java.library.version>
+        <azure.functions.maven.plugin.version>1.27.0</azure.functions.maven.plugin.version>
+        <azure.functions.java.library.version>3.1.0</azure.functions.java.library.version>
         <functionAppName>com.microsoft.azure-20220215182005862</functionAppName>
         <resteasy.version>3.15.3.Final</resteasy.version>
     </properties>
@@ -263,7 +263,7 @@
                     <appSettings>
                         <property>
                             <name>FUNCTIONS_EXTENSION_VERSION</name>
-                            <value>~3</value>
+                            <value>~4</value>
                         </property>
                     </appSettings>
                     <resourceGroup>java-functions-group</resourceGroup>

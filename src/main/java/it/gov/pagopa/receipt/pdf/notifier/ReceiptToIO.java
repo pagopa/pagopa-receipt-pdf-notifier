@@ -70,24 +70,24 @@ public class ReceiptToIO {
             @CosmosDBTrigger(
                     name = "ReceiptInputDatastore",
                     databaseName = "db",
-                    collectionName = "receipts",
-                    leaseCollectionName = "receipts-leases",
-                    leaseCollectionPrefix = "materialized",
-                    createLeaseCollectionIfNotExists = true,
+                    containerName = "receipts",
+                    leaseContainerName = "receipts-leases",
+                    leaseContainerPrefix = "materialized",
+                    createLeaseContainerIfNotExists = true,
                     maxItemsPerInvocation = 300,
-                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
+                    connection = "COSMOS_RECEIPTS_CONN_STRING")
             List<Receipt> listReceipts,
             @CosmosDBOutput(
                     name = "ReceiptOutputDatastore",
                     databaseName = "db",
-                    collectionName = "receipts",
-                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
+                    containerName = "receipts",
+                    connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<Receipt>> documentReceipts,
             @CosmosDBOutput(
                     name = "IoMessageDatastore",
                     databaseName = "db",
-                    collectionName = "receipts-io-messages",
-                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
+                    containerName = "receipts-io-messages",
+                    connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<IOMessage>> documentMessages,
             final ExecutionContext context
     ) {
