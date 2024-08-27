@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.project</groupId>
     <artifactId>pagopa-receipt-pdf-notifier</artifactId>
-    <version>0.13.0-1-PAGOPA-2017-fix-output-binding</version>
+    <version>0.13.1</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-notifier</name>
