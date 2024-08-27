@@ -31,10 +31,7 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.EnumMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -252,6 +249,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         IOMessageData ioMessageData = receipt.getIoMessageData();
         String messageId = userType.equals(UserType.DEBTOR) ? ioMessageData.getIdMessageDebtor() : ioMessageData.getIdMessagePayer();
         return IOMessage.builder()
+                .id(messageId + UUID.randomUUID())
                 .messageId(messageId)
                 .eventId(receipt.getEventId())
                 .build();

@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.project</groupId>
     <artifactId>pagopa-receipt-pdf-notifier</artifactId>
-    <version>0.13.0</version>
+    <version>0.13.0-1-PAGOPA-2017-fix-output-binding</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-notifier</name>
@@ -270,8 +270,8 @@
                     <appServicePlanName>java-functions-app-service-plan</appServicePlanName>
                     <region>westus</region>
                     <runtime>
-                        <os>windows</os>
-                        <javaVersion>17</javaVersion>
+                        <os>linux</os>
+                        <javaVersion>${java.version}</javaVersion>
                     </runtime>
                 </configuration>
                 <executions>
