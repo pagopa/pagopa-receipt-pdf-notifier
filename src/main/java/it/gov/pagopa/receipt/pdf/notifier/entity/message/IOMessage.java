@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class IOMessage {
-
+    String id;
     String messageId;
     String eventId;
 }

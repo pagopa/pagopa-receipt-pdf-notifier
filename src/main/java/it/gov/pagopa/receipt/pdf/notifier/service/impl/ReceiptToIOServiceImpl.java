@@ -252,6 +252,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         IOMessageData ioMessageData = receipt.getIoMessageData();
         String messageId = userType.equals(UserType.DEBTOR) ? ioMessageData.getIdMessageDebtor() : ioMessageData.getIdMessagePayer();
         return IOMessage.builder()
+                .id(messageId)
                 .messageId(messageId)
                 .eventId(receipt.getEventId())
                 .build();

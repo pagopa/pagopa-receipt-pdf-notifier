@@ -270,8 +270,8 @@
                     <appServicePlanName>java-functions-app-service-plan</appServicePlanName>
                     <region>westus</region>
                     <runtime>
-                        <os>windows</os>
-                        <javaVersion>17</javaVersion>
+                        <os>linux</os>
+                        <javaVersion>${java.version}</javaVersion>
                     </runtime>
                 </configuration>
                 <executions>
