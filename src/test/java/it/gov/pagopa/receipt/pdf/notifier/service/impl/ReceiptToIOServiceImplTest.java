@@ -4,12 +4,14 @@ import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
+import it.gov.pagopa.receipt.pdf.notifier.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
+import it.gov.pagopa.receipt.pdf.notifier.exception.IoMessageNotFoundException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
@@ -59,6 +61,8 @@ class ReceiptToIOServiceImplTest {
 
     private PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapperMock;
 
+    private ReceiptCosmosClient receiptCosmosClientMock;
+
     private ReceiptToIOService sut;
 
     @BeforeEach
@@ -67,13 +71,15 @@ class ReceiptToIOServiceImplTest {
         notifierQueueClientMock = mock(NotifierQueueClient.class);
         ioMessageServiceMock = mock(IOMessageService.class);
         pdvTokenizerServiceRetryWrapperMock = mock(PDVTokenizerServiceRetryWrapper.class);
-        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, ioMessageServiceMock, pdvTokenizerServiceRetryWrapperMock);
+        receiptCosmosClientMock = mock(ReceiptCosmosClient.class);
+        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, ioMessageServiceMock, pdvTokenizerServiceRetryWrapperMock, receiptCosmosClientMock);
     }
 
     @Test
     @SneakyThrows
     void notifyDebtorWithSuccess() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -99,6 +105,7 @@ class ReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyPayerWithSuccess() {
         doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.PAYER));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -124,6 +131,7 @@ class ReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyDebtorWithSuccessWithMessageData() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -150,6 +158,7 @@ class ReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyPayerWithSuccessWithMessageData() {
         doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.PAYER));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -209,6 +218,26 @@ class ReceiptToIOServiceImplTest {
     }
 
     @Test
+    @SneakyThrows
+    void notifySkipBecauseAlreadyNotified() {
+        IOMessage ioMessage = IOMessage.builder().messageId(VALID_DEBTOR_MESSAGE_ID).build();
+        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doReturn(ioMessage).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
+
+        Receipt receipt = new Receipt();
+        receipt.setEventId(EVENT_ID);
+
+        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
+
+        assertNotNull(userNotifyStatus);
+        assertEquals(UserNotifyStatus.ALREADY_NOTIFIED, userNotifyStatus);
+        assertNotNull(receipt.getIoMessageData().getIdMessageDebtor());
+        assertEquals(VALID_DEBTOR_MESSAGE_ID, receipt.getIoMessageData().getIdMessageDebtor());
+        assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
+    }
+
+    @Test
     void notifyFailNotToBeNotifiedFilterBlock() throws PDVTokenizerException, JsonProcessingException {
         doReturn(INVALID_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
 
@@ -225,8 +254,10 @@ class ReceiptToIOServiceImplTest {
     }
 
     @Test
-    void notifyFailDebtorNotNotifiedGetProfileResponse404() throws PDVTokenizerException, JsonProcessingException, ApiException {
+    @SneakyThrows
+    void notifyFailDebtorNotNotifiedGetProfileResponse404() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         doThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "not found"))
                 .when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -244,8 +275,10 @@ class ReceiptToIOServiceImplTest {
     }
 
     @Test
-    void notifyFailDebtorNotNotifiedGetProfileResponse400() throws PDVTokenizerException, JsonProcessingException, ApiException {
+    @SneakyThrows
+    void notifyFailDebtorNotNotifiedGetProfileResponse400() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         doThrow(new ApiException(HttpStatus.SC_BAD_REQUEST, "bad request"))
                 .when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -265,8 +298,10 @@ class ReceiptToIOServiceImplTest {
     }
 
     @Test
-    void notifyFailDebtorNotNotifiedGetProfileResponseNull() throws PDVTokenizerException, JsonProcessingException {
+    @SneakyThrows
+    void notifyFailDebtorNotNotifiedGetProfileResponseNull() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -283,8 +318,10 @@ class ReceiptToIOServiceImplTest {
     }
 
     @Test
-    void notifyFailPayerNotNotifiedGetProfileResponseNull() throws PDVTokenizerException, JsonProcessingException {
+    @SneakyThrows
+    void notifyFailPayerNotNotifiedGetProfileResponseNull() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.PAYER));
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -304,6 +341,7 @@ class ReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyFailNotNotifiedGetProfileResponseStatusNotOK() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, false);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -326,6 +364,7 @@ class ReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyFailNotToBeNotifiedGetProfileResponseNotAllowed() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, false);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -346,6 +385,7 @@ class ReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyFailNotNotifiedBuildMessageException() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -371,6 +411,7 @@ class ReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyFailNotNotifiedNotifyReturnException() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -395,6 +436,7 @@ class ReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyFailNotNotifiedNotifyResponseNull() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
@@ -419,6 +461,7 @@ class ReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyFailNotNotifiedNotifyResponseStatusNotCreated() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
 
         ApiResponse<LimitedProfile> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
         doReturn(getProfileResponse).when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
