@@ -86,7 +86,7 @@ public class ReceiptToIO {
             @CosmosDBOutput(
                     name = "IoMessageDatastore",
                     databaseName = "db",
-                    containerName = "receipts-io-messages",
+                    containerName = "receipts-io-messages-evt",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<IOMessage>> documentMessages,
             final ExecutionContext context
