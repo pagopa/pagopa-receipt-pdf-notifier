@@ -27,7 +27,6 @@ permissions:
 
 jobs:
   integration_test:
-    needs: [ create_runner ]
     name: Test ${{(github.event.inputs == null && 'uat') || inputs.environment }}
     runs-on: [ self-hosted-job, "${{(github.event.inputs == null && 'uat') || inputs.environment }}" ]
     environment: ${{(github.event.inputs == null && 'uat') || inputs.environment }}
