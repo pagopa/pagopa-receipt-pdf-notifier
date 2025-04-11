@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: ""
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
-    tag: "0.13.1"
+    tag: "0.13.1-1-PIDM-355-improve-duplicate-notification-check"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -85,6 +85,7 @@ microservice-chart:
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-d-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
+    COSMOS_RECEIPT_MESSAGE_CONTAINER_NAME: "receipts-io-messages-evt"
     IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
     # IO_API_BASE_PATH: "https://api.uat.platform.pagopa.it/mock-io/api/v1"
     PDV_TOKENIZER_BASE_PATH: "https://api.uat.tokenizer.pdv.pagopa.it/tokenizer/v1"
