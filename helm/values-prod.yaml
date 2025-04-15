@@ -57,7 +57,7 @@ microservice-chart:
       memory: "768Mi"
       cpu: "300m"
     limits:
-      memory: "768Mi"
+      memory: "1024Mi"
       cpu: "500m"
   autoscaling:
     enable: true
@@ -75,7 +75,7 @@ microservice-chart:
         metadata:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
-          value: "70"
+          value: "80"
   fileConfig: {}
   envConfig:
     LANG: "C.UTF-8"
