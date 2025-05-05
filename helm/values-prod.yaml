@@ -10,14 +10,14 @@ microservice-chart:
   livenessProbe:
     httpGet:
       path: /health
-      port: 80
+      port: 8080
     initialDelaySeconds: 60
     failureThreshold: 6
     periodSeconds: 10
   readinessProbe:
     httpGet:
       path: /health
-      port: 80
+      port: 8080
     initialDelaySeconds: 60
     failureThreshold: 6
     periodSeconds: 10
@@ -31,18 +31,18 @@ microservice-chart:
         targetPort: 12345
         path: /metrics
   ports:
-    - 80 #http
+    - 8080 #http
     - 12345 #jmx-exporter
   service:
     type: ClusterIP
     ports:
-      - 80 #http
+      - 8080 #http
       - 12345 #jmx-exporter
   ingress:
     create: true
     host: "weuprod.receipts.internal.platform.pagopa.it"
     path: /pagopa-receipt-pdf-notifier/(.*)
-    servicePort: 80
+    servicePort: 8080
   serviceAccount:
     name: "receipts-workload-identity"
   azure:
@@ -81,6 +81,7 @@ microservice-chart:
   envConfig:
     LANG: "C.UTF-8"
     WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
+    ASPNETCORE_URLS: "http://*:8080"
     FUNCTIONS_WORKER_RUNTIME: "java"
     NOTIFIER_QUEUE_TOPIC: "pagopa-p-weu-receipts-queue-receipt-io-notifier-error"
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-p-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
