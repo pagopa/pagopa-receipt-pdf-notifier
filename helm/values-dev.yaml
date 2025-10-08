@@ -4,26 +4,25 @@ microservice-chart:
   fullnameOverride: ""
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
-    tag: "0.13.5"
+    tag: "0.5.1"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
     httpGet:
-      path: /health
-      port: 8080
+      path: /info
+      port: 80
     initialDelaySeconds: 60
     failureThreshold: 6
     periodSeconds: 10
   readinessProbe:
     httpGet:
-      path: /health
-      port: 8080
+      path: /info
+      port: 80
     initialDelaySeconds: 60
     failureThreshold: 6
     periodSeconds: 10
   deployment:
     create: true
-    replicas: 1
   serviceMonitor:
     create: true
     endpoints:
@@ -31,22 +30,22 @@ microservice-chart:
         targetPort: 12345
         path: /metrics
   ports:
-    - 8080 #http
+    - 80 #http
     - 12345 #jmx-exporter
   service:
     type: ClusterIP
     ports:
-      - 8080 #http
+      - 80 #http
       - 12345 #jmx-exporter
   ingress:
     create: true
     host: "weudev.receipts.internal.dev.platform.pagopa.it"
     path: /pagopa-receipt-pdf-notifier/(.*)
-    servicePort: 8080
+    servicePort: 80
   serviceAccount:
-    name: "receipts-workload-identity"
-  azure:
-    workloadIdentityClientId: <workload-identity-client-id-set-automatically-by-gha>
+    create: false
+    annotations: {}
+    name: ""
   podAnnotations: {}
   podSecurityContext:
     seccompProfile:
@@ -79,22 +78,14 @@ microservice-chart:
           value: "70"
   fileConfig: {}
   envConfig:
-    LANG: "C.UTF-8"
     WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
-    ASPNETCORE_URLS: "http://*:8080"
     FUNCTIONS_WORKER_RUNTIME: "java"
     NOTIFIER_QUEUE_TOPIC: "pagopa-d-weu-receipts-queue-receipt-io-notifier-error"
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-d-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
-    COSMOS_RECEIPT_MESSAGE_CONTAINER_NAME: "receipts-io-messages-evt"
-    IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
-    # IO_API_BASE_PATH: "https://api.uat.platform.pagopa.it/mock-io/api/v1"
-    PDV_TOKENIZER_BASE_PATH: "https://api.uat.tokenizer.pdv.pagopa.it/tokenizer/v1"
-    PDV_TOKENIZER_INITIAL_INTERVAL: "200"
-    PDV_TOKENIZER_MULTIPLIER: "2.0"
-    PDV_TOKENIZER_RANDOMIZATION_FACTOR: "0.6"
-    PDV_TOKENIZER_MAX_RETRIES: "3"
+    IO_API_BASE_PATH: "https://api.dev.platform.pagopa.it/mock-io/api/v1" #TODO: Update with proper value
+    CF_FILTER_NOTIFIER: "*"
     ENABLE_ECS_CONSOLE: "true"
     CONSOLE_LOG_THRESHOLD: "DEBUG"
     CONSOLE_LOG_PATTERN: "%d{HH:mm:ss.SSS}[%thread]%-5level%logger{36}-%msg%n"
@@ -103,8 +94,7 @@ microservice-chart:
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
     OTEL_LOGS_EXPORTER: none
     OTEL_TRACES_SAMPLER: "always_on"
-    PAYER_NOTIFY_DISABLED: "false"
-    AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx768m -XX:+UseG1GC"
+    JAVA_TOOL_OPTIONS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx1024m -XX:+UseG1GC"
     MARKDOWN_DEBTOR: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
     SUBJECT_DEBTOR: "Ricevuta del pagamento a {cart.items[0].payee.name}"
     MARKDOWN_PAYER: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
@@ -113,16 +103,12 @@ microservice-chart:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"
   envSecret:
-    APPLICATIONINSIGHTS_CONNECTION_STRING: "ai-d-connection-string"
+    APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-d-connection-string'
     COSMOS_RECEIPTS_CONN_STRING: "cosmos-receipt-connection-string"
     STORAGE_CONN_STRING: "receipts-storage-account-connection-string"
-    # OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
-    OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key-official"
+    OCP_APIM_SUBSCRIPTION_KEY: "io-apim-subscription-key"
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
-    # CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter-nofilter"
-    CF_FILTER_NOTIFIER: "receipt-notifier-cf-filter"
-    OTEL_EXPORTER_OTLP_HEADERS: "elastic-otl-secret-token"
-    PDV_TOKENIZER_SUBSCRIPTION_KEY: "tokenizer-api-key"
+    OTEL_EXPORTER_OTLP_HEADERS: 'elastic-otl-secret-token'
   keyvault:
     name: "pagopa-d-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
