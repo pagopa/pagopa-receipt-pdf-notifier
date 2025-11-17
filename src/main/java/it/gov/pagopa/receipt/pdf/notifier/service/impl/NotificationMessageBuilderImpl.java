@@ -8,7 +8,7 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessageContent;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.ThirdPartyData;
-import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
+import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import org.apache.commons.text.StringSubstitutor;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * {@inheritDoc}
  */
-public class IOServiceImpl implements IOService {
+public class NotificationMessageBuilderImpl implements NotificationMessageBuilder {
     private static final String IO_CONFIGURATION_ID = System.getenv().getOrDefault("IO_CONFIGURATION_ID", "");
     private static final String SUBJECT_PAYER = new String(System.getenv().getOrDefault("SUBJECT_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String SUBJECT_DEBTOR = new String(System.getenv().getOrDefault("SUBJECT_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);

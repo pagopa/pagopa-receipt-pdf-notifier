@@ -20,7 +20,7 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfileResponse;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.IOMessageResponse;
-import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
+import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import lombok.SneakyThrows;
@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(SystemStubsExtension.class)
-class ReceiptToIOServiceImplTest {
+class ReceiptToNotificationMessageBuilderImplTest {
 
     private static final String VALID_DEBTOR_MESSAGE_ID = "valid debtor message id";
     private static final String VALID_PAYER_MESSAGE_ID = "valid payer message id";
@@ -59,7 +59,7 @@ class ReceiptToIOServiceImplTest {
 
     private NotifierQueueClient notifierQueueClientMock;
 
-    private IOService ioServiceMock;
+    private NotificationMessageBuilder notificationMessageBuilderMock;
 
     private PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapperMock;
 
@@ -71,10 +71,10 @@ class ReceiptToIOServiceImplTest {
     void setUp() {
         ioClientMock = mock(IOClient.class);
         notifierQueueClientMock = mock(NotifierQueueClient.class);
-        ioServiceMock = mock(IOService.class);
+        notificationMessageBuilderMock = mock(NotificationMessageBuilder.class);
         pdvTokenizerServiceRetryWrapperMock = mock(PDVTokenizerServiceRetryWrapper.class);
         receiptCosmosClientMock = mock(ReceiptCosmosClient.class);
-        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, ioServiceMock, pdvTokenizerServiceRetryWrapperMock, receiptCosmosClientMock);
+        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, notificationMessageBuilderMock, pdvTokenizerServiceRetryWrapperMock, receiptCosmosClientMock);
     }
 
     @Test
@@ -415,7 +415,7 @@ class ReceiptToIOServiceImplTest {
         doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
 
         String errorMessage = "error message";
-        doThrow(new MissingFieldsForNotificationException(errorMessage)).when(ioServiceMock).buildMessagePayload(anyString(), any(), any());
+        doThrow(new MissingFieldsForNotificationException(errorMessage)).when(notificationMessageBuilderMock).buildMessagePayload(anyString(), any(), any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);

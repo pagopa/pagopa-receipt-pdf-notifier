@@ -8,7 +8,7 @@ import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
 /**
  * Service for IO operations
  */
-public interface IOService {
+public interface NotificationMessageBuilder {
 
     /**
      * Build IO message from Receipt's data

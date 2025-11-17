@@ -6,7 +6,7 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
-import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
+import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SystemStubsExtension.class)
-class IOServiceImplTest {
+class NotificationMessageBuilderImplTest {
 
     private static final String VALID_PAYER_CF = "a valid payer fiscal code";
     private static final String VALID_DEBTOR_CF = "a valid debtor fiscal code";
@@ -33,7 +33,7 @@ class IOServiceImplTest {
     private static final String MARKDOWN_DEBTOR_WITHOUT_SUBJECT = "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: 2.300,55 €\n**Oggetto:** -\n**Ente creditore**: payee\n\nEcco la ricevuta con i dettagli.";
 
 
-    private IOService sut;
+    private NotificationMessageBuilder sut;
 
     @SystemStub
     private final EnvironmentVariables environmentVariables = new EnvironmentVariables(
@@ -44,7 +44,7 @@ class IOServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        sut = new IOServiceImpl();
+        sut = new NotificationMessageBuilderImpl();
     }
 
     @Test

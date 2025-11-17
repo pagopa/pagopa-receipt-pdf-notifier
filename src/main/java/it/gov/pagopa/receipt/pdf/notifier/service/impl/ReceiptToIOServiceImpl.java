@@ -24,7 +24,7 @@ import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfilePayload;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfileResponse;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.IOMessageResponse;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
-import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
+import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
@@ -53,14 +53,14 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
     private final IOClient ioClient;
     private final NotifierQueueClient notifierQueueClient;
-    private final IOService ioService;
+    private final NotificationMessageBuilder notificationMessageBuilder;
     private final PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper;
     private final ReceiptCosmosClient receiptCosmosClient;
 
     public ReceiptToIOServiceImpl() {
         this.ioClient = IOClientImpl.getInstance();
         this.notifierQueueClient = NotifierQueueClientImpl.getInstance();
-        this.ioService = new IOServiceImpl();
+        this.notificationMessageBuilder = new NotificationMessageBuilderImpl();
         this.pdvTokenizerServiceRetryWrapper = new PDVTokenizerServiceRetryWrapperImpl();
         this.receiptCosmosClient = ReceiptCosmosClientImpl.getInstance();
     }
@@ -68,13 +68,13 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     ReceiptToIOServiceImpl(
             IOClient ioClient,
             NotifierQueueClient notifierQueueClient,
-            IOService ioService,
+            NotificationMessageBuilder notificationMessageBuilder,
             PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper,
             ReceiptCosmosClient receiptCosmosClient
     ) {
         this.ioClient = ioClient;
         this.notifierQueueClient = notifierQueueClient;
-        this.ioService = ioService;
+        this.notificationMessageBuilder = notificationMessageBuilder;
         this.pdvTokenizerServiceRetryWrapper = pdvTokenizerServiceRetryWrapper;
         this.receiptCosmosClient = receiptCosmosClient;
     }
@@ -119,7 +119,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     }
 
     private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException, MissingFieldsForNotificationException, IOAPIException {
-        MessagePayload messagePayload = this.ioService.buildMessagePayload(fiscalCode, receipt, userType);
+        MessagePayload messagePayload = this.notificationMessageBuilder.buildMessagePayload(fiscalCode, receipt, userType);
         String messageId = sendNotificationToIOUser(messagePayload);
 
         updateReceiptWithIOMessageData(userType, receipt, messageId);
