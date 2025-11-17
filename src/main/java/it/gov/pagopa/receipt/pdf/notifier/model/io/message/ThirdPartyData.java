@@ -29,4 +29,7 @@ public class ThirdPartyData {
 
     @JsonProperty("summary")
     private String summary;
+
+    @JsonProperty("configuration_id")
+    private String configurationId;
 }
