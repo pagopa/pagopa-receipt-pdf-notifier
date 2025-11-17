@@ -43,8 +43,8 @@ public class NotifierRetry {
             @CosmosDBOutput(
                     name = "ReceiptOutputDatastore",
                     databaseName = "db",
-                    collectionName = "receipts",
-                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
+                    containerName = "receipts",
+                    connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<Receipt>> documentReceipts,
             final ExecutionContext context
     ) throws JsonProcessingException {
@@ -61,7 +61,7 @@ public class NotifierRetry {
             }
         }
         //Call to receipts' datastore info
-        logger.info("receipts retry notify stat {} function - number of receipts updated with state IO_NOTIFY_RETRY on the receipts' datastore {}",
+        logger.debug("receipts retry notify stat {} function - number of receipts updated with state IO_NOTIFY_RETRY on the receipts' datastore {}",
                 context.getInvocationId(), receiptsToRetry.size());
 
         if (!receiptsToRetry.isEmpty()) {

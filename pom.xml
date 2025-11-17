@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.project</groupId>
     <artifactId>pagopa-receipt-pdf-notifier</artifactId>
-    <version>0.11.3</version>
+    <version>0.13.5</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-notifier</name>
@@ -13,8 +13,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>17</java.version>
-        <azure.functions.maven.plugin.version>1.15.0</azure.functions.maven.plugin.version>
-        <azure.functions.java.library.version>1.4.2</azure.functions.java.library.version>
+        <azure.functions.maven.plugin.version>1.27.0</azure.functions.maven.plugin.version>
+        <azure.functions.java.library.version>3.1.0</azure.functions.java.library.version>
         <functionAppName>com.microsoft.azure-20220215182005862</functionAppName>
         <resteasy.version>3.15.3.Final</resteasy.version>
     </properties>
@@ -136,7 +136,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.13.4.1</version>
+            <version>2.13.4.2</version>
         </dependency>
 
         <dependency>
@@ -204,7 +204,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.7</version>
+            <version>1.4.12</version>
         </dependency>
 
         <dependency>
@@ -263,15 +263,15 @@
                     <appSettings>
                         <property>
                             <name>FUNCTIONS_EXTENSION_VERSION</name>
-                            <value>~3</value>
+                            <value>~4</value>
                         </property>
                     </appSettings>
                     <resourceGroup>java-functions-group</resourceGroup>
                     <appServicePlanName>java-functions-app-service-plan</appServicePlanName>
                     <region>westus</region>
                     <runtime>
-                        <os>windows</os>
-                        <javaVersion>17</javaVersion>
+                        <os>linux</os>
+                        <javaVersion>${java.version}</javaVersion>
                     </runtime>
                 </configuration>
                 <executions>

@@ -28,6 +28,8 @@ public class ReceiptToIO {
 
     private final Logger logger = LoggerFactory.getLogger(ReceiptToIO.class);
 
+    private final Boolean payerNotifyDisabled = Boolean.parseBoolean(System.getenv().getOrDefault("PAYER_NOTIFY_DISABLED", "true"));
+
     private final ReceiptToIOService receiptToIOService;
 
     public ReceiptToIO() {
@@ -67,24 +69,24 @@ public class ReceiptToIO {
             @CosmosDBTrigger(
                     name = "ReceiptInputDatastore",
                     databaseName = "db",
-                    collectionName = "receipts",
-                    leaseCollectionName = "receipts-leases",
-                    leaseCollectionPrefix = "materialized",
-                    createLeaseCollectionIfNotExists = true,
+                    containerName = "receipts",
+                    leaseContainerName = "receipts-leases",
+                    leaseContainerPrefix = "materialized",
+                    createLeaseContainerIfNotExists = true,
                     maxItemsPerInvocation = 300,
-                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
+                    connection = "COSMOS_RECEIPTS_CONN_STRING")
             List<Receipt> listReceipts,
             @CosmosDBOutput(
                     name = "ReceiptOutputDatastore",
                     databaseName = "db",
-                    collectionName = "receipts",
-                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
+                    containerName = "receipts",
+                    connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<Receipt>> documentReceipts,
             @CosmosDBOutput(
                     name = "IoMessageDatastore",
                     databaseName = "db",
-                    collectionName = "receipts-io-messages",
-                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
+                    containerName = "receipts-io-messages-evt",
+                    connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<IOMessage>> documentMessages,
             final ExecutionContext context
     ) {
@@ -97,11 +99,7 @@ public class ReceiptToIO {
         AtomicInteger queueSent = new AtomicInteger();
 
         listReceipts.parallelStream().forEach(receipt ->  {
-            if (receipt == null
-                    || receipt.getEventData() == null
-                    || receipt.getEventData().getDebtorFiscalCode() == null
-                    || !statusCanBeNotified(receipt)
-            ) {
+            if (isReceiptNotValid(receipt)) {
                 discarder.getAndIncrement();
                 return;
             }
@@ -112,13 +110,17 @@ public class ReceiptToIO {
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
 
             //Notify to debtor
-            UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
-            usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
+            if (!"ANONIMO".equals(debtorFiscalCode) && !(Boolean.TRUE.equals(payerNotifyDisabled) && debtorFiscalCode.equals(payerFiscalCode))) {
+                UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
+                usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
+            }
 
-            if(payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode))){
-                //Notify to payer
-                UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
-                usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
+            if (!Boolean.TRUE.equals(payerNotifyDisabled)
+                    && (payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode)))
+            ) {
+                    //Notify to payer
+                    UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
+                    usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
             }
 
             boolean boolQueueSent = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
@@ -137,6 +139,13 @@ public class ReceiptToIO {
         if (!messagesNotified.isEmpty()) {
             documentMessages.setValue(messagesNotified);
         }
+    }
+
+    private boolean isReceiptNotValid(Receipt receipt) {
+        return receipt == null
+                || receipt.getEventData() == null
+                || receipt.getEventData().getDebtorFiscalCode() == null
+                || !statusCanBeNotified(receipt);
     }
 
     public boolean statusCanBeNotified(Receipt receipt) {

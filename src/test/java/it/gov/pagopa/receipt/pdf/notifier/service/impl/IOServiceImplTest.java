@@ -133,7 +133,7 @@ class IOServiceImplTest {
         receipt.setEventId(EVENT_ID);
 
         EventData eventData = new EventData();
-        eventData.setAmount("2300.55");
+        eventData.setAmount("2.300,55");
         CartItem cartItem = new CartItem();
         cartItem.setPayeeName("payee");
         cartItem.setSubject(withSubject ? "subject" : null);

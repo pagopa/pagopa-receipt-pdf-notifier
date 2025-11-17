@@ -21,7 +21,7 @@ resource "github_repository_environment" "github_repository_environment" {
 
 locals {
   env_secrets = {
-    "CLIENT_ID" : module.github_runner_app.application_id,
+    "CLIENT_ID" : data.azurerm_user_assigned_identity.identity_cd_01.client_id,
     "TENANT_ID" : data.azurerm_client_config.current.tenant_id,
     "SUBSCRIPTION_ID" : data.azurerm_subscription.current.subscription_id,
     "RECEIPTS_STORAGE_CONN_STRING" : data.azurerm_storage_account.receipts_sa.primary_connection_string,
@@ -34,6 +34,7 @@ locals {
     "CLUSTER_RESOURCE_GROUP" : local.aks_cluster.resource_group_name,
     "DOMAIN" : local.domain,
     "NAMESPACE" : local.domain,
+    "WORKLOAD_IDENTITY_ID": data.azurerm_user_assigned_identity.workload_identity_clientid.client_id
   }
 }
 
@@ -78,7 +79,7 @@ resource "github_actions_environment_variable" "github_environment_runner_variab
 
    repository       = local.github.repository
    secret_name      = "BOT_TOKEN_GITHUB"
-   plaintext_value  = data.azurerm_key_vault_secret.key_vault_bot_token.value
+   plaintext_value  = data.azurerm_key_vault_secret.key_vault_bot_cd_token.value
  }
 
  #tfsec:ignore:github-actions-no-plain-text-action-secrets # not real secret
@@ -90,9 +91,16 @@ resource "github_actions_environment_variable" "github_environment_runner_variab
  }
 
 #tfsec:ignore:github-actions-no-plain-text-action-secrets # not real secret
-resource "github_actions_secret" "secret_slack_webhook" {
+resource "github_actions_secret" "secret_slack_webhook_integration_test" {
 
   repository      = local.github.repository
-  secret_name     = "SLACK_WEBHOOK_URL"
+  secret_name     = "SLACK_WEBHOOK_URL_INTEGRATION_TEST"
   plaintext_value = data.azurerm_key_vault_secret.key_vault_integration_test_webhook_slack.value
+}
+
+#tfsec:ignore:github-actions-no-plain-text-action-secrets # not real secret
+resource "github_actions_secret" "secret_slack_webhook_deploy" {
+  repository      = local.github.repository
+  secret_name     = "SLACK_WEBHOOK_URL_DEPLOY"
+  plaintext_value = data.azurerm_key_vault_secret.key_vault_deploy_webhook_slack.value
 }

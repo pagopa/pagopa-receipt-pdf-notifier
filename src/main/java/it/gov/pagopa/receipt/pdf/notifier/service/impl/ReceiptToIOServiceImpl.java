@@ -6,13 +6,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.notifier.client.IOClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.IOClientImpl;
+import it.gov.pagopa.receipt.pdf.notifier.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
+import it.gov.pagopa.receipt.pdf.notifier.client.impl.ReceiptCosmosClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.IOAPIException;
+import it.gov.pagopa.receipt.pdf.notifier.exception.IoMessageNotFoundException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
@@ -30,11 +33,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.http.HttpResponse;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.EnumMap;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.ALREADY_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_TO_BE_NOTIFIED;
@@ -52,19 +55,28 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     private final NotifierQueueClient notifierQueueClient;
     private final IOService ioService;
     private final PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper;
+    private final ReceiptCosmosClient receiptCosmosClient;
 
     public ReceiptToIOServiceImpl() {
         this.ioClient = IOClientImpl.getInstance();
         this.notifierQueueClient = NotifierQueueClientImpl.getInstance();
         this.ioService = new IOServiceImpl();
         this.pdvTokenizerServiceRetryWrapper = new PDVTokenizerServiceRetryWrapperImpl();
+        this.receiptCosmosClient = ReceiptCosmosClientImpl.getInstance();
     }
 
-    ReceiptToIOServiceImpl(IOClient ioClient, NotifierQueueClient notifierQueueClient, IOService ioService, PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper) {
+    ReceiptToIOServiceImpl(
+            IOClient ioClient,
+            NotifierQueueClient notifierQueueClient,
+            IOService ioService,
+            PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper,
+            ReceiptCosmosClient receiptCosmosClient
+    ) {
         this.ioClient = ioClient;
         this.notifierQueueClient = notifierQueueClient;
         this.ioService = ioService;
         this.pdvTokenizerServiceRetryWrapper = pdvTokenizerServiceRetryWrapper;
+        this.receiptCosmosClient = receiptCosmosClient;
     }
 
     /**
@@ -78,6 +90,14 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             if (!isToBeNotified(fiscalCode, userType, receipt)) {
                 return NOT_TO_BE_NOTIFIED;
             }
+
+            String ioMessageId = getIOMessageForUserIfAlreadyExist(receipt, userType);
+            if (ioMessageId != null) {
+                logger.warn("The receipt with event id  {} has already been notified for user type {}", receipt.getEventId(), userType);
+                updateReceiptWithIOMessageData(userType, receipt, ioMessageId);
+                return ALREADY_NOTIFIED;
+            }
+
             if (!isNotifyToIOUserAllowed(fiscalCode)) {
                 logger.info("User {} has not to be notified", userType);
                 return NOT_TO_BE_NOTIFIED;
@@ -102,13 +122,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         MessagePayload messagePayload = this.ioService.buildMessagePayload(fiscalCode, receipt, userType);
         String messageId = sendNotificationToIOUser(messagePayload);
 
-        IOMessageData messageData = receipt.getIoMessageData() != null ? receipt.getIoMessageData() : new IOMessageData();
-        if (userType.equals(UserType.DEBTOR)) {
-            messageData.setIdMessageDebtor(messageId);
-        } else {
-            messageData.setIdMessagePayer(messageId);
-        }
-        receipt.setIoMessageData(messageData);
+        updateReceiptWithIOMessageData(userType, receipt, messageId);
     }
 
     /**
@@ -141,8 +155,10 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             return false;
         }
 
+        if (receipt.getNotified_at() == 0L) {
+            receipt.setNotified_at(System.currentTimeMillis());
+        }
         receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
-        receipt.setNotified_at(System.currentTimeMillis());
         return false;
     }
 
@@ -238,10 +254,18 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     }
 
     private boolean isToBeNotified(String fiscalCode, UserType userType, Receipt receipt) {
-        return fiscalCode != null &&
-                !fiscalCode.isEmpty() &&
+        return isValidFiscalCode(fiscalCode) &&
                 (CF_FILTER_NOTIFIER.contains("*") || CF_FILTER_NOTIFIER.contains(fiscalCode)) &&
                 (receipt.getIoMessageData() == null || verifyMessageIdIsNotPresent(userType, receipt));
+    }
+
+    private boolean isValidFiscalCode(String fiscalCode) {
+        if (fiscalCode != null && !fiscalCode.isEmpty()) {
+            Pattern pattern = Pattern.compile("^[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$");
+            Matcher matcher = pattern.matcher(fiscalCode);
+            return matcher.find();
+        }
+        return false;
     }
 
     private boolean verifyMessageIdIsNotPresent(UserType userType, Receipt receipt) {
@@ -254,8 +278,10 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         IOMessageData ioMessageData = receipt.getIoMessageData();
         String messageId = userType.equals(UserType.DEBTOR) ? ioMessageData.getIdMessageDebtor() : ioMessageData.getIdMessagePayer();
         return IOMessage.builder()
+                .id(messageId + UUID.randomUUID())
                 .messageId(messageId)
                 .eventId(receipt.getEventId())
+                .userType(userType)
                 .build();
     }
 
@@ -265,6 +291,25 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         } catch (Exception e) {
             logger.error("Failed to call tokenizer service");
             throw e;
+        }
+    }
+
+    private void updateReceiptWithIOMessageData(UserType userType, Receipt receipt, String idMessage) {
+        IOMessageData messageData = receipt.getIoMessageData() != null ? receipt.getIoMessageData() : new IOMessageData();
+        if (userType.equals(UserType.DEBTOR)) {
+            messageData.setIdMessageDebtor(idMessage);
+        } else {
+            messageData.setIdMessagePayer(idMessage);
+        }
+        receipt.setIoMessageData(messageData);
+    }
+
+    private String getIOMessageForUserIfAlreadyExist(Receipt receipt, UserType userType) {
+        try {
+            IOMessage ioMessage = this.receiptCosmosClient.findIOMessageWithEventIdAndUserType(receipt.getEventId(), userType);
+            return ioMessage.getMessageId();
+        } catch (IoMessageNotFoundException e) {
+            return null;
         }
     }
 }
