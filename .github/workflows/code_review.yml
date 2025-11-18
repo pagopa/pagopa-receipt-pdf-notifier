@@ -33,17 +33,15 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # v2.3.4
       - name: Code Review
-        uses: ./.github/maven_code_review
+        uses: pagopa/github-actions-template/maven-code-review@525266fb788f4da438e5919fcf660fe8637271ed # v2.2.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           project_key: ${{env.PROJECT_KEY}}
-          jdk_version: 17
-          maven_version: 3.9.3
-          coverage_exclusions: "**/config/*,**/*Mock*,**/model/**,**/entity/**,**/generated/**"
-          cpd_exclusions: "**/model/**,**/entity/*"
+          java_version: 17
+          coverage_exclusions: "**/config/*,**/*Mock*,**/model/**,**/entity/**,**/exception/**"
+          cpd_exclusions: "**/model/**,**/entity/**"
 
   smoke-test:
     name: Smoke Test
@@ -75,52 +73,18 @@ jobs:
       - name: Run Integration Tests
         shell: bash
         id: run_integration_test
+        env:
+          SUBKEY_ENV: ${{ secrets.SUBKEY }}
+          CUCUMBER_PUBLISH_TOKEN_ENV: ${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
+          RECEIPTS_STORAGE_CONN_STRING_ENV: ${{ secrets.RECEIPTS_STORAGE_CONN_STRING }}
+          RECEIPTS_COSMOS_CONN_STRING_ENV: ${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}
         run: |
-          export SUBKEY=${{ secrets.SUBKEY }}
+          export SUBKEY= "$SUBKEY_ENV"
           export CANARY=${{ inputs.canary }}
-          export CUCUMBER_PUBLISH_TOKEN=${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
-          export RECEIPTS_STORAGE_CONN_STRING='${{ secrets.RECEIPTS_STORAGE_CONN_STRING }}'
-          export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
+          export CUCUMBER_PUBLISH_TOKEN="$CUCUMBER_PUBLISH_TOKEN_ENV"
+          export RECEIPTS_STORAGE_CONN_STRING="$RECEIPTS_STORAGE_CONN_STRING_ENV"
+          export RECEIPTS_COSMOS_CONN_STRING="$RECEIPTS_COSMOS_CONN_STRING_ENV"
 
           cd ./integration-test
           chmod +x ./run_integration_test.sh
           ./run_integration_test.sh local
-
-  delete_github_deployments:
-    runs-on: ubuntu-latest
-    needs: smoke-test
-    if: ${{ always() }}
-    steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"
-
-      - name: Delete Previous deployments
-        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
-        env:
-          SHA_HEAD: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.sha) || github.sha}}
-        with:
-          script: |
-            const { SHA_HEAD } = process.env
-
-            const deployments = await github.rest.repos.listDeployments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: SHA_HEAD
-            });
-            await Promise.all(
-              deployments.data.map(async (deployment) => {
-                await github.rest.repos.createDeploymentStatus({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  deployment_id: deployment.id,
-                  state: 'inactive'
-                });
-                return github.rest.repos.deleteDeployment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  deployment_id: deployment.id
-                });
-              })
-            );
