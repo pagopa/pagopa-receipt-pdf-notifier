@@ -74,12 +74,10 @@ jobs:
         shell: bash
         id: run_integration_test
         env:
-          SUBKEY_ENV: ${{ secrets.SUBKEY }}
           CUCUMBER_PUBLISH_TOKEN_ENV: ${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
           RECEIPTS_STORAGE_CONN_STRING_ENV: ${{ secrets.RECEIPTS_STORAGE_CONN_STRING }}
           RECEIPTS_COSMOS_CONN_STRING_ENV: ${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}
         run: |
-          export SUBKEY= "$SUBKEY_ENV"
           export CANARY=${{ inputs.canary }}
           export CUCUMBER_PUBLISH_TOKEN="$CUCUMBER_PUBLISH_TOKEN_ENV"
           export RECEIPTS_STORAGE_CONN_STRING="$RECEIPTS_STORAGE_CONN_STRING_ENV"
