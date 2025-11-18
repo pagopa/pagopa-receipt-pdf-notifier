@@ -6,12 +6,12 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
 
 /**
- * Service for IO operations
+ * Service for building notification message
  */
 public interface NotificationMessageBuilder {
 
     /**
-     * Build IO message from Receipt's data
+     * Build IO notification message from Receipt's data
      *
      * @param receipt    Receipt from CosmosDB
      * @param fiscalCode User's fiscal code
