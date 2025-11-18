@@ -11,6 +11,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+import static it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode.ERROR_IO_API_IO;
+import static it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode.ERROR_IO_API_UNEXPECTED;
+
 /**
  * {@inheritDoc}
  */
@@ -25,8 +28,6 @@ public class IOClientImpl implements IOClient {
     private static final String OCP_APIM_HEADER_KEY = System.getenv().getOrDefault("OCP_APIM_HEADER_KEY", "Ocp-Apim-Subscription-Key");
 
     private static final String CONTENT_TYPE_JSON = "application/json";
-    private static final int IO_API_IO_ERROR = 800;
-    private static final int IO_API_UNEXPECTED_ERROR = 801;
 
     private final HttpClient client;
 
@@ -89,11 +90,11 @@ public class IOClientImpl implements IOClient {
         try {
             return client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new IOAPIException("I/O error when invoking IO API", IO_API_IO_ERROR, e);
+            throw new IOAPIException("I/O error when invoking IO API", ERROR_IO_API_IO.getCode(), e);
         } catch (InterruptedException e) {
             logger.warn("This thread was interrupted, restoring the state");
             Thread.currentThread().interrupt();
-            throw new IOAPIException("Unexpected error when invoking IO API, the thread was interrupted", IO_API_UNEXPECTED_ERROR, e);
+            throw new IOAPIException("Unexpected error when invoking IO API, the thread was interrupted", ERROR_IO_API_UNEXPECTED.getCode(), e);
         }
     }
 }
