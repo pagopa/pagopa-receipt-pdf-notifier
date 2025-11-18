@@ -47,10 +47,14 @@ jobs:
 
       - name: Run Integration Tests
         shell: bash
+        env:
+          CUCUMBER_PUBLISH_TOKEN_ENV: ${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
+          RECEIPTS_STORAGE_CONN_STRING_ENV: ${{ secrets.RECEIPTS_STORAGE_CONN_STRING }}
+          RECEIPTS_COSMOS_CONN_STRING_ENV: ${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}
         run: |
-          export CUCUMBER_PUBLISH_TOKEN=${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
-          export RECEIPTS_STORAGE_CONN_STRING='${{ secrets.RECEIPTS_STORAGE_CONN_STRING }}'
-          export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
+          export CUCUMBER_PUBLISH_TOKEN="$CUCUMBER_PUBLISH_TOKEN_ENV"
+          export RECEIPTS_STORAGE_CONN_STRING="$RECEIPTS_STORAGE_CONN_STRING_ENV"
+          export RECEIPTS_COSMOS_CONN_STRING="$RECEIPTS_COSMOS_CONN_STRING_ENV"
           
           cd ./integration-test
           chmod +x ./run_integration_test.sh
