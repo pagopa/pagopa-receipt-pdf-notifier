@@ -4,7 +4,6 @@ import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.gov.pagopa.receipt.pdf.notifier.client.IOClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
@@ -13,6 +12,8 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
+import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
+import it.gov.pagopa.receipt.pdf.notifier.exception.IOAPIException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.IoMessageNotFoundException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
@@ -20,15 +21,18 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfileResponse;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.IOMessageResponse;
+import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import lombok.SneakyThrows;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -40,8 +44,8 @@ import java.util.EnumMap;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(SystemStubsExtension.class)
-class ReceiptToNotificationMessageBuilderImplTest {
+@ExtendWith({MockitoExtension.class, SystemStubsExtension.class})
+class ReceiptToIOServiceImplTest {
 
     private static final String VALID_DEBTOR_MESSAGE_ID = "valid debtor message id";
     private static final String VALID_PAYER_MESSAGE_ID = "valid payer message id";
@@ -49,45 +53,33 @@ class ReceiptToNotificationMessageBuilderImplTest {
     private static final String INVALID_CF = "an invalid fiscal code";
     private static final String VALID_DEBTOR_CF = "JHNDOE80D05B157Y";
     private static final String EVENT_ID = "123";
+    private static final String ERROR_MESSAGE = "error message";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @SystemStub
     private EnvironmentVariables environmentVariables = new EnvironmentVariables("CF_FILTER_NOTIFIER", VALID_DEBTOR_CF + "," + VALID_PAYER_CF);
 
-    private IOClient ioClientMock;
-
+    @Mock
+    private IOService ioServiceMock;
+    @Mock
     private NotifierQueueClient notifierQueueClientMock;
-
+    @Mock
     private NotificationMessageBuilder notificationMessageBuilderMock;
-
+    @Mock
     private PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapperMock;
-
+    @Mock
     private ReceiptCosmosClient receiptCosmosClientMock;
-
-    private ReceiptToIOService sut;
-
-    @BeforeEach
-    void setUp() {
-        ioClientMock = mock(IOClient.class);
-        notifierQueueClientMock = mock(NotifierQueueClient.class);
-        notificationMessageBuilderMock = mock(NotificationMessageBuilder.class);
-        pdvTokenizerServiceRetryWrapperMock = mock(PDVTokenizerServiceRetryWrapper.class);
-        receiptCosmosClientMock = mock(ReceiptCosmosClient.class);
-        sut = new ReceiptToIOServiceImpl(ioClientMock, notifierQueueClientMock, notificationMessageBuilderMock, pdvTokenizerServiceRetryWrapperMock, receiptCosmosClientMock);
-    }
+    @InjectMocks
+    private ReceiptToIOServiceImpl sut;
 
     @Test
     @SneakyThrows
     void notifyDebtorWithSuccess() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
         doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
-
-        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_DEBTOR_MESSAGE_ID);
-        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
+        doReturn(true).when(ioServiceMock).isNotifyToIOUserAllowed(any());
+        doReturn(VALID_DEBTOR_MESSAGE_ID).when(ioServiceMock).sendNotificationToIOUser(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -108,12 +100,8 @@ class ReceiptToNotificationMessageBuilderImplTest {
     void notifyPayerWithSuccess() {
         doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
         doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.PAYER));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
-
-        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_PAYER_MESSAGE_ID);
-        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
+        doReturn(true).when(ioServiceMock).isNotifyToIOUserAllowed(any());
+        doReturn(VALID_PAYER_MESSAGE_ID).when(ioServiceMock).sendNotificationToIOUser(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -134,12 +122,8 @@ class ReceiptToNotificationMessageBuilderImplTest {
     void notifyDebtorWithSuccessWithMessageData() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
         doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
-
-        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_DEBTOR_MESSAGE_ID);
-        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
+        doReturn(true).when(ioServiceMock).isNotifyToIOUserAllowed(any());
+        doReturn(VALID_DEBTOR_MESSAGE_ID).when(ioServiceMock).sendNotificationToIOUser(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -161,12 +145,8 @@ class ReceiptToNotificationMessageBuilderImplTest {
     void notifyPayerWithSuccessWithMessageData() {
         doReturn(VALID_PAYER_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
         doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.PAYER));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
-
-        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_CREATED, VALID_PAYER_MESSAGE_ID);
-        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
+        doReturn(true).when(ioServiceMock).isNotifyToIOUserAllowed(any());
+        doReturn(VALID_PAYER_MESSAGE_ID).when(ioServiceMock).sendNotificationToIOUser(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -257,12 +237,12 @@ class ReceiptToNotificationMessageBuilderImplTest {
 
     @Test
     @SneakyThrows
-    void notifyFailDebtorNotNotifiedGetProfileResponse404() {
+    void notifyFailDebtorNotNotifiedGetProfileThrowsIOAPIException() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        doThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "not found"))
-                .when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock)
+                .findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
+        doThrow(new IOAPIException(ERROR_MESSAGE, ReasonErrorCode.ERROR_IO_API_IO.getCode()))
+                .when(ioServiceMock).isNotifyToIOUserAllowed(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -270,20 +250,22 @@ class ReceiptToNotificationMessageBuilderImplTest {
         UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
 
         assertNotNull(userNotifyStatus);
-        assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, userNotifyStatus);
+        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
-        assertNull(receipt.getReasonErr());
+        assertNotNull(receipt.getReasonErr());
+        assertEquals(ReasonErrorCode.ERROR_IO_API_IO.getCode(), receipt.getReasonErr().getCode());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
         assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
     @SneakyThrows
-    void notifyFailDebtorNotNotifiedGetProfileResponse400() {
+    void notifyFailNotNotifiedGetProfileThrowsErrorToNotifyException() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        doThrow(new ApiException(HttpStatus.SC_BAD_REQUEST, "bad request"))
-                .when(ioClientMock).getProfileByPOSTWithHttpInfo(any());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock)
+                .findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
+        doThrow(new ErrorToNotifyException(ERROR_MESSAGE)).when(ioServiceMock).isNotifyToIOUserAllowed(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -295,92 +277,7 @@ class ReceiptToNotificationMessageBuilderImplTest {
         assertNull(receipt.getIoMessageData());
         assertNotNull(receipt.getReasonErr());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertNotNull(receipt.getReasonErr().getMessage());
-        assertNull(receipt.getReasonErrPayer());
-    }
-
-    @Test
-    @SneakyThrows
-    void notifyFailDebtorNotNotifiedGetProfileResponseNull() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        Receipt receipt = new Receipt();
-        receipt.setEventId(EVENT_ID);
-
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
-
-        assertNotNull(userNotifyStatus);
-        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
-        assertNull(receipt.getIoMessageData());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertNotNull(receipt.getReasonErr().getMessage());
-        assertNull(receipt.getReasonErrPayer());
-    }
-
-    @Test
-    @SneakyThrows
-    void notifyFailPayerNotNotifiedGetProfileResponseNull() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.PAYER));
-
-        Receipt receipt = new Receipt();
-        receipt.setEventId(EVENT_ID);
-
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_PAYER_CF, UserType.PAYER, receipt);
-
-        assertNotNull(userNotifyStatus);
-        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
-        assertNull(receipt.getIoMessageData());
-        assertNull(receipt.getReasonErr());
-        assertNotNull(receipt.getReasonErrPayer());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErrPayer().getCode());
-        assertNotNull(receipt.getReasonErrPayer().getMessage());
-    }
-
-    @Test
-    void notifyFailDebtorNotNotifiedGetProfileThrowsIOAPIException() throws IOAPIException, PDVTokenizerException, JsonProcessingException {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-
-        String errorMessage = "error message";
-        doThrow(new IOAPIException(errorMessage, HttpStatus.SC_BAD_REQUEST)).when(ioClientMock).getProfile(any());
-
-        Receipt receipt = new Receipt();
-        receipt.setEventId(EVENT_ID);
-
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
-
-        assertNotNull(userNotifyStatus);
-        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
-        assertNull(receipt.getIoMessageData());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_BAD_REQUEST, receipt.getReasonErr().getCode());
-        assertNotNull(receipt.getReasonErr().getMessage());
-        assertEquals(errorMessage, receipt.getReasonErr().getMessage());
-        assertNull(receipt.getReasonErrPayer());
-    }
-
-    @Test
-    @SneakyThrows
-    void notifyFailNotNotifiedGetProfileResponseStatusNotOK() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, false);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
-
-        Receipt receipt = new Receipt();
-        receipt.setEventId(EVENT_ID);
-
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
-
-        assertNotNull(userNotifyStatus);
-        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
-        assertNull(receipt.getIoMessageData());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertNotNull(receipt.getReasonErr().getMessage());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
         assertNull(receipt.getReasonErrPayer());
     }
 
@@ -388,10 +285,9 @@ class ReceiptToNotificationMessageBuilderImplTest {
     @SneakyThrows
     void notifyFailNotToBeNotifiedGetProfileResponseNotAllowed() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, false);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock)
+                .findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
+        doReturn(false).when(ioServiceMock).isNotifyToIOUserAllowed(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -409,13 +305,11 @@ class ReceiptToNotificationMessageBuilderImplTest {
     @SneakyThrows
     void notifyFailNotNotifiedBuildMessageException() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
-
-        String errorMessage = "error message";
-        doThrow(new MissingFieldsForNotificationException(errorMessage)).when(notificationMessageBuilderMock).buildMessagePayload(anyString(), any(), any());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock)
+                .findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
+        doReturn(true).when(ioServiceMock).isNotifyToIOUserAllowed(any());
+        doThrow(new MissingFieldsForNotificationException(ERROR_MESSAGE))
+                .when(notificationMessageBuilderMock).buildMessagePayload(anyString(), any(), any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -427,7 +321,7 @@ class ReceiptToNotificationMessageBuilderImplTest {
         assertNull(receipt.getIoMessageData());
         assertNotNull(receipt.getReasonErr());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertEquals(errorMessage, receipt.getReasonErr().getMessage());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
         assertNull(receipt.getReasonErrPayer());
     }
 
@@ -435,13 +329,11 @@ class ReceiptToNotificationMessageBuilderImplTest {
     @SneakyThrows
     void notifyFailNotNotifiedNotifyReturnIOAPIException() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
-
-        String errorMessage = "error message";
-        doThrow(new IOAPIException(errorMessage, HttpStatus.SC_BAD_REQUEST)).when(ioClientMock).submitMessage(any());
+        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock)
+                .findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
+        doReturn(true).when(ioServiceMock).isNotifyToIOUserAllowed(any());
+        doThrow(new IOAPIException(ERROR_MESSAGE, ReasonErrorCode.ERROR_IO_API_UNEXPECTED.getCode()))
+                .when(ioServiceMock).sendNotificationToIOUser(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -452,22 +344,19 @@ class ReceiptToNotificationMessageBuilderImplTest {
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
         assertNull(receipt.getIoMessageData());
         assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_BAD_REQUEST, receipt.getReasonErr().getCode());
+        assertEquals(ReasonErrorCode.ERROR_IO_API_UNEXPECTED.getCode(), receipt.getReasonErr().getCode());
         assertNotNull(receipt.getReasonErr().getMessage());
-        assertEquals(errorMessage, receipt.getReasonErr().getMessage());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
         assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
     @SneakyThrows
-    void notifyFailNotNotifiedNotifyResponseNull() {
+    void notifyFailNotNotifiedNotifyThrowsErrorToNotifyException() {
         doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
         doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
-
-        doReturn(null).when(ioClientMock).submitMessage(any());
+        doReturn(true).when(ioServiceMock).isNotifyToIOUserAllowed(any());
+        doThrow(new ErrorToNotifyException(ERROR_MESSAGE)).when(ioServiceMock).sendNotificationToIOUser(any());
 
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
@@ -479,40 +368,13 @@ class ReceiptToNotificationMessageBuilderImplTest {
         assertNull(receipt.getIoMessageData());
         assertNotNull(receipt.getReasonErr());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertNotNull(receipt.getReasonErr().getMessage());
-        assertNull(receipt.getReasonErrPayer());
-    }
-
-    @Test
-    @SneakyThrows
-    void notifyFailNotNotifiedNotifyResponseStatusNotCreated() {
-        doReturn(VALID_DEBTOR_CF).when(pdvTokenizerServiceRetryWrapperMock).getFiscalCodeWithRetry(anyString());
-        doThrow(IoMessageNotFoundException.class).when(receiptCosmosClientMock).findIOMessageWithEventIdAndUserType(anyString(),eq(UserType.DEBTOR));
-
-        HttpResponse<String> getProfileResponse = mockGetProfileResponse(HttpStatus.SC_OK, true);
-        doReturn(getProfileResponse).when(ioClientMock).getProfile(any());
-
-        HttpResponse<String> messageResponse = mockNotifyResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
-        doReturn(messageResponse).when(ioClientMock).submitMessage(any());
-
-        Receipt receipt = new Receipt();
-        receipt.setEventId(EVENT_ID);
-
-        UserNotifyStatus userNotifyStatus = sut.notifyMessage(VALID_DEBTOR_CF, UserType.DEBTOR, receipt);
-
-        assertNotNull(userNotifyStatus);
-        assertEquals(UserNotifyStatus.NOT_NOTIFIED, userNotifyStatus);
-        assertNull(receipt.getIoMessageData());
-        assertNotNull(receipt.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
-        assertNotNull(receipt.getReasonErr().getMessage());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
         assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
     @SneakyThrows
     void verifyWithSuccessDebtorPayerNotified() {
-
         EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
         usersToBeVerified.put(UserType.DEBTOR, UserNotifyStatus.NOTIFIED);
         usersToBeVerified.put(UserType.PAYER, UserNotifyStatus.NOTIFIED);
@@ -540,7 +402,6 @@ class ReceiptToNotificationMessageBuilderImplTest {
     @Test
     @SneakyThrows
     void verifyFailDebtorNotToBeNotified() {
-
         EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
         usersToBeVerified.put(UserType.DEBTOR, UserNotifyStatus.NOT_TO_BE_NOTIFIED);
 
@@ -557,31 +418,6 @@ class ReceiptToNotificationMessageBuilderImplTest {
         assertFalse(result);
         assertEquals(ReceiptStatusType.NOT_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
-    }
-
-    @Test
-    @SneakyThrows
-    void verifyFailDebtorNotNotifiedWithMessageDataNull() {
-        Response<SendMessageResult> queueResponse = mockRequeueResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        doReturn(queueResponse).when(notifierQueueClientMock).sendMessageToQueue(anyString());
-
-        EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
-        usersToBeVerified.put(UserType.DEBTOR, UserNotifyStatus.NOT_NOTIFIED);
-
-        Receipt receipt = new Receipt();
-        receipt.setEventId(EVENT_ID);
-        EventData eventData = new EventData();
-        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
-        receipt.setEventData(eventData);
-
-        ArrayList<IOMessage> messagesNotified = new ArrayList<>();
-
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
-
-        assertTrue(result);
-        assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
-        assertTrue(messagesNotified.isEmpty());
-        assertEquals(1, receipt.getNotificationNumRetry());
     }
 
     @Test
@@ -676,9 +512,6 @@ class ReceiptToNotificationMessageBuilderImplTest {
     @Test
     @SneakyThrows
     void verifyFailDebtorNotNotifiedMaxRetryReached() {
-        Response<SendMessageResult> queueResponse = mockRequeueResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        doReturn(queueResponse).when(notifierQueueClientMock).sendMessageToQueue(anyString());
-
         EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
         usersToBeVerified.put(UserType.DEBTOR, UserNotifyStatus.NOT_NOTIFIED);
 
@@ -696,6 +529,8 @@ class ReceiptToNotificationMessageBuilderImplTest {
         assertFalse(result);
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
+
+        verify(notifierQueueClientMock, never()).sendMessageToQueue(anyString());
     }
 
     @Test

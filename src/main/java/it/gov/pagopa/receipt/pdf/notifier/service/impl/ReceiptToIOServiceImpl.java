@@ -3,9 +3,7 @@ package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import it.gov.pagopa.receipt.pdf.notifier.client.IOClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
-import it.gov.pagopa.receipt.pdf.notifier.client.impl.IOClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.ReceiptCosmosClientImpl;
@@ -20,20 +18,20 @@ import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotification
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfilePayload;
-import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfileResponse;
-import it.gov.pagopa.receipt.pdf.notifier.model.io.message.IOMessageResponse;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
+import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.http.HttpResponse;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,14 +49,14 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_RECEIPT_MAX_RETRY", "5"));
     private static final List<String> CF_FILTER_NOTIFIER = Arrays.asList(System.getenv().getOrDefault("CF_FILTER_NOTIFIER", "").split(","));
 
-    private final IOClient ioClient;
+    private final IOService ioService;
     private final NotifierQueueClient notifierQueueClient;
     private final NotificationMessageBuilder notificationMessageBuilder;
     private final PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper;
     private final ReceiptCosmosClient receiptCosmosClient;
 
     public ReceiptToIOServiceImpl() {
-        this.ioClient = IOClientImpl.getInstance();
+        this.ioService = new IOServiceImpl();
         this.notifierQueueClient = NotifierQueueClientImpl.getInstance();
         this.notificationMessageBuilder = new NotificationMessageBuilderImpl();
         this.pdvTokenizerServiceRetryWrapper = new PDVTokenizerServiceRetryWrapperImpl();
@@ -66,13 +64,13 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     }
 
     ReceiptToIOServiceImpl(
-            IOClient ioClient,
+            IOService ioService,
             NotifierQueueClient notifierQueueClient,
             NotificationMessageBuilder notificationMessageBuilder,
             PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper,
             ReceiptCosmosClient receiptCosmosClient
     ) {
-        this.ioClient = ioClient;
+        this.ioService = ioService;
         this.notifierQueueClient = notifierQueueClient;
         this.notificationMessageBuilder = notificationMessageBuilder;
         this.pdvTokenizerServiceRetryWrapper = pdvTokenizerServiceRetryWrapper;
@@ -98,7 +96,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 return ALREADY_NOTIFIED;
             }
 
-            if (!isNotifyToIOUserAllowed(fiscalCode)) {
+            if (!this.ioService.isNotifyToIOUserAllowed(fiscalCode)) {
                 logger.info("User {} has not to be notified", userType);
                 return NOT_TO_BE_NOTIFIED;
             }
@@ -116,13 +114,6 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             logger.error("Error notifying IO user {}", userType, e);
             return NOT_NOTIFIED;
         }
-    }
-
-    private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException, MissingFieldsForNotificationException, IOAPIException {
-        MessagePayload messagePayload = this.notificationMessageBuilder.buildMessagePayload(fiscalCode, receipt, userType);
-        String messageId = sendNotificationToIOUser(messagePayload);
-
-        updateReceiptWithIOMessageData(userType, receipt, messageId);
     }
 
     /**
@@ -162,60 +153,11 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         return false;
     }
 
-    private boolean isNotifyToIOUserAllowed(String fiscalCode) throws IOAPIException, ErrorToNotifyException {
-        IOProfilePayload iOProfilePayload = IOProfilePayload.builder().fiscalCode(fiscalCode).build();
-        String payload = serializePayload(iOProfilePayload);
+    private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException, MissingFieldsForNotificationException, IOAPIException {
+        MessagePayload messagePayload = this.notificationMessageBuilder.buildMessagePayload(fiscalCode, receipt, userType);
+        String messageId = this.ioService.sendNotificationToIOUser(messagePayload);
 
-        logger.debug("IO API getProfile called");
-        HttpResponse<String> getProfileResponse = this.ioClient.getProfile(payload);
-        logger.debug("IO API getProfile invocation completed");
-
-        if (getProfileResponse == null) {
-            throw new ErrorToNotifyException("IO /profiles failed to respond");
-        }
-
-        if (getProfileResponse.statusCode() != HttpStatus.SC_OK || getProfileResponse.body() == null) {
-            String errorMsg = String.format("IO /profiles responded with code %s", getProfileResponse.statusCode());
-            throw new ErrorToNotifyException(errorMsg);
-        }
-
-        IOProfileResponse ioProfileResponse = deserializeResponse(getProfileResponse.body(), IOProfileResponse.class);
-        return ioProfileResponse.isSenderAllowed();
-    }
-
-    private String sendNotificationToIOUser(MessagePayload message) throws IOAPIException, ErrorToNotifyException {
-        String payload = serializePayload(message);
-
-        logger.debug("IO API submitMessage called");
-        HttpResponse<String> notificationResponse = this.ioClient.submitMessage(payload);
-        logger.debug("IO API submitMessage invocation completed");
-
-        if (notificationResponse == null) {
-            throw new ErrorToNotifyException("IO /messages failed to respond");
-        }
-        if (notificationResponse.statusCode() != HttpStatus.SC_CREATED || notificationResponse.body() == null) {
-            String errorMsg = String.format("IO /messages responded with code %s", notificationResponse.statusCode());
-            throw new ErrorToNotifyException(errorMsg);
-        }
-
-        IOMessageResponse ioMessageResponse = deserializeResponse(notificationResponse.body(), IOMessageResponse.class);
-        return ioMessageResponse.getId();
-    }
-
-    private String serializePayload(Object payload) throws ErrorToNotifyException {
-        try {
-            return ObjectMapperUtils.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
-            throw new ErrorToNotifyException("Failed to serialize payload for IO API invocation", e);
-        }
-    }
-
-    private <T> T deserializeResponse(String response, Class<T> clazz) throws ErrorToNotifyException {
-        try {
-            return ObjectMapperUtils.mapString(response, clazz);
-        } catch (JsonProcessingException e) {
-            throw new ErrorToNotifyException("Failed to deserialize response of IO API invocation", e);
-        }
+        updateReceiptWithIOMessageData(userType, receipt, messageId);
     }
 
     private boolean requeueReceiptForRetry(Receipt receipt) {
