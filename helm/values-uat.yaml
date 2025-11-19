@@ -80,6 +80,7 @@ microservice-chart:
   fileConfig: {}
   envConfig:
     ENV: "uat"
+    LOG_LEVEL: "INFO"
     LANG: "C.UTF-8"
     WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
     ASPNETCORE_URLS: "http://*:8080"

@@ -16,8 +16,8 @@ public class Receipt {
     private EventData eventData;
     private IOMessageData ioMessageData;
     private ReceiptStatusType status;
-    //    private ReceiptMetadata mdAttach;
-//    private ReceiptMetadata mdAttachPayer;
+    private ReceiptMetadata mdAttach;
+    private ReceiptMetadata mdAttachPayer;
     private int numRetry;
     private ReasonError reasonErr;
     private ReasonError reasonErrPayer;
@@ -25,5 +25,5 @@ public class Receipt {
     private long inserted_at;
     private long generated_at;
     private long notified_at;
-//    private Boolean isCart;
+    private Boolean isCart;
 }

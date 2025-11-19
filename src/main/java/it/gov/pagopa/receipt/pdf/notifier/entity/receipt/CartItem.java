@@ -11,8 +11,5 @@ public class CartItem {
 
     private String subject;
     private String payeeName;
-    private String debtorFiscalCode;
-    private String amount;
-    private ReceiptMetadata mdAttach;
 
 }
