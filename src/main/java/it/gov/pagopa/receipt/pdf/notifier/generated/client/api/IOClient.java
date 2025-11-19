@@ -77,7 +77,7 @@ public class IOClient {
      * @return Call to execute
      * @throws ApiException If fail to serialize the request body object
      */
-    public okhttp3.Call getProfileByPOSTCall(FiscalCodePayload payload) throws ApiException {
+    private okhttp3.Call getProfileByPOSTCall(FiscalCodePayload payload) throws ApiException {
 
         Map<String, String> localVarHeaderParams = new HashMap<>();
 
@@ -132,7 +132,7 @@ public class IOClient {
      * @return Call to execute
      * @throws ApiException If fail to serialize the request body object
      */
-    public okhttp3.Call submitMessageforUserWithFiscalCodeInBodyCall(NewMessage message) throws ApiException {
+    private okhttp3.Call submitMessageforUserWithFiscalCodeInBodyCall(NewMessage message) throws ApiException {
 
         Map<String, String> localVarHeaderParams = new HashMap<>();
 

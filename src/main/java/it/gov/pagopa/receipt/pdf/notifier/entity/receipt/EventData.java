@@ -11,8 +11,8 @@ import java.util.List;
 @NoArgsConstructor
 public class EventData {
     private String payerFiscalCode;
-    private String debtorFiscalCode;
+    //    private String debtorFiscalCode;
     private String transactionCreationDate;
-    private String amount;
+    private String totalAmount;
     private List<CartItem> cart;
 }
