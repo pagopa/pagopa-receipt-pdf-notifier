@@ -84,6 +84,7 @@ microservice-chart:
     ASPNETCORE_URLS: "http://*:8080"
     FUNCTIONS_WORKER_RUNTIME: "java"
     NOTIFIER_QUEUE_TOPIC: "pagopa-d-weu-receipts-queue-receipt-io-notifier-error"
+    NOTIFIER_CART_QUEUE_TOPIC: "pagopa-d-weu-receipts-queue-cart-receipt-io-notifier-error"
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-d-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
