@@ -33,8 +33,8 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -395,9 +395,8 @@ class ReceiptToIOServiceImplTest {
         messageData.setIdMessagePayer(VALID_PAYER_MESSAGE_ID);
         receipt.setIoMessageData(messageData);
 
-        ArrayList<IOMessage> messagesNotified = new ArrayList<>();
-
-        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
+        List<IOMessage> messagesNotified =
+                assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, receipt));
 
         assertEquals(ReceiptStatusType.IO_NOTIFIED, receipt.getStatus());
         assertEquals(2, messagesNotified.size());
@@ -417,9 +416,8 @@ class ReceiptToIOServiceImplTest {
         eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
         receipt.setEventData(eventData);
 
-        ArrayList<IOMessage> messagesNotified = new ArrayList<>();
-
-        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
+        List<IOMessage> messagesNotified =
+                assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, receipt));
 
         assertEquals(ReceiptStatusType.NOT_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
@@ -442,9 +440,8 @@ class ReceiptToIOServiceImplTest {
         eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
         receipt.setEventData(eventData);
 
-        ArrayList<IOMessage> messagesNotified = new ArrayList<>();
-
-        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
+        List<IOMessage> messagesNotified =
+                assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, receipt));
 
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
@@ -473,9 +470,8 @@ class ReceiptToIOServiceImplTest {
         messageData.setIdMessagePayer(VALID_PAYER_MESSAGE_ID);
         receipt.setIoMessageData(messageData);
 
-        ArrayList<IOMessage> messagesNotified = new ArrayList<>();
-
-        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
+        List<IOMessage> messagesNotified =
+                assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, receipt));
 
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertEquals(1, messagesNotified.size());
@@ -506,9 +502,8 @@ class ReceiptToIOServiceImplTest {
         messageData.setIdMessageDebtor(VALID_DEBTOR_MESSAGE_ID);
         receipt.setIoMessageData(messageData);
 
-        ArrayList<IOMessage> messagesNotified = new ArrayList<>();
-
-        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
+        List<IOMessage> messagesNotified =
+                assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, receipt));
 
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertEquals(1, messagesNotified.size());
@@ -532,9 +527,8 @@ class ReceiptToIOServiceImplTest {
         receipt.setEventData(eventData);
         receipt.setNotificationNumRetry(6);
 
-        ArrayList<IOMessage> messagesNotified = new ArrayList<>();
-
-        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
+        List<IOMessage> messagesNotified =
+                assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, receipt));
 
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
@@ -557,9 +551,8 @@ class ReceiptToIOServiceImplTest {
         eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
         receipt.setEventData(eventData);
 
-        ArrayList<IOMessage> messagesNotified = new ArrayList<>();
-
-        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
+        List<IOMessage> messagesNotified =
+                assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, receipt));
 
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
@@ -581,9 +574,8 @@ class ReceiptToIOServiceImplTest {
         eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
         receipt.setEventData(eventData);
 
-        ArrayList<IOMessage> messagesNotified = new ArrayList<>();
-
-        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
+        List<IOMessage> messagesNotified =
+                assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, receipt));
 
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());

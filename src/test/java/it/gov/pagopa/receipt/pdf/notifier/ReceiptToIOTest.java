@@ -11,6 +11,8 @@ import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -18,8 +20,9 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import java.util.Collections;
 import java.util.List;
 
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.ANONIMO;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.anyList;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -44,17 +47,19 @@ class ReceiptToIOTest {
 
     private ReceiptToIO sut;
 
-    @Test
+    @ParameterizedTest
+    @EnumSource(value = ReceiptStatusType.class, names = {"GENERATED", "SIGNED", "IO_NOTIFIER_RETRY"})
     @SneakyThrows
-    void receiptToIOSuccessWithDebtorAndStatusGenerated() {
+    void receiptToIOSuccessWithDebtorAndStatusGenerated(ReceiptStatusType status) {
         doReturn(UserNotifyStatus.NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        doReturn(Collections.singletonList(new IOMessage()))
+                .when(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
 
         Receipt receipt = new Receipt();
         EventData eventData = new EventData();
         eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
         receipt.setEventData(eventData);
-        receipt.setStatus(ReceiptStatusType.GENERATED);
+        receipt.setStatus(status);
 
         withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
                 .execute(() -> {
@@ -63,58 +68,17 @@ class ReceiptToIOTest {
                 });
 
         verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
-    }
-
-    @Test
-    @SneakyThrows
-    void receiptToIOSuccessWithDebtorAndStatusSigned() {
-        doReturn(UserNotifyStatus.NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
-
-        Receipt receipt = new Receipt();
-        EventData eventData = new EventData();
-        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
-        receipt.setEventData(eventData);
-        receipt.setStatus(ReceiptStatusType.SIGNED);
-
-        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
-                .execute(() -> {
-                    sut = new ReceiptToIO(receiptToIOServiceMock);
-                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
-                });
-
-        verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
-    }
-
-    @Test
-    @SneakyThrows
-    void receiptToIOSuccessWithDebtorAndStatusIONotifierRetry() {
-        doReturn(UserNotifyStatus.NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
-
-        Receipt receipt = new Receipt();
-        EventData eventData = new EventData();
-        eventData.setDebtorFiscalCode(VALID_DEBTOR_CF);
-        receipt.setEventData(eventData);
-        receipt.setStatus(ReceiptStatusType.IO_NOTIFIER_RETRY);
-
-        withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
-                .execute(() -> {
-                    sut = new ReceiptToIO(receiptToIOServiceMock);
-                    sut.processReceiptToIO(Collections.singletonList(receipt), documentReceiptsMock, documentMessagesMock, executionContextMock);
-                });
-
-        verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
+        verify(documentReceiptsMock).setValue(anyList());
+        verify(documentMessagesMock).setValue(anyList());
     }
 
     @Test
     @SneakyThrows
     void receiptToIOSuccessWithDebtorAndPayer() {
         doReturn(UserNotifyStatus.NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        doReturn(List.of(new IOMessage(), new IOMessage()))
+                .when(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
 
         Receipt receipt = new Receipt();
         EventData eventData = new EventData();
@@ -130,17 +94,19 @@ class ReceiptToIOTest {
                 });
 
         verify(receiptToIOServiceMock, times(2)).notifyMessage(anyString(), any(), any());
-        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
+        verify(documentReceiptsMock).setValue(anyList());
+        verify(documentMessagesMock).setValue(anyList());
     }
 
     @Test
     @SneakyThrows
     void receiptToIOSuccessWithDebtorAnonimo() {
-        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        doReturn(Collections.emptyList()).when(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
 
         Receipt receipt = new Receipt();
         EventData eventData = new EventData();
-        eventData.setDebtorFiscalCode("ANONIMO");
+        eventData.setDebtorFiscalCode(ANONIMO);
         receipt.setEventData(eventData);
         receipt.setStatus(ReceiptStatusType.GENERATED);
 
@@ -151,7 +117,9 @@ class ReceiptToIOTest {
                 });
 
         verify(receiptToIOServiceMock, never()).notifyMessage(anyString(), any(), any());
-        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
+        verify(documentReceiptsMock).setValue(anyList());
+        verify(documentMessagesMock, never()).setValue(anyList());
     }
 
     @Test
@@ -170,14 +138,16 @@ class ReceiptToIOTest {
                 });
 
         verify(receiptToIOServiceMock, never()).notifyMessage(anyString(), any(), any());
-        verify(receiptToIOServiceMock, never()).verifyMessagesNotification(any(), anyList(), any());
+        verify(receiptToIOServiceMock, never()).verifyMessagesNotification(any(), any());
+        verify(documentReceiptsMock, never()).setValue(anyList());
+        verify(documentMessagesMock, never()).setValue(anyList());
     }
 
     @Test
     @SneakyThrows
     void receiptToIOFailVerifyTriggerRequeue() {
         doReturn(UserNotifyStatus.NOT_NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        doReturn(true).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        doReturn(Collections.emptyList()).when(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
 
         Receipt receipt = new Receipt();
         EventData eventData = new EventData();
@@ -192,14 +162,16 @@ class ReceiptToIOTest {
                 });
 
         verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
+        verify(documentReceiptsMock).setValue(anyList());
+        verify(documentMessagesMock, never()).setValue(anyList());
     }
 
     @Test
     @SneakyThrows
     void receiptToIOPayerNotNotifiedBecauseDisabled() {
         doReturn(UserNotifyStatus.NOT_NOTIFIED).when(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        doReturn(Collections.emptyList()).when(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
 
         Receipt receipt = new Receipt();
         EventData eventData = new EventData();
@@ -215,13 +187,15 @@ class ReceiptToIOTest {
                 });
 
         verify(receiptToIOServiceMock).notifyMessage(anyString(), any(), any());
-        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
+        verify(documentReceiptsMock).setValue(anyList());
+        verify(documentMessagesMock, never()).setValue(anyList());
     }
 
     @Test
     @SneakyThrows
     void receiptToIONotNotifiedBecausePayerEqualDebtor() {
-        doReturn(false).when(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        doReturn(Collections.emptyList()).when(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
 
         Receipt receipt = new Receipt();
         EventData eventData = new EventData();
@@ -237,6 +211,8 @@ class ReceiptToIOTest {
                 });
 
         verify(receiptToIOServiceMock, never()).notifyMessage(anyString(), any(), any());
-        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), anyList(), any());
+        verify(receiptToIOServiceMock).verifyMessagesNotification(any(), any());
+        verify(documentReceiptsMock).setValue(anyList());
+        verify(documentMessagesMock, never()).setValue(anyList());
     }
 }

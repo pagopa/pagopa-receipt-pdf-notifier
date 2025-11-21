@@ -19,7 +19,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.ANONIMO;
 
 /**
  * Azure Functions with CosmosDB trigger.
@@ -107,7 +108,7 @@ public class ReceiptToIO {
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
 
             //Notify to debtor
-            if (!"ANONIMO".equals(debtorFiscalCode) && !(Boolean.TRUE.equals(payerNotifyDisabled) && debtorFiscalCode.equals(payerFiscalCode))) {
+            if (!ANONIMO.equals(debtorFiscalCode) && !(Boolean.TRUE.equals(payerNotifyDisabled) && debtorFiscalCode.equals(payerFiscalCode))) {
                 UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
                 usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
             }

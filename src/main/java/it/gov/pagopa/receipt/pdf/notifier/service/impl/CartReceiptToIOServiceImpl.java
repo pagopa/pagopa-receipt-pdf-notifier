@@ -35,17 +35,16 @@ import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifySta
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_TO_BE_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.ANONIMO;
-import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.CF_FILTER_NOTIFIER;
-import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.FISCAL_CODE_PATTERN;
-import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.PAYER_NOTIFY_DISABLED;
 import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.buildReasonError;
 import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.getCodeOrDefault;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.isFiscalCodeValid;
 
 public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
 
     private final Logger logger = LoggerFactory.getLogger(CartReceiptToIOServiceImpl.class);
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_CART_RECEIPT_MAX_RETRY", "5"));
+    public static final Boolean PAYER_NOTIFY_DISABLED = Boolean.parseBoolean(System.getenv().getOrDefault("PAYER_NOTIFY_DISABLED", "true"));
 
     private final IOService ioService;
     private final NotifierCartQueueClient notifierCartQueueClient;
@@ -160,12 +159,14 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
         });
 
 
-        if (debtorNotifyStatus.stream().anyMatch(status -> status.equals(NOT_NOTIFIED)) || payerNotified.equals(NOT_NOTIFIED)) {
+        boolean atLeastOneDebtorNotNotified = debtorNotifyStatus.stream().anyMatch(status -> status.equals(NOT_NOTIFIED));
+        if (atLeastOneDebtorNotNotified || payerNotified.equals(NOT_NOTIFIED)) {
             requeueReceiptForRetry(cartForReceipt);
             return ioMessages;
         }
 
-        if (debtorNotifyStatus.stream().allMatch(status -> status.equals(NOT_TO_BE_NOTIFIED)) && payerNotified.equals(NOT_TO_BE_NOTIFIED)) {
+        boolean allDebtorsNotToBeNotified = debtorNotifyStatus.stream().allMatch(status -> status.equals(NOT_TO_BE_NOTIFIED));
+        if (allDebtorsNotToBeNotified && payerNotified.equals(NOT_TO_BE_NOTIFIED)) {
             cartForReceipt.setStatus(CartStatusType.NOT_TO_NOTIFY);
             return ioMessages;
         }
@@ -263,10 +264,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
     }
 
     private boolean isToBeNotified(String fiscalCode, String idMessage) {
-        return fiscalCode != null
-                && FISCAL_CODE_PATTERN.matcher(fiscalCode).matches()
-                && (CF_FILTER_NOTIFIER.contains("*") || CF_FILTER_NOTIFIER.contains(fiscalCode))
-                && idMessage == null;
+        return isFiscalCodeValid(fiscalCode) && idMessage == null;
     }
 
     private String getIOMessageForUserIfAlreadyExist(String cartId, String eventId, UserType userType) {
