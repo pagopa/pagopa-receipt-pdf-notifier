@@ -20,9 +20,11 @@ import it.gov.pagopa.receipt.pdf.notifier.service.CartReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
+import it.gov.pagopa.receipt.pdf.notifier.utils.MDCConstants;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -81,35 +83,45 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
     public NotifyCartResult notifyCart(CartForReceipt cartForReceipt) {
         String payerFiscalCode = cartForReceipt.getPayload().getPayerFiscalCode();
 
-        NotifyCartResult notifyCartResult = new NotifyCartResult();
-        if (!Boolean.TRUE.equals(PAYER_NOTIFY_DISABLED) && payerFiscalCode != null) {
-            //Notify to payer
-            NotifyUserResult payerNotifyStatus = notifyMessage(
-                    payerFiscalCode,
-                    cartForReceipt.getEventId(),
-                    null,
-                    cartForReceipt.getPayload().getIdMessagePayer(),
-                    UserType.PAYER
-            );
+        try {
+            NotifyCartResult notifyCartResult = new NotifyCartResult();
+            if (!Boolean.TRUE.equals(PAYER_NOTIFY_DISABLED) && payerFiscalCode != null) {
+                MDC.put(MDCConstants.USER_TYPE, UserType.PAYER.name());
 
-            notifyCartResult.setPayerNotifyResult(payerNotifyStatus);
-        }
-
-        cartForReceipt.getPayload().getCart().forEach(cartPayment -> {
-            String debtorFiscalCode = cartPayment.getDebtorFiscalCode();
-            //Notify to debtor
-            if (!ANONIMO.equals(debtorFiscalCode) && !Objects.equals(debtorFiscalCode, payerFiscalCode)) {
-                NotifyUserResult debtorNotifyResult = notifyMessage(
-                        debtorFiscalCode,
+                // Notify to payer
+                NotifyUserResult payerNotifyStatus = notifyMessage(
+                        payerFiscalCode,
                         cartForReceipt.getEventId(),
-                        cartPayment.getBizEventId(),
-                        cartPayment.getIdMessageDebtor(),
-                        UserType.DEBTOR
+                        null,
+                        cartForReceipt.getPayload().getIdMessagePayer(),
+                        UserType.PAYER
                 );
-                notifyCartResult.addDebtorNotifyStatusToMap(cartPayment.getBizEventId(), debtorNotifyResult);
+
+                notifyCartResult.setPayerNotifyResult(payerNotifyStatus);
             }
-        });
-        return notifyCartResult;
+
+            cartForReceipt.getPayload().getCart().forEach(cartPayment -> {
+                MDC.put(MDCConstants.USER_TYPE, UserType.DEBTOR.name());
+                MDC.put(MDCConstants.BIZ_EVENT_ID, cartPayment.getBizEventId());
+
+                String debtorFiscalCode = cartPayment.getDebtorFiscalCode();
+                // Notify to debtor
+                if (!ANONIMO.equals(debtorFiscalCode) && !Objects.equals(debtorFiscalCode, payerFiscalCode)) {
+                    NotifyUserResult debtorNotifyResult = notifyMessage(
+                            debtorFiscalCode,
+                            cartForReceipt.getEventId(),
+                            cartPayment.getBizEventId(),
+                            cartPayment.getIdMessageDebtor(),
+                            UserType.DEBTOR
+                    );
+                    notifyCartResult.addDebtorNotifyStatusToMap(cartPayment.getBizEventId(), debtorNotifyResult);
+                }
+            });
+            return notifyCartResult;
+        } finally {
+            MDC.remove(MDCConstants.BIZ_EVENT_ID);
+            MDC.remove(MDCConstants.USER_TYPE);
+        }
     }
 
     /**
@@ -196,7 +208,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
 
             String ioMessageId = getIOMessageForUserIfAlreadyExist(cartId, bizEventId, userType);
             if (ioMessageId != null) {
-                logger.warn("The receipt with event id {} has already been notified for user type {}", cartId, userType);
+                logger.warn("The cart receipt has already been notified for user");
                 return NotifyUserResult.builder()
                         .notifyStatus(ALREADY_NOTIFIED)
                         .messageId(ioMessageId)
@@ -204,7 +216,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
             }
 
             if (!this.ioService.isNotifyToIOUserAllowed(fiscalCode)) {
-                logger.info("User {} has not to be notified", userType);
+                logger.info("User has not to be notified");
                 return NotifyUserResult.builder()
                         .notifyStatus(NOT_TO_BE_NOTIFIED)
                         .build();
@@ -221,7 +233,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
                     .build();
         } catch (Exception e) {
             int code = getCodeOrDefault(e);
-            logger.error("Error notifying IO user {}", UserType.PAYER, e);
+            logger.error("Error notifying IO user", e);
             // TODO reason error should be set in cart object
             return NotifyUserResult.builder()
                     .notifyStatus(NOT_NOTIFIED)
@@ -235,7 +247,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
         cartForReceipt.setNotificationNumRetry(numRetry + 1);
 
         if (numRetry >= MAX_NUMBER_RETRY) {
-            logger.error("Maximum number of retries for event with event id: {}. Cart receipt updated with status UNABLE_TO_SEND", cartForReceipt.getEventId());
+            logger.error("Maximum number of retries for cart. Cart receipt updated with status UNABLE_TO_SEND");
             cartForReceipt.setStatus(CartStatusType.UNABLE_TO_SEND);
             return;
         }
@@ -244,7 +256,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
         try {
             receiptString = ObjectMapperUtils.writeValueAsString(cartForReceipt);
         } catch (JsonProcessingException e) {
-            logger.error("Unable to requeue for retry the event with event id: {}. Cart receipt updated with status IO_ERROR_TO_NOTIFY", cartForReceipt.getEventId(), e);
+            logger.error("Unable to requeue cart for retry. Cart receipt will be updated with status IO_ERROR_TO_NOTIFY", e);
             cartForReceipt.setStatus(CartStatusType.IO_ERROR_TO_NOTIFY);
             return;
         }
@@ -254,11 +266,11 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
                 cartForReceipt.setStatus(CartStatusType.IO_ERROR_TO_NOTIFY);
                 return;
             }
-            logger.error("Error in sending message to queue for cart receipt with event id: {}, queue responded with status {}. Cart receipt updated with status UNABLE_TO_SEND",
-                    cartForReceipt.getEventId(), response.getStatusCode());
+            logger.error("Error in sending message to queue for cart, queue responded with status {}. Cart receipt updated with status UNABLE_TO_SEND",
+                    response.getStatusCode());
             cartForReceipt.setStatus(CartStatusType.UNABLE_TO_SEND);
         } catch (Exception e) {
-            logger.error("Error in sending message to queue for cart receipt with event id: {}. Cart receipt updated with status UNABLE_TO_SEND", cartForReceipt.getEventId(), e);
+            logger.error("Error in sending message to queue for cart. Cart receipt updated with status UNABLE_TO_SEND", e);
             cartForReceipt.setStatus(CartStatusType.UNABLE_TO_SEND);
         }
     }

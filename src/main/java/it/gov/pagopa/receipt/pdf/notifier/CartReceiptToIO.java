@@ -11,8 +11,10 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.message.CartIOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.NotifyCartResult;
 import it.gov.pagopa.receipt.pdf.notifier.service.CartReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.impl.CartReceiptToIOServiceImpl;
+import it.gov.pagopa.receipt.pdf.notifier.utils.MDCConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -93,18 +95,24 @@ public class CartReceiptToIO {
         List<CartIOMessage> messagesNotified = new ArrayList<>();
 
         listReceipts.parallelStream().forEach(cartReceipt -> {
-            if (isCartReceiptNotValid(cartReceipt)) {
-                logger.info("Cart receipt discarded");
-                return;
+            try {
+                String cartId = cartReceipt != null ? cartReceipt.getEventId() : null;
+                MDC.put(MDCConstants.CART_ID, cartId);
+                if (isCartReceiptNotValid(cartReceipt)) {
+                    logger.info("Cart receipt discarded");
+                    return;
+                }
+
+                NotifyCartResult notifyCartResult = this.cartReceiptToIOService.notifyCart(cartReceipt);
+
+                List<CartIOMessage> cartIOMessages = this.cartReceiptToIOService
+                        .verifyNotificationResultAndUpdateCartReceipt(notifyCartResult, cartReceipt);
+
+                messagesNotified.addAll(cartIOMessages);
+                cartReceiptsNotified.add(cartReceipt);
+            } finally {
+                MDC.remove(MDCConstants.CART_ID);
             }
-
-            NotifyCartResult notifyCartResult = this.cartReceiptToIOService.notifyCart(cartReceipt);
-
-            List<CartIOMessage> cartIOMessages = this.cartReceiptToIOService
-                    .verifyNotificationResultAndUpdateCartReceipt(notifyCartResult, cartReceipt);
-
-            messagesNotified.addAll(cartIOMessages);
-            cartReceiptsNotified.add(cartReceipt);
         });
 
         if (!cartReceiptsNotified.isEmpty()) {
