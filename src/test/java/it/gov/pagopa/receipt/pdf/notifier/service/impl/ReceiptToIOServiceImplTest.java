@@ -3,7 +3,6 @@ package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gov.pagopa.receipt.pdf.notifier.client.NotifierQueueClient;
 import it.gov.pagopa.receipt.pdf.notifier.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
@@ -19,12 +18,9 @@ import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotification
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.model.io.IOProfileResponse;
-import it.gov.pagopa.receipt.pdf.notifier.model.io.message.IOMessageResponse;
 import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
-import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import lombok.SneakyThrows;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
@@ -37,12 +33,23 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.EnumMap;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith({MockitoExtension.class, SystemStubsExtension.class})
 class ReceiptToIOServiceImplTest {
@@ -54,8 +61,6 @@ class ReceiptToIOServiceImplTest {
     private static final String VALID_DEBTOR_CF = "JHNDOE80D05B157Y";
     private static final String EVENT_ID = "123";
     private static final String ERROR_MESSAGE = "error message";
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @SystemStub
     private EnvironmentVariables environmentVariables = new EnvironmentVariables("CF_FILTER_NOTIFIER", VALID_DEBTOR_CF + "," + VALID_PAYER_CF);
@@ -392,11 +397,12 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
 
-        assertFalse(result);
         assertEquals(ReceiptStatusType.IO_NOTIFIED, receipt.getStatus());
         assertEquals(2, messagesNotified.size());
+
+        verify(notifierQueueClientMock, never()).sendMessageToQueue(anyString());
     }
 
     @Test
@@ -413,11 +419,12 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
 
-        assertFalse(result);
         assertEquals(ReceiptStatusType.NOT_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
+
+        verify(notifierQueueClientMock, never()).sendMessageToQueue(anyString());
     }
 
     @Test
@@ -437,12 +444,13 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
 
-        assertTrue(result);
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
         assertEquals(1, receipt.getNotificationNumRetry());
+
+        verify(notifierQueueClientMock).sendMessageToQueue(anyString());
     }
 
     @Test
@@ -467,14 +475,15 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
 
-        assertTrue(result);
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertEquals(1, messagesNotified.size());
         assertEquals(receipt.getEventId(), messagesNotified.get(0).getEventId());
         assertEquals(VALID_PAYER_MESSAGE_ID, messagesNotified.get(0).getMessageId());
         assertEquals(1, receipt.getNotificationNumRetry());
+
+        verify(notifierQueueClientMock).sendMessageToQueue(anyString());
     }
 
     @Test
@@ -499,14 +508,15 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
 
-        assertTrue(result);
         assertEquals(ReceiptStatusType.IO_ERROR_TO_NOTIFY, receipt.getStatus());
         assertEquals(1, messagesNotified.size());
         assertEquals(receipt.getEventId(), messagesNotified.get(0).getEventId());
         assertEquals(VALID_DEBTOR_MESSAGE_ID, messagesNotified.get(0).getMessageId());
         assertEquals(1, receipt.getNotificationNumRetry());
+
+        verify(notifierQueueClientMock).sendMessageToQueue(anyString());
     }
 
     @Test
@@ -524,9 +534,8 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
 
-        assertFalse(result);
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
 
@@ -550,11 +559,12 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
 
-        assertFalse(result);
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
+
+        verify(notifierQueueClientMock).sendMessageToQueue(anyString());
     }
 
     @Test
@@ -573,11 +583,12 @@ class ReceiptToIOServiceImplTest {
 
         ArrayList<IOMessage> messagesNotified = new ArrayList<>();
 
-        boolean result = sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+        assertDoesNotThrow(() -> sut.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt));
 
-        assertFalse(result);
         assertEquals(ReceiptStatusType.UNABLE_TO_SEND, receipt.getStatus());
         assertTrue(messagesNotified.isEmpty());
+
+        verify(notifierQueueClientMock).sendMessageToQueue(anyString());
     }
 
     @NotNull
@@ -586,27 +597,5 @@ class ReceiptToIOServiceImplTest {
         Response<SendMessageResult> queueResponse = mock(Response.class);
         when(queueResponse.getStatusCode()).thenReturn(status);
         return queueResponse;
-    }
-
-    @SneakyThrows
-    @NotNull
-    private HttpResponse<String> mockNotifyResponse(int status, String messageId) {
-        @SuppressWarnings("unchecked")
-        HttpResponse<String> messageResponse = mock(HttpResponse.class);
-        when(messageResponse.statusCode()).thenReturn(status);
-        IOMessageResponse ioMessageResponse = IOMessageResponse.builder().id(messageId).build();
-        when(messageResponse.body()).thenReturn(objectMapper.writeValueAsString(ioMessageResponse));
-        return messageResponse;
-    }
-
-    @SneakyThrows
-    @NotNull
-    private HttpResponse<String> mockGetProfileResponse(int status, boolean allowed) {
-        @SuppressWarnings("unchecked")
-        HttpResponse<String> getProfileResponse = mock(HttpResponse.class);
-        when(getProfileResponse.statusCode()).thenReturn(status);
-        IOProfileResponse profile = IOProfileResponse.builder().senderAllowed(allowed).build();
-        when(getProfileResponse.body()).thenReturn(objectMapper.writeValueAsString(profile));
-        return getProfileResponse;
     }
 }

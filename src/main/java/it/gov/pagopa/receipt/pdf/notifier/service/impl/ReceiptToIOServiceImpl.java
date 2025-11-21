@@ -27,7 +27,7 @@ import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.EnumMap;
 import java.util.List;
@@ -120,37 +120,39 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * {@inheritDoc}
      */
     @Override
-    public boolean verifyMessagesNotification(
+    public List<IOMessage> verifyMessagesNotification(
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified,
-            List<IOMessage> messagesNotified,
             Receipt receipt
     ) {
+        List<IOMessage> ioMessages = new ArrayList<>();
+
         UserNotifyStatus debtorNotified =  usersToBeVerified.getOrDefault(UserType.DEBTOR, NOT_TO_BE_NOTIFIED);
         UserNotifyStatus payerNotified = usersToBeVerified.getOrDefault(UserType.PAYER, NOT_TO_BE_NOTIFIED);
 
         if (debtorNotified.equals(NOTIFIED)) {
             IOMessage ioMessage = getIoMessage(receipt, UserType.DEBTOR);
-            messagesNotified.add(ioMessage);
+            ioMessages.add(ioMessage);
         }
         if (payerNotified.equals(NOTIFIED)) {
             IOMessage ioMessage = getIoMessage(receipt, UserType.PAYER);
-            messagesNotified.add(ioMessage);
+            ioMessages.add(ioMessage);
         }
 
         if (debtorNotified.equals(NOT_NOTIFIED) || payerNotified.equals(NOT_NOTIFIED)) {
-            return requeueReceiptForRetry(receipt);
+            requeueReceiptForRetry(receipt);
+            return ioMessages;
         }
 
         if (debtorNotified.equals(NOT_TO_BE_NOTIFIED) && payerNotified.equals(NOT_TO_BE_NOTIFIED)) {
             receipt.setStatus(ReceiptStatusType.NOT_TO_NOTIFY);
-            return false;
+            return ioMessages;
         }
 
         if (receipt.getNotified_at() == 0L) {
             receipt.setNotified_at(System.currentTimeMillis());
         }
         receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
-        return false;
+        return ioMessages;
     }
 
     private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException, MissingFieldsForNotificationException, IOAPIException {
@@ -160,14 +162,14 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         updateReceiptWithIOMessageData(userType, receipt, messageId);
     }
 
-    private boolean requeueReceiptForRetry(Receipt receipt) {
+    private void requeueReceiptForRetry(Receipt receipt) {
         int numRetry = receipt.getNotificationNumRetry();
         receipt.setNotificationNumRetry(numRetry + 1);
 
         if (numRetry >= MAX_NUMBER_RETRY) {
             logger.error("Maximum number of retries for event with event id: {}. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId());
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
-            return false;
+            return;
         }
 
         String receiptString;
@@ -176,22 +178,20 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         } catch (JsonProcessingException e) {
             logger.error("Unable to requeue for retry the event with event id: {}. Receipt updated with status IO_ERROR_TO_NOTIFY", receipt.getEventId(), e);
             receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
-            return false;
+            return;
         }
         try {
             Response<SendMessageResult> response = this.notifierQueueClient.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
             if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
                 receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
-                return true;
+                return;
             }
             logger.error("Error in sending message to queue for receipt with event id: {}, queue responded with status {}. Receipt updated with status UNABLE_TO_SEND",
                     receipt.getEventId(), response.getStatusCode());
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
-            return false;
         } catch (Exception e) {
             logger.error("Error in sending message to queue for receipt with event id: {}. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId(), e);
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
-            return false;
         }
     }
 

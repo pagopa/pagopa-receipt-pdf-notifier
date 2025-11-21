@@ -59,10 +59,10 @@ public class ReceiptToIO {
      * #
      * In case of success the receipt's status will be IO_NOTIFIED
      *
-     * @param listReceipts Receipts saved on CosmosDB and triggering the function
+     * @param listReceipts     Receipts saved on CosmosDB and triggering the function
      * @param documentReceipts Output binding to save receipts to cosmos
      * @param documentMessages Output binding to save the IO notification id to cosmos
-     * @param context Function context
+     * @param context          Function context
      */
     @FunctionName("ReceiptToIoProcessor")
     public void processReceiptToIO(
@@ -92,15 +92,12 @@ public class ReceiptToIO {
     ) {
 
         logger.info("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
-        AtomicInteger discarder = new AtomicInteger();
 
         List<Receipt> receiptsNotified = new ArrayList<>();
         List<IOMessage> messagesNotified = new ArrayList<>();
-        AtomicInteger queueSent = new AtomicInteger();
 
-        listReceipts.parallelStream().forEach(receipt ->  {
+        listReceipts.parallelStream().forEach(receipt -> {
             if (isReceiptNotValid(receipt)) {
-                discarder.getAndIncrement();
                 return;
             }
 
@@ -118,17 +115,14 @@ public class ReceiptToIO {
             if (!Boolean.TRUE.equals(payerNotifyDisabled)
                     && (payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode)))
             ) {
-                    //Notify to payer
-                    UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
-                    usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
+                //Notify to payer
+                UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
+                usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
             }
 
-            boolean boolQueueSent = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
+            List<IOMessage> ioMessages = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, receipt);
 
-            if(boolQueueSent){
-                queueSent.getAndIncrement();
-            }
-
+            messagesNotified.addAll(ioMessages);
             receiptsNotified.add(receipt);
         });
 
@@ -152,4 +146,5 @@ public class ReceiptToIO {
         return receipt.getStatus().equals(ReceiptStatusType.GENERATED) ||
                 receipt.getStatus().equals(ReceiptStatusType.SIGNED) ||
                 receipt.getStatus().equals(ReceiptStatusType.IO_NOTIFIER_RETRY);
-    }}
+    }
+}

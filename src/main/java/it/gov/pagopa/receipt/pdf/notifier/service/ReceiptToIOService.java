@@ -13,24 +13,22 @@ public interface ReceiptToIOService {
     /**
      * Handles IO user validation and notification
      *
-     * @param fiscalCode    User fiscal code
-     * @param userType      Enum User type
-     * @param receipt       the Receipt
+     * @param fiscalCode User fiscal code
+     * @param userType   Enum User type
+     * @param receipt    the Receipt
      * @return the status of the notification {@link UserNotifyStatus}
      */
     UserNotifyStatus notifyMessage(String fiscalCode, UserType userType, Receipt receipt);
 
     /**
-     * Verifies if all users have been notified
+     * Verifies if all users have been notified and updates the receipt
      *
      * @param usersToBeVerified Map<FiscalCode, Status> containing user notification status
-     * @param messagesNotified  List of messages with message id to be saved on CosmosDB
      * @param receipt           Receipt to update and save on CosmosDB
-     * @return true if a message has been sent to queue, false otherwise
+     * @return the list of notification message reference to be saved on CosmosDB
      */
-    boolean verifyMessagesNotification(
+    List<IOMessage> verifyMessagesNotification(
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified,
-            List<IOMessage> messagesNotified,
             Receipt receipt
     );
 }
