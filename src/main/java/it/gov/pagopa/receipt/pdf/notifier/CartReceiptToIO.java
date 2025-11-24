@@ -62,7 +62,7 @@ public class CartReceiptToIO {
      * @param context          Function context
      */
     @FunctionName("CartReceiptToIoProcessor")
-    public void processReceiptToIO(
+    public void processCartReceiptToIO(
             @CosmosDBTrigger(
                     name = "CartReceiptInputDatastore",
                     databaseName = "db",
@@ -131,7 +131,7 @@ public class CartReceiptToIO {
                 || !statusCanBeNotified(cartForReceipt);
     }
 
-    public boolean statusCanBeNotified(CartForReceipt cartForReceipt) {
+    private boolean statusCanBeNotified(CartForReceipt cartForReceipt) {
         return cartForReceipt.getStatus().equals(CartStatusType.GENERATED) ||
                 cartForReceipt.getStatus().equals(CartStatusType.SIGNED) ||
                 cartForReceipt.getStatus().equals(CartStatusType.IO_NOTIFIER_RETRY);
