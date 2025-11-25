@@ -113,8 +113,6 @@ microservice-chart:
     SUBJECT_PAYER: "Ricevuta del pagamento a {cart.items[0].payee.name}"
   externalConfigMapValues:
     template-maps:
-      PAYMENT_METHOD_NAME_MAP: payment-method-name-map
-      BRAND_LOGO_MAP: brand-logo-map
       MARKDOWN_DEBTOR: markdown-debtor
       SUBJECT_DEBTOR: subjet-debtor
       MARKDOWN_PAYER: markdown-payer
