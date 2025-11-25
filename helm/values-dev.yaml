@@ -1,7 +1,7 @@
 microservice-chart:
   namespace: "receipts"
   nameOverride: ""
-  fullnameOverride: ""
+  fullnameOverride: "pagopa-receipt-pdf-notifier"
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
     tag: "0.13.5"
@@ -79,6 +79,8 @@ microservice-chart:
           value: "70"
   fileConfig: {}
   envConfig:
+    ENV: "dev"
+    LOG_LEVEL: "INFO"
     LANG: "C.UTF-8"
     WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
     ASPNETCORE_URLS: "http://*:8080"
