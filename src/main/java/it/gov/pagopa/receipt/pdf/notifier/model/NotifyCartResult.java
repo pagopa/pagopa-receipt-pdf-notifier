@@ -1,5 +1,6 @@
 package it.gov.pagopa.receipt.pdf.notifier.model;
 
+import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
