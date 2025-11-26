@@ -110,7 +110,7 @@ microservice-chart:
     PAYER_NOTIFY_DISABLED: "false"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -Xmx768m -XX:+UseG1GC"
   externalConfigMapValues:
-    template-maps:
+    message-template:
       MARKDOWN_DEBTOR: markdown-debtor
       SUBJECT_DEBTOR: subjet-debtor
       MARKDOWN_PAYER: markdown-payer
