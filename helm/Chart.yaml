@@ -2,8 +2,8 @@ apiVersion: v2
 name: pagopareceiptpdfnotifier
 description: Microservice description
 type: application
-version: 0.96.0
-appVersion: 0.13.5
+version: 0.97.0
+appVersion: 0.13.6
 dependencies:
   - name: microservice-chart
     version: 7.5.0

@@ -1,10 +1,10 @@
 microservice-chart:
   namespace: "receipts"
   nameOverride: ""
-  fullnameOverride: ""
+  fullnameOverride: "pagopa-receipt-pdf-notifier"
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
-    tag: "0.13.5"
+    tag: "0.13.6"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -79,6 +79,8 @@ microservice-chart:
           value: "70"
   fileConfig: {}
   envConfig:
+    ENV: "dev"
+    LOG_LEVEL: "INFO"
     LANG: "C.UTF-8"
     WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
     ASPNETCORE_URLS: "http://*:8080"
@@ -105,10 +107,12 @@ microservice-chart:
     OTEL_TRACES_SAMPLER: "always_on"
     PAYER_NOTIFY_DISABLED: "false"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx768m -XX:+UseG1GC"
-    MARKDOWN_DEBTOR: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-    SUBJECT_DEBTOR: "Ricevuta del pagamento a {cart.items[0].payee.name}"
-    MARKDOWN_PAYER: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-    SUBJECT_PAYER: "Ricevuta del pagamento a {cart.items[0].payee.name}"
+  externalConfigMapValues:
+    template-maps:
+      MARKDOWN_DEBTOR: markdown-debtor
+      SUBJECT_DEBTOR: subjet-debtor
+      MARKDOWN_PAYER: markdown-payer
+      SUBJECT_PAYER: subject-payer
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"
