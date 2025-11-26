@@ -14,6 +14,7 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonError
 import it.gov.pagopa.receipt.pdf.notifier.exception.CartIoMessageNotFoundException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.IOAPIException;
+import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.model.NotifyCartResult;
 import it.gov.pagopa.receipt.pdf.notifier.model.NotifyUserResult;
@@ -695,6 +696,161 @@ class CartReceiptToIOServiceImplTest {
 
     @Test
     @SneakyThrows
+    void notifyCartPayerNullAndDebtorFailBuildNotificationPayload() {
+        CartPayment payment = buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN);
+        CartForReceipt cart = CartForReceipt.builder()
+                .eventId(CART_ID)
+                .payload(
+                        Payload.builder()
+                                .cart(List.of(payment))
+                                .build())
+                .build();
+
+        when(pdvTokenizerServiceRetryWrapperMock.getFiscalCodeWithRetry(DEBTOR_1_CF_TOKEN))
+                .thenReturn(VALID_DEBTOR_1_CF);
+        when(ioServiceMock.isNotifyToIOUserAllowed(VALID_DEBTOR_1_CF))
+                .thenReturn(true);
+        when(cartReceiptCosmosClientMock.findIOMessageWithCartIdAndEventIdAndUserType(CART_ID, EVENT_1_ID, UserType.DEBTOR))
+                .thenThrow(CartIoMessageNotFoundException.class);
+        when(notificationMessageBuilderMock.buildCartDebtorMessagePayload(VALID_DEBTOR_1_CF, payment, CART_ID))
+                .thenThrow(new MissingFieldsForNotificationException(ERROR_MESSAGE));
+
+        NotifyCartResult result = withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new CartReceiptToIOServiceImpl(
+                            ioServiceMock,
+                            notifierCartQueueClientMock,
+                            notificationMessageBuilderMock,
+                            pdvTokenizerServiceRetryWrapperMock,
+                            cartReceiptCosmosClientMock
+                    );
+                    return sut.notifyCart(cart);
+                });
+
+        assertNotNull(result);
+        assertNull(result.getPayerNotifyResult());
+        assertNotNull(result.getDebtorNotifyResultMap());
+        assertEquals(1, result.getDebtorNotifyResultMap().size());
+        assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
+        assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
+        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getReasonErrPayer());
+
+        CartPayment cartPayment = cart.getPayload().getCart().get(0);
+        assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
+        assertNotNull(cartPayment.getReasonErrDebtor());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cartPayment.getReasonErrDebtor().getCode());
+        assertEquals(ERROR_MESSAGE, cartPayment.getReasonErrDebtor().getMessage());
+        assertNull(cartPayment.getIdMessageDebtor());
+
+        verify(ioServiceMock, never()).sendNotificationToIOUser(any());
+    }
+
+    @Test
+    @SneakyThrows
+    void notifyCartPayerNullAndDebtorFailNotifyThrowsIOAPIException() {
+        CartPayment payment = buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN);
+        CartForReceipt cart = CartForReceipt.builder()
+                .eventId(CART_ID)
+                .payload(
+                        Payload.builder()
+                                .cart(List.of(payment))
+                                .build())
+                .build();
+
+        when(pdvTokenizerServiceRetryWrapperMock.getFiscalCodeWithRetry(DEBTOR_1_CF_TOKEN))
+                .thenReturn(VALID_DEBTOR_1_CF);
+        when(ioServiceMock.isNotifyToIOUserAllowed(VALID_DEBTOR_1_CF))
+                .thenReturn(true);
+        when(cartReceiptCosmosClientMock.findIOMessageWithCartIdAndEventIdAndUserType(CART_ID, EVENT_1_ID, UserType.DEBTOR))
+                .thenThrow(CartIoMessageNotFoundException.class);
+        when(ioServiceMock.sendNotificationToIOUser(any()))
+                .thenThrow(new IOAPIException(ERROR_MESSAGE, ReasonErrorCode.ERROR_IO_API_UNEXPECTED.getCode()));
+
+        NotifyCartResult result = withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new CartReceiptToIOServiceImpl(
+                            ioServiceMock,
+                            notifierCartQueueClientMock,
+                            notificationMessageBuilderMock,
+                            pdvTokenizerServiceRetryWrapperMock,
+                            cartReceiptCosmosClientMock
+                    );
+                    return sut.notifyCart(cart);
+                });
+
+        assertNotNull(result);
+        assertNull(result.getPayerNotifyResult());
+        assertNotNull(result.getDebtorNotifyResultMap());
+        assertEquals(1, result.getDebtorNotifyResultMap().size());
+        assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
+        assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
+        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getReasonErrPayer());
+
+        CartPayment cartPayment = cart.getPayload().getCart().get(0);
+        assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
+        assertNotNull(cartPayment.getReasonErrDebtor());
+        assertEquals(ReasonErrorCode.ERROR_IO_API_UNEXPECTED.getCode(), cartPayment.getReasonErrDebtor().getCode());
+        assertEquals(ERROR_MESSAGE, cartPayment.getReasonErrDebtor().getMessage());
+        assertNull(cartPayment.getIdMessageDebtor());
+    }
+
+    @Test
+    @SneakyThrows
+    void notifyCartPayerNullAndDebtorFailNotifyThrowsErrorToNotifyException() {
+        CartPayment payment = buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN);
+        CartForReceipt cart = CartForReceipt.builder()
+                .eventId(CART_ID)
+                .payload(
+                        Payload.builder()
+                                .cart(List.of(payment))
+                                .build())
+                .build();
+
+        when(pdvTokenizerServiceRetryWrapperMock.getFiscalCodeWithRetry(DEBTOR_1_CF_TOKEN))
+                .thenReturn(VALID_DEBTOR_1_CF);
+        when(ioServiceMock.isNotifyToIOUserAllowed(VALID_DEBTOR_1_CF))
+                .thenReturn(true);
+        when(cartReceiptCosmosClientMock.findIOMessageWithCartIdAndEventIdAndUserType(CART_ID, EVENT_1_ID, UserType.DEBTOR))
+                .thenThrow(CartIoMessageNotFoundException.class);
+        when(ioServiceMock.sendNotificationToIOUser(any()))
+                .thenThrow(new ErrorToNotifyException(ERROR_MESSAGE));
+
+        NotifyCartResult result = withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new CartReceiptToIOServiceImpl(
+                            ioServiceMock,
+                            notifierCartQueueClientMock,
+                            notificationMessageBuilderMock,
+                            pdvTokenizerServiceRetryWrapperMock,
+                            cartReceiptCosmosClientMock
+                    );
+                    return sut.notifyCart(cart);
+                });
+
+        assertNotNull(result);
+        assertNull(result.getPayerNotifyResult());
+        assertNotNull(result.getDebtorNotifyResultMap());
+        assertEquals(1, result.getDebtorNotifyResultMap().size());
+        assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
+        assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
+        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getReasonErrPayer());
+
+        CartPayment cartPayment = cart.getPayload().getCart().get(0);
+        assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
+        assertNotNull(cartPayment.getReasonErrDebtor());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cartPayment.getReasonErrDebtor().getCode());
+        assertEquals(ERROR_MESSAGE, cartPayment.getReasonErrDebtor().getMessage());
+        assertNull(cartPayment.getIdMessageDebtor());
+    }
+
+    @Test
+    @SneakyThrows
     void notifyCartPayerNullAndDebtorSkippedAlreadyNotified() {
         CartForReceipt cart = CartForReceipt.builder()
                 .eventId(CART_ID)
@@ -878,6 +1034,57 @@ class CartReceiptToIOServiceImplTest {
 
         assertEquals(VALID_PAYER_MESSAGE_ID, cart.getPayload().getIdMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
+        CartPayment cartPayment = cart.getPayload().getCart().get(0);
+        assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
+        assertNull(cartPayment.getReasonErrDebtor());
+        assertNull(cartPayment.getIdMessageDebtor());
+
+        verify(ioServiceMock, never()).sendNotificationToIOUser(any());
+    }
+
+    @Test
+    @SneakyThrows
+    void notifyCartSamePayerDebtorFailBuildMessagePayload() {
+        CartForReceipt cart = CartForReceipt.builder()
+                .eventId(CART_ID)
+                .payload(
+                        Payload.builder()
+                                .payerFiscalCode(PAYER_CF_TOKEN)
+                                .cart(List.of(buildCartPayment(EVENT_1_ID, PAYER_CF_TOKEN)))
+                                .build()
+                )
+                .build();
+
+        when(pdvTokenizerServiceRetryWrapperMock.getFiscalCodeWithRetry(PAYER_CF_TOKEN)).thenReturn(VALID_PAYER_CF);
+        when(ioServiceMock.isNotifyToIOUserAllowed(VALID_PAYER_CF))
+                .thenReturn(true);
+        when(cartReceiptCosmosClientMock.findIOMessageWithCartIdAndEventIdAndUserType(CART_ID, null, UserType.PAYER))
+                .thenThrow(CartIoMessageNotFoundException.class);
+        when(notificationMessageBuilderMock.buildCartPayerMessagePayload(VALID_PAYER_CF, cart))
+                .thenThrow(new MissingFieldsForNotificationException(ERROR_MESSAGE));
+
+        NotifyCartResult result = withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
+                .execute(() -> {
+                    sut = new CartReceiptToIOServiceImpl(
+                            ioServiceMock,
+                            notifierCartQueueClientMock,
+                            notificationMessageBuilderMock,
+                            pdvTokenizerServiceRetryWrapperMock,
+                            cartReceiptCosmosClientMock
+                    );
+                    return sut.notifyCart(cart);
+                });
+
+        assertNotNull(result);
+        assertNotNull(result.getPayerNotifyResult());
+        assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getPayerNotifyResult().getNotifyStatus());
+        assertNull(result.getPayerNotifyResult().getMessageId());
+        assertNull(result.getDebtorNotifyResultMap());
+
+        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNotNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cart.getPayload().getReasonErrPayer().getCode());
+        assertEquals(ERROR_MESSAGE, cart.getPayload().getReasonErrPayer().getMessage());
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
         assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
         assertNull(cartPayment.getReasonErrDebtor());

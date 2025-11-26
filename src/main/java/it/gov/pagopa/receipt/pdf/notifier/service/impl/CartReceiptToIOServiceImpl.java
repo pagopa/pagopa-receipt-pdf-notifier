@@ -15,7 +15,6 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.message.CartIOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.exception.CartIoMessageNotFoundException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.IOAPIException;
-import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.notifier.model.NotifyCartResult;
 import it.gov.pagopa.receipt.pdf.notifier.model.NotifyUserResult;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
@@ -186,7 +185,9 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
     ) {
         Payload payload = cartForReceipt.getPayload();
         try {
-            if (userShouldBeDiscardedFromNotification(fiscalCodeToken, payload.getIdMessagePayer())) {
+            String fiscalCode = this.pdvTokenizerServiceRetryWrapper.getFiscalCodeWithRetry(fiscalCodeToken);
+
+            if (userShouldBeDiscardedFromNotification(fiscalCode, payload.getIdMessagePayer())) {
                 return NotifyUserResult.builder()
                         .notifyStatus(NOT_TO_BE_NOTIFIED)
                         .build();
@@ -201,9 +202,8 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
             }
 
             //Send notification to user
-            // TODO define cart message template
-            //MessagePayload messagePayload = this.notificationMessageBuilder.buildMessagePayload(fiscalCode, receipt, userType);
-            MessagePayload messagePayload = null;
+            MessagePayload messagePayload = this.notificationMessageBuilder
+                    .buildCartPayerMessagePayload(fiscalCode, cartForReceipt);
             String messageId = this.ioService.sendNotificationToIOUser(messagePayload);
             payload.setIdMessagePayer(messageId);
             return NotifyUserResult.builder()
@@ -226,24 +226,25 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
             CartPayment cartPayment
     ) {
         try {
-            if (userShouldBeDiscardedFromNotification(fiscalCodeToken, cartPayment.getIdMessageDebtor())) {
+            String fiscalCode = this.pdvTokenizerServiceRetryWrapper.getFiscalCodeWithRetry(fiscalCodeToken);
+
+            if (userShouldBeDiscardedFromNotification(fiscalCode, cartPayment.getIdMessageDebtor())) {
                 return NotifyUserResult.builder()
                         .notifyStatus(NOT_TO_BE_NOTIFIED)
                         .build();
             }
 
-            String ioMessageId = getIOMessageForUserIfAlreadyExist(cartId, cartPayment.getBizEventId(), UserType.DEBTOR);
-            if (ioMessageId != null) {
-                cartPayment.setIdMessageDebtor(ioMessageId);
+            String existingMessageId = getIOMessageForUserIfAlreadyExist(cartId, cartPayment.getBizEventId(), UserType.DEBTOR);
+            if (existingMessageId != null) {
+                cartPayment.setIdMessageDebtor(existingMessageId);
                 return NotifyUserResult.builder()
                         .notifyStatus(ALREADY_NOTIFIED)
                         .build();
             }
 
             //Send notification to user
-            // TODO define cart message template
-            //MessagePayload messagePayload = this.notificationMessageBuilder.buildMessagePayload(fiscalCode, receipt, userType);
-            MessagePayload messagePayload = null;
+            MessagePayload messagePayload = this.notificationMessageBuilder
+                    .buildCartDebtorMessagePayload(fiscalCode, cartPayment, cartId);
             String messageId = this.ioService.sendNotificationToIOUser(messagePayload);
             cartPayment.setIdMessageDebtor(messageId);
             return NotifyUserResult.builder()
@@ -261,11 +262,9 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
     }
 
     private boolean userShouldBeDiscardedFromNotification(
-            String fiscalCodeToken,
+            String fiscalCode,
             String idMessage
-    ) throws PDVTokenizerException, JsonProcessingException, IOAPIException, ErrorToNotifyException {
-        String fiscalCode = this.pdvTokenizerServiceRetryWrapper.getFiscalCodeWithRetry(fiscalCodeToken);
-
+    ) throws IOAPIException, ErrorToNotifyException {
         if (!isFiscalCodeValid(fiscalCode) || idMessage != null) {
             return true;
         }

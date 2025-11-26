@@ -1,5 +1,7 @@
 package it.gov.pagopa.receipt.pdf.notifier.service.impl;
 
+import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartForReceipt;
+import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartPayment;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.CartItem;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
@@ -26,21 +28,13 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
     private static final String SUBJECT_DEBTOR = new String(System.getenv().getOrDefault("SUBJECT_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String MARKDOWN_PAYER = new String(System.getenv().getOrDefault("MARKDOWN_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String MARKDOWN_DEBTOR = new String(System.getenv().getOrDefault("MARKDOWN_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+    public static final String ADVANCED = "ADVANCED";
 
     /**
      * {@inheritDoc}
      */
     @Override
     public MessagePayload buildMessagePayload(String fiscalCode, Receipt receipt, UserType userType) throws MissingFieldsForNotificationException {
-        return MessagePayload.builder()
-                .fiscalCode(fiscalCode)
-                .featureLevelType("ADVANCED")
-                .content(buildMessageContent(receipt, userType))
-                .build();
-    }
-
-    @NotNull
-    private MessageContent buildMessageContent(Receipt receipt, UserType userType) throws MissingFieldsForNotificationException {
         StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
 
         String subject;
@@ -52,15 +46,53 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
             subject = stringSubstitutor.replace(SUBJECT_PAYER);
             markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
         }
+        return buildMessage(fiscalCode, subject, markdown, receipt.getEventId());
+    }
 
-        return MessageContent.builder()
-                .subject(subject)
-                .markdown(markdown)
-                .thirdPartyData(ThirdPartyData.builder()
-                        .id(receipt.getEventId())
-                        .hasAttachments(true)
-                        .configurationId(IO_CONFIGURATION_ID)
-                        .build())
+    @Override
+    public MessagePayload buildCartPayerMessagePayload(String fiscalCode, CartForReceipt cart) throws MissingFieldsForNotificationException {
+        // TODO define string builder for cart payer message
+        StringSubstitutor stringSubstitutor = null;// = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
+
+        String thirdPartyId = String.format("%s_CART", cart.getEventId());
+        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
+        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
+
+        return buildMessage(fiscalCode, subject, markdown, thirdPartyId);
+    }
+
+    @Override
+    public MessagePayload buildCartDebtorMessagePayload(String fiscalCode, CartPayment cartPayment, String cartId) throws MissingFieldsForNotificationException {
+        // TODO define string builder for cart debtor message
+        StringSubstitutor stringSubstitutor = null;// = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
+
+        String thirdPartyId = String.format("%s_CART_%s", cartId, cartPayment.getBizEventId());
+        String subject = stringSubstitutor.replace(SUBJECT_DEBTOR);
+        String markdown = stringSubstitutor.replace(MARKDOWN_DEBTOR);
+
+        return buildMessage(fiscalCode, subject, markdown, thirdPartyId);
+    }
+
+    private MessagePayload buildMessage(
+            String fiscalCode,
+            String subject,
+            String markdown,
+            String thirdPartyId
+    ) {
+        return MessagePayload.builder()
+                .fiscalCode(fiscalCode)
+                .featureLevelType(ADVANCED)
+                .content(
+                        MessageContent.builder()
+                                .subject(subject)
+                                .markdown(markdown)
+                                .thirdPartyData(ThirdPartyData.builder()
+                                        .id(thirdPartyId)
+                                        .hasAttachments(true)
+                                        .configurationId(IO_CONFIGURATION_ID)
+                                        .build())
+                                .build()
+                )
                 .build();
     }
 
