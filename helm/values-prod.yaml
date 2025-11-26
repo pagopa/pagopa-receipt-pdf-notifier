@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: "pagopa-receipt-pdf-notifier"
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
-    tag: "0.13.6-2-PRDP-61-refactor-io-client"
+    tag: "0.13.6-3-PRDP-61-refactor-io-client"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
