@@ -52,25 +52,25 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
     @Override
     public MessagePayload buildCartPayerMessagePayload(String fiscalCode, CartForReceipt cart) throws MissingFieldsForNotificationException {
         // TODO define string builder for cart payer message
-        StringSubstitutor stringSubstitutor = null;// = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
+//        StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
 
         String thirdPartyId = String.format("%s_CART", cart.getEventId());
-        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
-        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
+//        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
+//        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
 
-        return buildMessage(fiscalCode, subject, markdown, thirdPartyId);
+        return buildMessage(fiscalCode, SUBJECT_PAYER, MARKDOWN_PAYER, thirdPartyId);
     }
 
     @Override
     public MessagePayload buildCartDebtorMessagePayload(String fiscalCode, CartPayment cartPayment, String cartId) throws MissingFieldsForNotificationException {
         // TODO define string builder for cart debtor message
-        StringSubstitutor stringSubstitutor = null;// = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
+//        StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
 
         String thirdPartyId = String.format("%s_CART_%s", cartId, cartPayment.getBizEventId());
-        String subject = stringSubstitutor.replace(SUBJECT_DEBTOR);
-        String markdown = stringSubstitutor.replace(MARKDOWN_DEBTOR);
+//        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
+//        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
 
-        return buildMessage(fiscalCode, subject, markdown, thirdPartyId);
+        return buildMessage(fiscalCode, SUBJECT_PAYER, MARKDOWN_PAYER, thirdPartyId);
     }
 
     private MessagePayload buildMessage(
