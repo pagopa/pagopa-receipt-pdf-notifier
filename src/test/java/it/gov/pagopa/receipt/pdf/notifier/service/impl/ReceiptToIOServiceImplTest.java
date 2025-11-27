@@ -59,11 +59,16 @@ class ReceiptToIOServiceImplTest {
     private static final String VALID_PAYER_CF = "JHNDOE80D45E507N";
     private static final String INVALID_CF = "an invalid fiscal code";
     private static final String VALID_DEBTOR_CF = "JHNDOE80D05B157Y";
+    static final String VALID_DEBTOR_2_CF = "JHNDOE66D05B157K";
     private static final String EVENT_ID = "123";
     private static final String ERROR_MESSAGE = "error message";
 
     @SystemStub
-    private EnvironmentVariables environmentVariables = new EnvironmentVariables("CF_FILTER_NOTIFIER", VALID_DEBTOR_CF + "," + VALID_PAYER_CF);
+    private EnvironmentVariables environmentVariables =
+            new EnvironmentVariables(
+                    "CF_FILTER_NOTIFIER",
+                    VALID_DEBTOR_CF + "," + VALID_DEBTOR_2_CF + "," + VALID_PAYER_CF
+            );
 
     @Mock
     private IOService ioServiceMock;

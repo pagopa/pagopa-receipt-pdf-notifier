@@ -63,7 +63,7 @@ class CartReceiptToIOServiceImplTest {
     private static final String DEBTOR_1_CF_TOKEN = "alskfjòaoiuernòlqnwer";
     private static final String DEBTOR_2_CF_TOKEN = "poiasdfnkjenlòansdfjd";
     private static final String VALID_DEBTOR_1_CF = "JHNDOE80D05B157Y";
-    private static final String VALID_DEBTOR_2_CF = "JHNDOE66D05B157K";
+    static final String VALID_DEBTOR_2_CF = "JHNDOE66D05B157K";
     private static final String EVENT_1_ID = "123";
     private static final String EVENT_2_ID = "456";
     private static final String ERROR_MESSAGE = "error message";
