@@ -24,7 +24,6 @@ import it.gov.pagopa.receipt.pdf.notifier.model.io.message.IOMessageResponse;
 import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
-import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import lombok.SneakyThrows;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
