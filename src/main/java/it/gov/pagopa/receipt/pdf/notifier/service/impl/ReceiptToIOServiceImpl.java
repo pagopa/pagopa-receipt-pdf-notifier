@@ -9,32 +9,29 @@ import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.client.impl.ReceiptCosmosClientImpl;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.IOMessageData;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.exception.ErrorToNotifyException;
+import it.gov.pagopa.receipt.pdf.notifier.exception.IOAPIException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.IoMessageNotFoundException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
 import it.gov.pagopa.receipt.pdf.notifier.exception.PDVTokenizerException;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiException;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.ApiResponse;
-import it.gov.pagopa.receipt.pdf.notifier.generated.client.api.IOClient;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.CreatedMessage;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.FiscalCodePayload;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.LimitedProfile;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
+import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
+import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
+import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,6 +39,8 @@ import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifySta
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_TO_BE_NOTIFIED;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.buildReasonError;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.getCodeOrDefault;
 
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
@@ -50,30 +49,30 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_RECEIPT_MAX_RETRY", "5"));
     private static final List<String> CF_FILTER_NOTIFIER = Arrays.asList(System.getenv().getOrDefault("CF_FILTER_NOTIFIER", "").split(","));
 
-    private final IOClient ioClient;
+    private final IOService ioService;
     private final NotifierQueueClient notifierQueueClient;
-    private final IOMessageService ioMessageService;
+    private final NotificationMessageBuilder notificationMessageBuilder;
     private final PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper;
     private final ReceiptCosmosClient receiptCosmosClient;
 
     public ReceiptToIOServiceImpl() {
-        this.ioClient = IOClient.getInstance();
+        this.ioService = new IOServiceImpl();
         this.notifierQueueClient = NotifierQueueClientImpl.getInstance();
-        this.ioMessageService = new IOMessageServiceImpl();
+        this.notificationMessageBuilder = new NotificationMessageBuilderImpl();
         this.pdvTokenizerServiceRetryWrapper = new PDVTokenizerServiceRetryWrapperImpl();
         this.receiptCosmosClient = ReceiptCosmosClientImpl.getInstance();
     }
 
     ReceiptToIOServiceImpl(
-            IOClient ioClient,
+            IOService ioService,
             NotifierQueueClient notifierQueueClient,
-            IOMessageService ioMessageService,
+            NotificationMessageBuilder notificationMessageBuilder,
             PDVTokenizerServiceRetryWrapper pdvTokenizerServiceRetryWrapper,
             ReceiptCosmosClient receiptCosmosClient
     ) {
-        this.ioClient = ioClient;
+        this.ioService = ioService;
         this.notifierQueueClient = notifierQueueClient;
-        this.ioMessageService = ioMessageService;
+        this.notificationMessageBuilder = notificationMessageBuilder;
         this.pdvTokenizerServiceRetryWrapper = pdvTokenizerServiceRetryWrapper;
         this.receiptCosmosClient = receiptCosmosClient;
     }
@@ -97,8 +96,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 return ALREADY_NOTIFIED;
             }
 
-            boolean isNotifyAllowed = handleGetProfile(fiscalCode);
-            if (!isNotifyAllowed) {
+            if (!this.ioService.isNotifyToIOUserAllowed(fiscalCode)) {
                 logger.info("User {} has not to be notified", userType);
                 return NOT_TO_BE_NOTIFIED;
             }
@@ -119,67 +117,6 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
     }
 
     /**
-     * Invoke getProfile API and verify its response status
-     *
-     * @param fiscalCode         User fiscal code
-     * @throws ErrorToNotifyException in case of error notifying user
-     */
-    private boolean handleGetProfile(String fiscalCode) throws ErrorToNotifyException {
-        FiscalCodePayload fiscalCodePayload = new FiscalCodePayload();
-        fiscalCodePayload.setFiscalCode(fiscalCode);
-        ApiResponse<LimitedProfile> getProfileResponse;
-        try {
-            getProfileResponse = this.ioClient.getProfileByPOSTWithHttpInfo(fiscalCodePayload);
-        } catch (ApiException e) {
-            if (e.getCode() == HttpStatus.SC_NOT_FOUND) {
-                return false;
-            }
-            throw new ErrorToNotifyException("IO /profiles failed", e);
-        }
-
-        if (getProfileResponse == null) {
-            throw new ErrorToNotifyException("IO /profiles failed to respond");
-        }
-
-        if (getProfileResponse.getData() == null || getProfileResponse.getStatusCode() != HttpStatus.SC_OK) {
-            String errorMsg = String.format("IO /profiles responded with code %s", getProfileResponse.getStatusCode());
-            throw new ErrorToNotifyException(errorMsg);
-        }
-
-        return getProfileResponse.getData().getSenderAllowed();
-    }
-
-    /**
-     * Handles sending notification to IO user
-     *
-     * @param fiscalCode User fiscal code
-     * @param userType   Enum User type
-     * @throws ErrorToNotifyException in case of error during API call
-     */
-    private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException, MissingFieldsForNotificationException {
-        NewMessage message = this.ioMessageService.buildNewMessage(fiscalCode, receipt, userType);
-
-        //IO /messages
-        ApiResponse<CreatedMessage> sendMessageResponse;
-        try {
-            sendMessageResponse = this.ioClient.submitMessageforUserWithFiscalCodeInBodyWithHttpInfo(message);
-        } catch (Exception e) {
-            String errorMsg = String.format("Error sending notification to IO user %s", userType);
-            throw new ErrorToNotifyException(errorMsg, e);
-        }
-
-        if (sendMessageResponse == null) {
-            throw new ErrorToNotifyException("IO /messages failed to respond");
-        }
-        if (sendMessageResponse.getData() == null || sendMessageResponse.getStatusCode() != HttpStatus.SC_CREATED) {
-            String errorMsg = String.format("IO /messages responded with code %s", sendMessageResponse.getStatusCode());
-            throw new ErrorToNotifyException(errorMsg);
-        }
-
-        updateReceiptWithIOMessageData(userType, receipt, sendMessageResponse.getData().getId());
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -187,7 +124,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified,
             List<IOMessage> messagesNotified,
             Receipt receipt
-    ) throws JsonProcessingException {
+    ) {
         UserNotifyStatus debtorNotified =  usersToBeVerified.getOrDefault(UserType.DEBTOR, NOT_TO_BE_NOTIFIED);
         UserNotifyStatus payerNotified = usersToBeVerified.getOrDefault(UserType.PAYER, NOT_TO_BE_NOTIFIED);
 
@@ -216,7 +153,14 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         return false;
     }
 
-    private boolean requeueReceiptForRetry(Receipt receipt) throws JsonProcessingException {
+    private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException, MissingFieldsForNotificationException, IOAPIException {
+        MessagePayload messagePayload = this.notificationMessageBuilder.buildMessagePayload(fiscalCode, receipt, userType);
+        String messageId = this.ioService.sendNotificationToIOUser(messagePayload);
+
+        updateReceiptWithIOMessageData(userType, receipt, messageId);
+    }
+
+    private boolean requeueReceiptForRetry(Receipt receipt) {
         int numRetry = receipt.getNotificationNumRetry();
         receipt.setNotificationNumRetry(numRetry + 1);
 
@@ -226,13 +170,22 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
             return false;
         }
 
-        String receiptString = ObjectMapperUtils.writeValueAsString(receipt);
+        String receiptString;
+        try {
+            receiptString = ObjectMapperUtils.writeValueAsString(receipt);
+        } catch (JsonProcessingException e) {
+            logger.error("Unable to requeue for retry the event with event id: {}. Receipt updated with status IO_ERROR_TO_NOTIFY", receipt.getEventId(), e);
+            receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
+            return false;
+        }
         try {
             Response<SendMessageResult> response = this.notifierQueueClient.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
             if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
                 receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
                 return true;
             }
+            logger.error("Error in sending message to queue for receipt with event id: {}, queue responded with status {}. Receipt updated with status UNABLE_TO_SEND",
+                    receipt.getEventId(), response.getStatusCode());
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
             return false;
         } catch (Exception e) {
@@ -272,23 +225,6 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 .eventId(receipt.getEventId())
                 .userType(userType)
                 .build();
-    }
-
-    private ReasonError buildReasonError(String errorMessage, int code) {
-        return ReasonError.builder()
-                .code(code)
-                .message(errorMessage)
-                .build();
-    }
-
-    private int getCodeOrDefault(Exception e) {
-        if (e instanceof PDVTokenizerException pdvTokenizerException) {
-            return pdvTokenizerException.getStatusCode();
-        }
-        if (e instanceof JsonProcessingException) {
-            return ReasonErrorCode.ERROR_PDV_MAPPING.getCode();
-        }
-        return HttpStatus.SC_INTERNAL_SERVER_ERROR;
     }
 
     private String getFiscalCode(String fiscalCodeToken) throws PDVTokenizerException, JsonProcessingException {

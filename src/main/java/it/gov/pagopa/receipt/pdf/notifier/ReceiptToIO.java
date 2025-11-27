@@ -1,6 +1,5 @@
 package it.gov.pagopa.receipt.pdf.notifier;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.CosmosDBOutput;
@@ -124,14 +123,7 @@ public class ReceiptToIO {
                     usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
             }
 
-            boolean boolQueueSent = false;
-            try {
-                boolQueueSent = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
-            } catch (JsonProcessingException e) {
-                receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
-                logger.error("[{}] Error on requeue receipt with id {} and event id {} for retry",
-                        context.getFunctionName(), receipt.getId(), receipt.getEventId(), e);
-            }
+            boolean boolQueueSent = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, messagesNotified, receipt);
 
             if(boolQueueSent){
                 queueSent.getAndIncrement();

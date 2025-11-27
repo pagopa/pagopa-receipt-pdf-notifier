@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: "pagopa-receipt-pdf-notifier"
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
-    tag: "0.13.6"
+    tag: "0.13.6-3-PRDP-61-refactor-io-client"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -108,7 +108,7 @@ microservice-chart:
     PAYER_NOTIFY_DISABLED: "false"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx768m -XX:+UseG1GC"
   externalConfigMapValues:
-    template-maps:
+    message-template:
       MARKDOWN_DEBTOR: markdown-debtor
       SUBJECT_DEBTOR: subjet-debtor
       MARKDOWN_PAYER: markdown-payer

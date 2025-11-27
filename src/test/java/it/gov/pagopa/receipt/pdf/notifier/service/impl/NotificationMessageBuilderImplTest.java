@@ -4,9 +4,9 @@ import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.CartItem;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.notifier.exception.MissingFieldsForNotificationException;
-import it.gov.pagopa.receipt.pdf.notifier.generated.model.NewMessage;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
-import it.gov.pagopa.receipt.pdf.notifier.service.IOMessageService;
+import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
+import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SystemStubsExtension.class)
-class IOMessageServiceImplTest {
+class NotificationMessageBuilderImplTest {
 
     private static final String VALID_PAYER_CF = "a valid payer fiscal code";
     private static final String VALID_DEBTOR_CF = "a valid debtor fiscal code";
@@ -33,7 +33,7 @@ class IOMessageServiceImplTest {
     private static final String MARKDOWN_DEBTOR_WITHOUT_SUBJECT = "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: 2.300,55 €\n**Oggetto:** -\n**Ente creditore**: payee\n\nEcco la ricevuta con i dettagli.";
 
 
-    private IOMessageService sut;
+    private NotificationMessageBuilder sut;
 
     @SystemStub
     private final EnvironmentVariables environmentVariables = new EnvironmentVariables(
@@ -44,7 +44,7 @@ class IOMessageServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        sut = new IOMessageServiceImpl();
+        sut = new NotificationMessageBuilderImpl();
     }
 
     @Test
@@ -52,7 +52,7 @@ class IOMessageServiceImplTest {
     void buildMessageDebtorSuccess() {
         Receipt receipt = buildReceipt(true);
 
-        NewMessage message = sut.buildNewMessage(VALID_DEBTOR_CF, receipt, UserType.DEBTOR);
+        MessagePayload message = sut.buildMessagePayload(VALID_DEBTOR_CF, receipt, UserType.DEBTOR);
 
         assertNotNull(message);
         assertEquals(VALID_DEBTOR_CF, message.getFiscalCode());
@@ -70,7 +70,7 @@ class IOMessageServiceImplTest {
     void buildMessageDebtorWithoutSubjectSuccess() {
         Receipt receipt = buildReceipt(false);
 
-        NewMessage message = sut.buildNewMessage(VALID_DEBTOR_CF, receipt, UserType.DEBTOR);
+        MessagePayload message = sut.buildMessagePayload(VALID_DEBTOR_CF, receipt, UserType.DEBTOR);
 
         assertNotNull(message);
         assertEquals(VALID_DEBTOR_CF, message.getFiscalCode());
@@ -89,7 +89,7 @@ class IOMessageServiceImplTest {
         Receipt receipt = new Receipt();
         receipt.setEventId(EVENT_ID);
 
-        assertThrows(MissingFieldsForNotificationException.class, () -> sut.buildNewMessage(VALID_DEBTOR_CF, receipt, UserType.DEBTOR));
+        assertThrows(MissingFieldsForNotificationException.class, () -> sut.buildMessagePayload(VALID_DEBTOR_CF, receipt, UserType.DEBTOR));
     }
 
     @Test
@@ -97,7 +97,7 @@ class IOMessageServiceImplTest {
     void buildMessagePayerSuccess() {
         Receipt receipt = buildReceipt(true);
 
-        NewMessage message = sut.buildNewMessage(VALID_PAYER_CF, receipt, UserType.PAYER);
+        MessagePayload message = sut.buildMessagePayload(VALID_PAYER_CF, receipt, UserType.PAYER);
 
         assertNotNull(message);
         assertEquals(VALID_PAYER_CF, message.getFiscalCode());
@@ -115,7 +115,7 @@ class IOMessageServiceImplTest {
     void buildMessagePayerWithoutSubjectSuccess() {
         Receipt receipt = buildReceipt(false);
 
-        NewMessage message = sut.buildNewMessage(VALID_PAYER_CF, receipt, UserType.PAYER);
+        MessagePayload message = sut.buildMessagePayload(VALID_PAYER_CF, receipt, UserType.PAYER);
 
         assertNotNull(message);
         assertEquals(VALID_PAYER_CF, message.getFiscalCode());
