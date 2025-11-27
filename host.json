@@ -12,14 +12,8 @@
   "logging": {
     "fileLoggingMode": "debugOnly",
     "logLevel": {
-      "default": "None",
-      "Host.Results": "Error",
       "Function.NotifierRetryProcessor": "Information",
-      "Function.ReceiptToIoProcessor": "Information",
-      "Microsoft": "Information",
-      "Worker": "Information",
-      "Host.Aggregator": "Error",
-      "Host": "Error"
+      "Function.ReceiptToIoProcessor": "Information"
     },
     "applicationInsights": {
       "samplingSettings": {

@@ -21,12 +21,6 @@ public class MessageContent {
     @JsonProperty("markdown")
     private String markdown;
 
-    @JsonProperty("payment_data")
-    private PaymentData paymentData;
-
     @JsonProperty("third_party_data")
     private ThirdPartyData thirdPartyData;
-
-    @JsonProperty("due_date")
-    private String dueDate;
 }

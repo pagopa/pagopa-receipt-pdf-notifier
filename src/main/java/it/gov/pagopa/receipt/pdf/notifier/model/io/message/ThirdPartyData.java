@@ -18,17 +18,8 @@ public class ThirdPartyData {
     @JsonProperty("id")
     private String id;
 
-    @JsonProperty("original_sender")
-    private String originalSender;
-
-    @JsonProperty("original_receipt_date")
-    private String originalReceiptDate;
-
     @JsonProperty("has_attachments")
     private Boolean hasAttachments = false;
-
-    @JsonProperty("summary")
-    private String summary;
 
     @JsonProperty("configuration_id")
     private String configurationId;
