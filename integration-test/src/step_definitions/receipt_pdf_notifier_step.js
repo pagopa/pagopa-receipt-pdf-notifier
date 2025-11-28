@@ -9,12 +9,15 @@ setDefaultTimeout(360 * 1000);
 // After each Scenario
 After(async function () {
     // remove event
-    await deleteDocumentFromReceiptsDatastore(this.receiptId, this.receiptId);
+    if (this.receiptId != null) {
+        await deleteDocumentFromReceiptsDatastore(this.receiptId, this.receiptId);
+    }
+    // remove cart event
+    if (this.cartReceiptId != null) {
+        await deleteDocumentFromCartReceiptsDatastore(this.cartReceiptId, this.cartReceiptId);
+    }
     this.responseToCheck = null;
     this.receiptId = null;
-    // remove cart event
-    await deleteDocumentFromCartReceiptsDatastore(this.cartReceiptId, this.cartReceiptId);
-    this.responseToCheck = null;
     this.cartReceiptId = null;
 });
 
@@ -39,8 +42,15 @@ Then('the receipt has not the status {string}', function (targetStatus) {
     assert.notStrictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
 
+Then('the receipt has the status {string}', function (targetStatus) {
+    assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
+});
+
 Given('a random receipt with id {string} enqueued on notification error queue', async function (id) {
     this.receiptId = id;
+    // prior cancellation to avoid dirty cases
+    await deleteDocumentFromReceiptsDatastore(this.receiptId, this.receiptId);
+
     let event = createReceiptForError(this.receiptId);
     await putMessageOnQueue(event);
 });
@@ -70,8 +80,15 @@ Then('the cart receipt has not the status {string}', function (targetStatus) {
     assert.notStrictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
 
+Then('the cart receipt has the status {string}', function (targetStatus) {
+    assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
+});
+
 Given('a random cart receipt with id {string} enqueued on notification error queue for cart', async function (id) {
     this.cartReceiptId = id;
+    // prior cancellation to avoid dirty cases
+    await deleteDocumentFromCartReceiptsDatastore(this.cartReceiptId, this.cartReceiptId);
+
     let event = createCartReceiptForError(this.cartReceiptId);
     await putMessageOnCartQueue(event);
 });
