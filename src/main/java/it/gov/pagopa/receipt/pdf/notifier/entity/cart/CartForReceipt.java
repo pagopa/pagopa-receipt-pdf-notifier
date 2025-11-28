@@ -23,5 +23,4 @@ public class CartForReceipt {
     private long inserted_at;
     private long generated_at;
     private long notified_at;
-    private String _etag;
 }
