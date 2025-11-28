@@ -2,8 +2,8 @@ apiVersion: v2
 name: pagopareceiptpdfnotifier
 description: Microservice description
 type: application
-version: 0.104.0
-appVersion: 0.13.7-3-git-checkout--b-PAGOPA-3373-ipg-147-cart-notifier-sviluppo-function-per-errori-e-retry
+version: 0.105.0
+appVersion: 0.13.7-4-PAGOPA-3373
 dependencies:
   - name: microservice-chart
     version: 7.5.0
