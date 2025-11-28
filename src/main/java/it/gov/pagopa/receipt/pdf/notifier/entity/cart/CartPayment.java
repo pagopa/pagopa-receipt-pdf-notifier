@@ -19,7 +19,7 @@ public class CartPayment {
     private String debtorFiscalCode;
     private String amount;
     private ReceiptMetadata mdAttach;
-    private IOMessageData idMessageDebtor;
+    private String idMessageDebtor;
     private ReasonError reasonErrDebtor;
 
 }

@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.project</groupId>
     <artifactId>pagopa-receipt-pdf-notifier</artifactId>
-    <version>0.13.5</version>
+    <version>0.13.7-2-PAGOPA-3372-cart-receipt-notifier-function</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-notifier</name>
@@ -130,7 +130,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>2.13.1</version>
+            <version>2.15.0</version>
         </dependency>
 
         <dependency>

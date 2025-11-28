@@ -1,10 +1,10 @@
 microservice-chart:
   namespace: "receipts"
   nameOverride: ""
-  fullnameOverride: ""
+  fullnameOverride: "pagopa-receipt-pdf-notifier"
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
-    tag: "0.13.5"
+    tag: "0.13.7-2-PAGOPA-3372-cart-receipt-notifier-function"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -79,16 +79,19 @@ microservice-chart:
           value: "80"
   fileConfig: {}
   envConfig:
+    ENV: "prod"
+    LOG_LEVEL: "INFO"
     LANG: "C.UTF-8"
     WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
     ASPNETCORE_URLS: "http://*:8080"
     FUNCTIONS_WORKER_RUNTIME: "java"
     NOTIFIER_QUEUE_TOPIC: "pagopa-p-weu-receipts-queue-receipt-io-notifier-error"
-    NOTIFIER_CART_QUEUE_TOPIC: "pagopa-p-weu-cart-receipts-queue-receipt-io-notifier-error"
+    NOTIFIER_CART_QUEUE_TOPIC: "pagopa-p-weu-receipts-queue-cart-receipt-io-notifier-error"
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-p-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
     COSMOS_RECEIPT_MESSAGE_CONTAINER_NAME: "receipts-io-messages-evt"
+    COSMOS_CART_RECEIPT_MESSAGE_CONTAINER_NAME: "cart-receipts-io-messages"
     IO_API_BASE_PATH: "https://api.io.pagopa.it/api/v1" # IO PROD
     # IO_API_BASE_PATH: "https://api.uat.platform.pagopa.it/mock-io/api/v1"
     PDV_TOKENIZER_BASE_PATH: "https://api.tokenizer.pdv.pagopa.it/tokenizer/v1"
@@ -98,20 +101,18 @@ microservice-chart:
     PDV_TOKENIZER_MAX_RETRIES: "5"
     MAX_NUMBER_RETRY: "7"
     NOTIFIER_QUEUE_DELAY: "2"
-    ENABLE_ECS_CONSOLE: "true"
-    CONSOLE_LOG_THRESHOLD: "DEBUG"
-    CONSOLE_LOG_PATTERN: "%d{HH:mm:ss.SSS}[%thread]%-5level%logger{36}-%msg%n"
-    CONSOLE_LOG_CHARSET: "UTF-8"
     OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopareceiptpdfnotifierotl,deployment.environment=prod"
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
     OTEL_LOGS_EXPORTER: none
     OTEL_TRACES_SAMPLER: "always_on"
     PAYER_NOTIFY_DISABLED: "false"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -Xmx768m -XX:+UseG1GC"
-    MARKDOWN_DEBTOR: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-    SUBJECT_DEBTOR: "Ricevuta del pagamento a {cart.items[0].payee.name}"
-    MARKDOWN_PAYER: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-    SUBJECT_PAYER: "Ricevuta del pagamento a {cart.items[0].payee.name}"
+  externalConfigMapValues:
+    message-template:
+      MARKDOWN_DEBTOR: markdown-debtor
+      SUBJECT_DEBTOR: subjet-debtor
+      MARKDOWN_PAYER: markdown-payer
+      SUBJECT_PAYER: subject-payer
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"

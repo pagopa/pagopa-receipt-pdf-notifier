@@ -15,9 +15,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MessagePayload {
 
-    @JsonProperty("time_to_live")
-    private Integer timeToLive = 3600;
-
     @JsonProperty("content")
     private MessageContent content;
 
