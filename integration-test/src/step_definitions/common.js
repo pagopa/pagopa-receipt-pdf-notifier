@@ -7,8 +7,8 @@ function createReceipt(id) {
 	{
 		"eventId": id,
 		"eventData": {
-			"payerFiscalCode": "cd07268c-73e8-4df4-8305-a35085e32eff",
-			"debtorFiscalCode": "cd07268c-73e8-4df4-8305-a35085e32eff",
+			"payerFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
+			"debtorFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
 			"amount": "200",
 			"cart": [
 				{
@@ -23,12 +23,7 @@ function createReceipt(id) {
 			"name": "attachment_1.pdf",
 			"url": "aurl"
 		},
-		"id": id,
-		"_rid": "Z9AJAMdamqNjAAAAAAAAAA==",
-		"_self": "dbs/Z9AJAA==/colls/Z9AJAMdamqM=/docs/Z9AJAMdamqNjAAAAAAAAAA==/",
-		"_etag": "\"08007a84-0000-0d00-0000-648b1e510000\"",
-		"_attachments": "attachments/",
-		"_ts": 1686838865
+		"id": id
 	}
 	return receipt
 }
@@ -39,7 +34,7 @@ function createCartReceipt(id) {
 		"id": id,
 		"version": "1",
 		"payload": {
-			"payerFiscalCode": "cd07268c-73e8-4df4-8305-a35085e32eff",
+			"payerFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
 			"transactionCreationDate": "2025-11-27T15:22:45.227227227Z",
 			"totalNotice": 2,
 			"totalAmount": "26,48",
@@ -52,14 +47,14 @@ function createCartReceipt(id) {
 					"bizEventId": "doc-test-ricevute-5606a4ef-61e7-48e2-ac1b-13581fd47f48-0-0-0",
 					"subject": "N004-DVTMCL66B25E098J",
 					"payeeName": "Ministero delle infrastrutture e dei trasporti",
-					"debtorFiscalCode": "cd07268c-73e8-4df4-8305-a35085e32eff",
+					"debtorFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
 					"amount": "16.0"
 				},
 				{
 					"bizEventId": "doc-test-ricevute-5606a4ef-61e7-48e2-ac1b-13581fd47f48-0-0-1",
 					"subject": "Pagamento multa 1",
 					"payeeName": "Ministero delle infrastrutture e dei trasporti",
-					"debtorFiscalCode": "cd07268c-73e8-4df4-8305-a35085e32eff",
+					"debtorFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
 					"amount": "10.2",
 					"mdAttach": {
 						"name": "pagopa-ricevuta-251127-doc-test-ricevute-5606a4ef-61e7-48e2-ac1b-13581fd47f48-0-0-1-d-c.pdf",
