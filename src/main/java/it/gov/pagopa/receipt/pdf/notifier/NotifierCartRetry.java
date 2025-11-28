@@ -33,7 +33,7 @@ public class NotifierCartRetry {
      * It will trigger the ReceiptToIO function to retry the notification to user
      *
      * @param queueMessage Message from notification error queue with receipt's data
-     * @param documentReceipts Output binding to save the updated receipt
+     * @param documentCartReceipts Output binding to save the updated receipt
      * @param context Function Context
      * @throws JsonProcessingException in case the message can't be mapped to the Receipt class
      */
@@ -47,9 +47,9 @@ public class NotifierCartRetry {
             @CosmosDBOutput(
                     name = "ReceiptOutputDatastore",
                     databaseName = "db",
-                    containerName = "receipts",
+                    containerName = "cart-for-receipts",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
-            OutputBinding<List<CartForReceipt>> documentReceipts,
+            OutputBinding<List<CartForReceipt>> documentCartReceipts,
             final ExecutionContext context
     ) throws JsonProcessingException {
 
@@ -69,7 +69,7 @@ public class NotifierCartRetry {
                 context.getInvocationId(), receiptsToRetry.size());
 
         if (!receiptsToRetry.isEmpty()) {
-            documentReceipts.setValue(receiptsToRetry);
+            documentCartReceipts.setValue(receiptsToRetry);
         }
     }
 }
