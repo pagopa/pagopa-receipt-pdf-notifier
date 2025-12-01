@@ -25,5 +25,4 @@ public class Receipt {
     private long inserted_at;
     private long generated_at;
     private long notified_at;
-    private Boolean isCart;
 }

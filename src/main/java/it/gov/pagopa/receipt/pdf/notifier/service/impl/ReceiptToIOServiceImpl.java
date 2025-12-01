@@ -27,13 +27,11 @@ import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.ALREADY_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOTIFIED;
@@ -41,13 +39,13 @@ import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifySta
 import static it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus.NOT_TO_BE_NOTIFIED;
 import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.buildReasonError;
 import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.getCodeOrDefault;
+import static it.gov.pagopa.receipt.pdf.notifier.utils.ReceiptToIOUtils.isFiscalCodeValid;
 
 public class ReceiptToIOServiceImpl implements ReceiptToIOService {
 
     private final Logger logger = LoggerFactory.getLogger(ReceiptToIOServiceImpl.class);
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("NOTIFY_RECEIPT_MAX_RETRY", "5"));
-    private static final List<String> CF_FILTER_NOTIFIER = Arrays.asList(System.getenv().getOrDefault("CF_FILTER_NOTIFIER", "").split(","));
 
     private final IOService ioService;
     private final NotifierQueueClient notifierQueueClient;
@@ -89,7 +87,7 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
                 return NOT_TO_BE_NOTIFIED;
             }
 
-            String ioMessageId = getIOMessageForUserIfAlreadyExist(receipt, userType);
+            String ioMessageId = getIOMessageForUserIfAlreadyExist(receipt.getEventId(), userType);
             if (ioMessageId != null) {
                 logger.warn("The receipt with event id  {} has already been notified for user type {}", receipt.getEventId(), userType);
                 updateReceiptWithIOMessageData(userType, receipt, ioMessageId);
@@ -120,37 +118,39 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
      * {@inheritDoc}
      */
     @Override
-    public boolean verifyMessagesNotification(
+    public List<IOMessage> verifyMessagesNotification(
             EnumMap<UserType, UserNotifyStatus> usersToBeVerified,
-            List<IOMessage> messagesNotified,
             Receipt receipt
     ) {
+        List<IOMessage> ioMessages = new ArrayList<>();
+
         UserNotifyStatus debtorNotified =  usersToBeVerified.getOrDefault(UserType.DEBTOR, NOT_TO_BE_NOTIFIED);
         UserNotifyStatus payerNotified = usersToBeVerified.getOrDefault(UserType.PAYER, NOT_TO_BE_NOTIFIED);
 
         if (debtorNotified.equals(NOTIFIED)) {
             IOMessage ioMessage = getIoMessage(receipt, UserType.DEBTOR);
-            messagesNotified.add(ioMessage);
+            ioMessages.add(ioMessage);
         }
         if (payerNotified.equals(NOTIFIED)) {
             IOMessage ioMessage = getIoMessage(receipt, UserType.PAYER);
-            messagesNotified.add(ioMessage);
+            ioMessages.add(ioMessage);
         }
 
         if (debtorNotified.equals(NOT_NOTIFIED) || payerNotified.equals(NOT_NOTIFIED)) {
-            return requeueReceiptForRetry(receipt);
+            requeueReceiptForRetry(receipt);
+            return ioMessages;
         }
 
         if (debtorNotified.equals(NOT_TO_BE_NOTIFIED) && payerNotified.equals(NOT_TO_BE_NOTIFIED)) {
             receipt.setStatus(ReceiptStatusType.NOT_TO_NOTIFY);
-            return false;
+            return ioMessages;
         }
 
         if (receipt.getNotified_at() == 0L) {
             receipt.setNotified_at(System.currentTimeMillis());
         }
         receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
-        return false;
+        return ioMessages;
     }
 
     private void handleSendNotificationToUser(String fiscalCode, UserType userType, Receipt receipt) throws ErrorToNotifyException, MissingFieldsForNotificationException, IOAPIException {
@@ -160,14 +160,14 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         updateReceiptWithIOMessageData(userType, receipt, messageId);
     }
 
-    private boolean requeueReceiptForRetry(Receipt receipt) {
+    private void requeueReceiptForRetry(Receipt receipt) {
         int numRetry = receipt.getNotificationNumRetry();
         receipt.setNotificationNumRetry(numRetry + 1);
 
         if (numRetry >= MAX_NUMBER_RETRY) {
             logger.error("Maximum number of retries for event with event id: {}. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId());
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
-            return false;
+            return;
         }
 
         String receiptString;
@@ -176,39 +176,28 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         } catch (JsonProcessingException e) {
             logger.error("Unable to requeue for retry the event with event id: {}. Receipt updated with status IO_ERROR_TO_NOTIFY", receipt.getEventId(), e);
             receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
-            return false;
+            return;
         }
         try {
             Response<SendMessageResult> response = this.notifierQueueClient.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(receiptString.getBytes()));
             if (response.getStatusCode() == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
                 receipt.setStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY);
-                return true;
+                return;
             }
             logger.error("Error in sending message to queue for receipt with event id: {}, queue responded with status {}. Receipt updated with status UNABLE_TO_SEND",
                     receipt.getEventId(), response.getStatusCode());
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
-            return false;
         } catch (Exception e) {
             logger.error("Error in sending message to queue for receipt with event id: {}. Receipt updated with status UNABLE_TO_SEND", receipt.getEventId(), e);
             receipt.setStatus(ReceiptStatusType.UNABLE_TO_SEND);
-            return false;
         }
     }
 
     private boolean isToBeNotified(String fiscalCode, UserType userType, Receipt receipt) {
-        return isValidFiscalCode(fiscalCode) &&
-                (CF_FILTER_NOTIFIER.contains("*") || CF_FILTER_NOTIFIER.contains(fiscalCode)) &&
-                (receipt.getIoMessageData() == null || verifyMessageIdIsNotPresent(userType, receipt));
+        return isFiscalCodeValid(fiscalCode)
+                && (receipt.getIoMessageData() == null || verifyMessageIdIsNotPresent(userType, receipt));
     }
 
-    private boolean isValidFiscalCode(String fiscalCode) {
-        if (fiscalCode != null && !fiscalCode.isEmpty()) {
-            Pattern pattern = Pattern.compile("^[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$");
-            Matcher matcher = pattern.matcher(fiscalCode);
-            return matcher.find();
-        }
-        return false;
-    }
 
     private boolean verifyMessageIdIsNotPresent(UserType userType, Receipt receipt) {
         return (userType.equals(UserType.DEBTOR) && receipt.getIoMessageData().getIdMessageDebtor() == null)
@@ -246,9 +235,9 @@ public class ReceiptToIOServiceImpl implements ReceiptToIOService {
         receipt.setIoMessageData(messageData);
     }
 
-    private String getIOMessageForUserIfAlreadyExist(Receipt receipt, UserType userType) {
+    private String getIOMessageForUserIfAlreadyExist(String eventId, UserType userType) {
         try {
-            IOMessage ioMessage = this.receiptCosmosClient.findIOMessageWithEventIdAndUserType(receipt.getEventId(), userType);
+            IOMessage ioMessage = this.receiptCosmosClient.findIOMessageWithEventIdAndUserType(eventId, userType);
             return ioMessage.getMessageId();
         } catch (IoMessageNotFoundException e) {
             return null;
