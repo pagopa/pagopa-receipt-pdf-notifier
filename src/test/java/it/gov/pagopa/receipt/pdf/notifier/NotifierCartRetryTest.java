@@ -5,8 +5,6 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartStatusType;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.Receipt;
-import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.notifier.utils.ObjectMapperUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
