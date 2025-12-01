@@ -23,12 +23,14 @@ import java.util.Map;
  * {@inheritDoc}
  */
 public class NotificationMessageBuilderImpl implements NotificationMessageBuilder {
+
     private static final String IO_CONFIGURATION_ID = System.getenv().getOrDefault("IO_CONFIGURATION_ID", "");
     private static final String SUBJECT_PAYER = new String(System.getenv().getOrDefault("SUBJECT_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String SUBJECT_DEBTOR = new String(System.getenv().getOrDefault("SUBJECT_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String MARKDOWN_PAYER = new String(System.getenv().getOrDefault("MARKDOWN_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String MARKDOWN_DEBTOR = new String(System.getenv().getOrDefault("MARKDOWN_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
-    public static final String ADVANCED = "ADVANCED";
+    private static final String ADVANCED = "ADVANCED";
+    private static final String CART_PLACEHOLDER = "_CART_";
 
     /**
      * {@inheritDoc}
@@ -54,7 +56,7 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
         // TODO define string builder for cart payer message
 //        StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
 
-        String thirdPartyId = String.format("%s_CART", cart.getEventId());
+        String thirdPartyId = String.format("%s%s", cart.getEventId(), CART_PLACEHOLDER);
 //        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
 //        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
 
@@ -66,7 +68,7 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
         // TODO define string builder for cart debtor message
 //        StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
 
-        String thirdPartyId = String.format("%s_CART_%s", cartId, cartPayment.getBizEventId());
+        String thirdPartyId = String.format("%s%s%s", cartId, CART_PLACEHOLDER, cartPayment.getBizEventId());
 //        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
 //        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
 
