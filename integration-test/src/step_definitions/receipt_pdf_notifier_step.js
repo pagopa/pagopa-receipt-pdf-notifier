@@ -3,6 +3,7 @@ const { After, Given, When, Then, setDefaultTimeout, BeforeAll } = require('@cuc
 const { sleep, createReceiptForError, createCartReceiptForError } = require("./common");
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, getDocumentByIdFromCartReceiptsDatastore, deleteDocumentFromCartReceiptsDatastore, createDocumentInCartReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnQueue, putMessageOnCartQueue } = require("./receipt_queue_client");
+const { createToken } = require("./tokenizer_client");
 // set timeout for Hooks function, it allows to wait for long task
 setDefaultTimeout(360 * 1000);
 
