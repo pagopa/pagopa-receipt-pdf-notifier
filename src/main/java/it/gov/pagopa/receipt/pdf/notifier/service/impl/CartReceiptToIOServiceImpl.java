@@ -134,7 +134,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
         UserNotifyStatus payerNotified = gePayerNotifyStatus(notifyCartResult);
         if (payerNotified.equals(NOTIFIED)) {
             MessageData messageData = notifyCartResult.getPayerNotifyResult().getMessage();
-            ioMessages.add(buildCartIOMessageForPayer(cartForReceipt, messageData));
+            ioMessages.add(buildCartIOMessageForPayer(messageData, cartForReceipt.getEventId()));
         }
 
         List<UserNotifyStatus> debtorNotifyStatus = new ArrayList<>();
@@ -143,7 +143,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
                 UserNotifyStatus debtorNotified = notifyDebtorResult.getNotifyStatus();
                 if (NOTIFIED.equals(debtorNotified)) {
                     MessageData messageData = notifyDebtorResult.getMessage();
-                    ioMessages.add(buildCartIOMessageForDebtor(cartForReceipt, bizEventId, messageData));
+                    ioMessages.add(buildCartIOMessageForDebtor(bizEventId, messageData, cartForReceipt.getEventId()));
                 }
                 debtorNotifyStatus.add(debtorNotified);
 
@@ -339,28 +339,30 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
                 .build();
     }
 
-    private CartIOMessage buildCartIOMessageForPayer(CartForReceipt cartForReceipt, MessageData messageData) {
-        return CartIOMessage.builder()
-                .id(messageData.getId() + UUID.randomUUID())
-                .messageId(messageData.getId())
-                .subject(messageData.getSubject())
-                .markdown(messageData.getMarkdown())
-                .cartId(cartForReceipt.getEventId())
-                .userType(UserType.PAYER)
-                .build();
-    }
-
-    private CartIOMessage buildCartIOMessageForDebtor(
-            CartForReceipt cartForReceipt,
-            String bizEventId,
-            MessageData messageData
+    private CartIOMessage buildCartIOMessageForPayer(
+            MessageData messageData, String eventId
     ) {
         return CartIOMessage.builder()
                 .id(messageData.getId() + UUID.randomUUID())
                 .messageId(messageData.getId())
                 .subject(messageData.getSubject())
                 .markdown(messageData.getMarkdown())
-                .cartId(cartForReceipt.getEventId())
+                .cartId(eventId)
+                .userType(UserType.PAYER)
+                .build();
+    }
+
+    private CartIOMessage buildCartIOMessageForDebtor(
+            String bizEventId,
+            MessageData messageData,
+            String eventId
+    ) {
+        return CartIOMessage.builder()
+                .id(messageData.getId() + UUID.randomUUID())
+                .messageId(messageData.getId())
+                .subject(messageData.getSubject())
+                .markdown(messageData.getMarkdown())
+                .cartId(eventId)
                 .eventId(bizEventId)
                 .userType(UserType.DEBTOR)
                 .build();
