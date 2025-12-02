@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { After, Given, When, Then, setDefaultTimeout, BeforeAll } = require('@cucumber/cucumber');
+const { After, Given, When, Then, setDefaultTimeout, Before } = require('@cucumber/cucumber');
 const { sleep, createReceiptForError, createCartReceiptForError } = require("./common");
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, getDocumentByIdFromCartReceiptsDatastore, deleteDocumentFromCartReceiptsDatastore, createDocumentInCartReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnQueue, putMessageOnCartQueue } = require("./receipt_queue_client");
@@ -7,8 +7,7 @@ const { createToken } = require("./tokenizer_client");
 // set timeout for Hooks function, it allows to wait for long task
 setDefaultTimeout(360 * 1000);
 
-
-BeforeAll(async function () {
+Before(async function () {
     let response = await createToken("JHNDOE00A01F205N");
     assert.notStrictEqual(response.token, null);
     this.fiscalCodeToken = response.token;
