@@ -13,9 +13,11 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class CartIOMessage {
-    String id;
-    String messageId;
-    String cartId;
-    String eventId;
-    UserType userType;
+    private String id;
+    private String messageId;
+    private String cartId;
+    private String eventId;
+    private UserType userType;
+    private String subject;
+    private String markdown;
 }

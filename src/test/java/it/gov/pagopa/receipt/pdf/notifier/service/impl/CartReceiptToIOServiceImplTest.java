@@ -8,6 +8,7 @@ import it.gov.pagopa.receipt.pdf.notifier.client.NotifierCartQueueClient;
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartPayment;
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartStatusType;
+import it.gov.pagopa.receipt.pdf.notifier.entity.cart.MessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.Payload;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.CartIOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.entity.receipt.enumeration.ReasonErrorCode;
@@ -20,6 +21,8 @@ import it.gov.pagopa.receipt.pdf.notifier.model.NotifyCartResult;
 import it.gov.pagopa.receipt.pdf.notifier.model.NotifyUserResult;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
+import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessageContent;
+import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
 import it.gov.pagopa.receipt.pdf.notifier.service.IOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import it.gov.pagopa.receipt.pdf.notifier.service.PDVTokenizerServiceRetryWrapper;
@@ -68,6 +71,12 @@ class CartReceiptToIOServiceImplTest {
     private static final String EVENT_2_ID = "456";
     private static final String ERROR_MESSAGE = "error message";
     public static final String CART_ID = "cartId";
+    public static final String SUBJECT_PAYER = "subjectPayer";
+    public static final String MARKDOWN_PAYER = "markdownPayer";
+    public static final String SUBJECT_DEBTOR_1 = "subjectDebtor1";
+    public static final String MARKDOWN_DEBTOR_1 = "markdownDebtor1";
+    public static final String SUBJECT_DEBTOR_2 = "subjectDebtor2";
+    public static final String MARKDOWN_DEBTOR_2 = "markdownDebtor2";
 
     @SystemStub
     private EnvironmentVariables environmentVariables =
@@ -111,6 +120,11 @@ class CartReceiptToIOServiceImplTest {
                 .thenThrow(CartIoMessageNotFoundException.class);
         when(ioServiceMock.isNotifyToIOUserAllowed(VALID_DEBTOR_1_CF)).thenReturn(true);
         when(ioServiceMock.isNotifyToIOUserAllowed(VALID_DEBTOR_2_CF)).thenReturn(true);
+        when(notificationMessageBuilderMock.buildCartDebtorMessagePayload(anyString(), any(), anyString()))
+                .thenReturn(
+                        buildMessagePayload(MARKDOWN_DEBTOR_1, SUBJECT_DEBTOR_1),
+                        buildMessagePayload(MARKDOWN_DEBTOR_2, SUBJECT_DEBTOR_2)
+                );
         when(ioServiceMock.sendNotificationToIOUser(any())).thenReturn(VALID_DEBTOR_1_MESSAGE_ID, VALID_DEBTOR_2_MESSAGE_ID);
 
         NotifyCartResult result = withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
@@ -132,17 +146,25 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_2_ID));
         assertEquals(UserNotifyStatus.NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertEquals(VALID_DEBTOR_1_MESSAGE_ID, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
+        assertEquals(VALID_DEBTOR_1_MESSAGE_ID, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage().getId());
+        assertEquals(SUBJECT_DEBTOR_1, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage().getSubject());
+        assertEquals(MARKDOWN_DEBTOR_1, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage().getMarkdown());
         assertEquals(UserNotifyStatus.NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getNotifyStatus());
-        assertEquals(VALID_DEBTOR_2_MESSAGE_ID, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getMessageId());
+        assertEquals(VALID_DEBTOR_2_MESSAGE_ID, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getMessage().getId());
+        assertEquals(SUBJECT_DEBTOR_2, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getMessage().getSubject());
+        assertEquals(MARKDOWN_DEBTOR_2, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getMessage().getMarkdown());
 
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
         cart.getPayload().getCart().forEach(cartPayment -> {
             if (cartPayment.getBizEventId().equals(EVENT_1_ID)) {
-                assertEquals(VALID_DEBTOR_1_MESSAGE_ID, cartPayment.getIdMessageDebtor());
+                assertEquals(VALID_DEBTOR_1_MESSAGE_ID, cartPayment.getMessageDebtor().getId());
+                assertEquals(SUBJECT_DEBTOR_1, cartPayment.getMessageDebtor().getSubject());
+                assertEquals(MARKDOWN_DEBTOR_1, cartPayment.getMessageDebtor().getMarkdown());
             } else if (cartPayment.getBizEventId().equals(EVENT_2_ID)) {
-                assertEquals(VALID_DEBTOR_2_MESSAGE_ID, cartPayment.getIdMessageDebtor());
+                assertEquals(VALID_DEBTOR_2_MESSAGE_ID, cartPayment.getMessageDebtor().getId());
+                assertEquals(SUBJECT_DEBTOR_2, cartPayment.getMessageDebtor().getSubject());
+                assertEquals(MARKDOWN_DEBTOR_2, cartPayment.getMessageDebtor().getMarkdown());
             }
             assertNull(cartPayment.getReasonErrDebtor());
         });
@@ -176,10 +198,10 @@ class CartReceiptToIOServiceImplTest {
         assertNull(result.getPayerNotifyResult());
         assertNull(result.getDebtorNotifyResultMap());
 
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
         cart.getPayload().getCart().forEach(cartPayment -> {
-            assertNull(cartPayment.getIdMessageDebtor());
+            assertNull(cartPayment.getMessageDebtor());
             assertNull(cartPayment.getReasonErrDebtor());
         });
 
@@ -209,6 +231,8 @@ class CartReceiptToIOServiceImplTest {
         when(cartReceiptCosmosClientMock.findIOMessageWithCartIdAndEventIdAndUserType(CART_ID, null, UserType.PAYER))
                 .thenThrow(CartIoMessageNotFoundException.class);
         when(ioServiceMock.isNotifyToIOUserAllowed(VALID_PAYER_CF)).thenReturn(true);
+        when(notificationMessageBuilderMock.buildCartPayerMessagePayload(anyString(), any()))
+                .thenReturn(buildMessagePayload(MARKDOWN_PAYER, SUBJECT_PAYER));
         when(ioServiceMock.sendNotificationToIOUser(any())).thenReturn(VALID_PAYER_MESSAGE_ID);
 
         NotifyCartResult result = withEnvironmentVariables("PAYER_NOTIFY_DISABLED", "false")
@@ -226,13 +250,17 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(result);
         assertNotNull(result.getPayerNotifyResult());
         assertEquals(UserNotifyStatus.NOTIFIED, result.getPayerNotifyResult().getNotifyStatus());
-        assertEquals(VALID_PAYER_MESSAGE_ID, result.getPayerNotifyResult().getMessageId());
+        assertEquals(VALID_PAYER_MESSAGE_ID, result.getPayerNotifyResult().getMessage().getId());
+        assertEquals(MARKDOWN_PAYER, result.getPayerNotifyResult().getMessage().getMarkdown());
+        assertEquals(SUBJECT_PAYER, result.getPayerNotifyResult().getMessage().getSubject());
         assertNull(result.getDebtorNotifyResultMap());
 
-        assertEquals(VALID_PAYER_MESSAGE_ID, cart.getPayload().getIdMessagePayer());
+        assertEquals(VALID_PAYER_MESSAGE_ID, cart.getPayload().getMessagePayer().getId());
+        assertEquals(SUBJECT_PAYER, cart.getPayload().getMessagePayer().getSubject());
+        assertEquals(MARKDOWN_PAYER, cart.getPayload().getMessagePayer().getMarkdown());
         assertNull(cart.getPayload().getReasonErrPayer());
         cart.getPayload().getCart().forEach(cartPayment -> {
-            assertNull(cartPayment.getIdMessageDebtor());
+            assertNull(cartPayment.getMessageDebtor());
             assertNull(cartPayment.getReasonErrDebtor());
         });
     }
@@ -268,10 +296,10 @@ class CartReceiptToIOServiceImplTest {
         assertNull(result.getPayerNotifyResult());
         assertNull(result.getDebtorNotifyResultMap());
 
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
         cart.getPayload().getCart().forEach(cartPayment -> {
-            assertNull(cartPayment.getIdMessageDebtor());
+            assertNull(cartPayment.getMessageDebtor());
             assertNull(cartPayment.getReasonErrDebtor());
         });
 
@@ -309,6 +337,13 @@ class CartReceiptToIOServiceImplTest {
         when(ioServiceMock.isNotifyToIOUserAllowed(VALID_PAYER_CF)).thenReturn(true);
         when(ioServiceMock.isNotifyToIOUserAllowed(VALID_DEBTOR_1_CF)).thenReturn(true);
         when(ioServiceMock.isNotifyToIOUserAllowed(VALID_DEBTOR_2_CF)).thenReturn(true);
+        when(notificationMessageBuilderMock.buildCartPayerMessagePayload(anyString(), any()))
+                .thenReturn(buildMessagePayload(MARKDOWN_PAYER, SUBJECT_PAYER));
+        when(notificationMessageBuilderMock.buildCartDebtorMessagePayload(anyString(), any(), anyString()))
+                .thenReturn(
+                        buildMessagePayload(MARKDOWN_DEBTOR_1, SUBJECT_DEBTOR_1),
+                        buildMessagePayload(MARKDOWN_DEBTOR_2, SUBJECT_DEBTOR_2)
+                );
         when(ioServiceMock.sendNotificationToIOUser(any()))
                 .thenReturn(VALID_PAYER_MESSAGE_ID, VALID_DEBTOR_1_MESSAGE_ID, VALID_DEBTOR_2_MESSAGE_ID);
 
@@ -327,23 +362,35 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(result);
         assertNotNull(result.getPayerNotifyResult());
         assertEquals(UserNotifyStatus.NOTIFIED, result.getPayerNotifyResult().getNotifyStatus());
-        assertEquals(VALID_PAYER_MESSAGE_ID, result.getPayerNotifyResult().getMessageId());
+        assertEquals(VALID_PAYER_MESSAGE_ID, result.getPayerNotifyResult().getMessage().getId());
+        assertEquals(MARKDOWN_PAYER, result.getPayerNotifyResult().getMessage().getMarkdown());
+        assertEquals(SUBJECT_PAYER, result.getPayerNotifyResult().getMessage().getSubject());
         assertNotNull(result.getDebtorNotifyResultMap());
         assertEquals(2, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_2_ID));
         assertEquals(UserNotifyStatus.NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertEquals(VALID_DEBTOR_1_MESSAGE_ID, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
+        assertEquals(VALID_DEBTOR_1_MESSAGE_ID, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage().getId());
+        assertEquals(SUBJECT_DEBTOR_1, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage().getSubject());
+        assertEquals(MARKDOWN_DEBTOR_1, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage().getMarkdown());
         assertEquals(UserNotifyStatus.NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getNotifyStatus());
-        assertEquals(VALID_DEBTOR_2_MESSAGE_ID, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getMessageId());
+        assertEquals(VALID_DEBTOR_2_MESSAGE_ID, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getMessage().getId());
+        assertEquals(SUBJECT_DEBTOR_2, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getMessage().getSubject());
+        assertEquals(MARKDOWN_DEBTOR_2, result.getDebtorNotifyResultMap().get(EVENT_2_ID).getMessage().getMarkdown());
 
-        assertEquals(VALID_PAYER_MESSAGE_ID, cart.getPayload().getIdMessagePayer());
+        assertEquals(VALID_PAYER_MESSAGE_ID, cart.getPayload().getMessagePayer().getId());
+        assertEquals(MARKDOWN_PAYER, cart.getPayload().getMessagePayer().getMarkdown());
+        assertEquals(SUBJECT_PAYER, cart.getPayload().getMessagePayer().getSubject());
         assertNull(cart.getPayload().getReasonErrPayer());
         cart.getPayload().getCart().forEach(cartPayment -> {
             if (cartPayment.getBizEventId().equals(EVENT_1_ID)) {
-                assertEquals(VALID_DEBTOR_1_MESSAGE_ID, cartPayment.getIdMessageDebtor());
+                assertEquals(VALID_DEBTOR_1_MESSAGE_ID, cartPayment.getMessageDebtor().getId());
+                assertEquals(SUBJECT_DEBTOR_1, cartPayment.getMessageDebtor().getSubject());
+                assertEquals(MARKDOWN_DEBTOR_1, cartPayment.getMessageDebtor().getMarkdown());
             } else if (cartPayment.getBizEventId().equals(EVENT_2_ID)) {
-                assertEquals(VALID_DEBTOR_2_MESSAGE_ID, cartPayment.getIdMessageDebtor());
+                assertEquals(VALID_DEBTOR_2_MESSAGE_ID, cartPayment.getMessageDebtor().getId());
+                assertEquals(SUBJECT_DEBTOR_2, cartPayment.getMessageDebtor().getSubject());
+                assertEquals(MARKDOWN_DEBTOR_2, cartPayment.getMessageDebtor().getMarkdown());
             }
             assertNull(cartPayment.getReasonErrDebtor());
         });
@@ -381,14 +428,14 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
 
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
         assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
         assertNull(cartPayment.getReasonErrDebtor());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(cartReceiptCosmosClientMock, never())
                 .findIOMessageWithCartIdAndEventIdAndUserType(anyString(), anyString(), any());
@@ -407,7 +454,7 @@ class CartReceiptToIOServiceImplTest {
                                         CartPayment.builder()
                                                 .bizEventId(EVENT_1_ID)
                                                 .debtorFiscalCode(DEBTOR_1_CF_TOKEN)
-                                                .idMessageDebtor(VALID_DEBTOR_1_MESSAGE_ID)
+                                                .messageDebtor(MessageData.builder().id(VALID_DEBTOR_1_MESSAGE_ID).build())
                                                 .build()))
                                 .build()
                 )
@@ -433,14 +480,14 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
 
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
         assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
         assertNull(cartPayment.getReasonErrDebtor());
-        assertEquals(VALID_DEBTOR_1_MESSAGE_ID, cartPayment.getIdMessageDebtor());
+        assertEquals(VALID_DEBTOR_1_MESSAGE_ID, cartPayment.getMessageDebtor().getId());
 
         verify(cartReceiptCosmosClientMock, never())
                 .findIOMessageWithCartIdAndEventIdAndUserType(anyString(), anyString(), any());
@@ -480,8 +527,8 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
 
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
@@ -489,7 +536,7 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(cartPayment.getReasonErrDebtor());
         assertEquals(HttpStatus.SC_BAD_REQUEST, cartPayment.getReasonErrDebtor().getCode());
         assertEquals(ERROR_MESSAGE, cartPayment.getReasonErrDebtor().getMessage());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(cartReceiptCosmosClientMock, never())
                 .findIOMessageWithCartIdAndEventIdAndUserType(anyString(), anyString(), any());
@@ -529,8 +576,8 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
 
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
@@ -538,7 +585,7 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(cartPayment.getReasonErrDebtor());
         assertEquals(ReasonErrorCode.ERROR_PDV_MAPPING.getCode(), cartPayment.getReasonErrDebtor().getCode());
         assertNotNull(cartPayment.getReasonErrDebtor().getMessage());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(cartReceiptCosmosClientMock, never())
                 .findIOMessageWithCartIdAndEventIdAndUserType(anyString(), anyString(), any());
@@ -580,8 +627,8 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
 
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
@@ -589,7 +636,7 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(cartPayment.getReasonErrDebtor());
         assertEquals(ReasonErrorCode.ERROR_IO_API_IO.getCode(), cartPayment.getReasonErrDebtor().getCode());
         assertEquals(ERROR_MESSAGE, cartPayment.getReasonErrDebtor().getMessage());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(cartReceiptCosmosClientMock, never())
                 .findIOMessageWithCartIdAndEventIdAndUserType(anyString(), anyString(), any());
@@ -630,8 +677,8 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
 
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
@@ -639,7 +686,7 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(cartPayment.getReasonErrDebtor());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cartPayment.getReasonErrDebtor().getCode());
         assertEquals(ERROR_MESSAGE, cartPayment.getReasonErrDebtor().getMessage());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(cartReceiptCosmosClientMock, never())
                 .findIOMessageWithCartIdAndEventIdAndUserType(anyString(), anyString(), any());
@@ -680,14 +727,14 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
 
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
         assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
         assertNull(cartPayment.getReasonErrDebtor());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(cartReceiptCosmosClientMock, never())
                 .findIOMessageWithCartIdAndEventIdAndUserType(anyString(), anyString(), any());
@@ -733,8 +780,8 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
 
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
@@ -742,7 +789,7 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(cartPayment.getReasonErrDebtor());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cartPayment.getReasonErrDebtor().getCode());
         assertEquals(ERROR_MESSAGE, cartPayment.getReasonErrDebtor().getMessage());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(ioServiceMock, never()).sendNotificationToIOUser(any());
     }
@@ -786,8 +833,8 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
 
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
@@ -795,7 +842,7 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(cartPayment.getReasonErrDebtor());
         assertEquals(ReasonErrorCode.ERROR_IO_API_UNEXPECTED.getCode(), cartPayment.getReasonErrDebtor().getCode());
         assertEquals(ERROR_MESSAGE, cartPayment.getReasonErrDebtor().getMessage());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
     }
 
     @Test
@@ -837,8 +884,8 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
 
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
@@ -846,7 +893,7 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(cartPayment.getReasonErrDebtor());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cartPayment.getReasonErrDebtor().getCode());
         assertEquals(ERROR_MESSAGE, cartPayment.getReasonErrDebtor().getMessage());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
     }
 
     @Test
@@ -886,14 +933,14 @@ class CartReceiptToIOServiceImplTest {
         assertEquals(1, result.getDebtorNotifyResultMap().size());
         assertNotNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID));
         assertEquals(UserNotifyStatus.ALREADY_NOTIFIED, result.getDebtorNotifyResultMap().get(EVENT_1_ID).getNotifyStatus());
-        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessageId());
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(result.getDebtorNotifyResultMap().get(EVENT_1_ID).getMessage());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
 
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
         assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
         assertNull(cartPayment.getReasonErrDebtor());
-        assertEquals(VALID_DEBTOR_1_MESSAGE_ID, cartPayment.getIdMessageDebtor());
+        assertEquals(VALID_DEBTOR_1_MESSAGE_ID, cartPayment.getMessageDebtor().getId());
 
         verify(ioServiceMock, never()).sendNotificationToIOUser(any());
     }
@@ -928,15 +975,15 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(result);
         assertNotNull(result.getPayerNotifyResult());
         assertEquals(UserNotifyStatus.NOT_TO_BE_NOTIFIED, result.getPayerNotifyResult().getNotifyStatus());
-        assertNull(result.getPayerNotifyResult().getMessageId());
+        assertNull(result.getPayerNotifyResult().getMessage());
         assertNull(result.getDebtorNotifyResultMap());
 
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNull(cart.getPayload().getReasonErrPayer());
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
         assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
         assertNull(cartPayment.getReasonErrDebtor());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(cartReceiptCosmosClientMock, never())
                 .findIOMessageWithCartIdAndEventIdAndUserType(anyString(), anyString(), any());
@@ -976,17 +1023,17 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(result);
         assertNotNull(result.getPayerNotifyResult());
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getPayerNotifyResult().getNotifyStatus());
-        assertNull(result.getPayerNotifyResult().getMessageId());
+        assertNull(result.getPayerNotifyResult().getMessage());
         assertNull(result.getDebtorNotifyResultMap());
 
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNotNull(cart.getPayload().getReasonErrPayer());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cart.getPayload().getReasonErrPayer().getCode());
         assertEquals(ERROR_MESSAGE, cart.getPayload().getReasonErrPayer().getMessage());
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
         assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
         assertNull(cartPayment.getReasonErrDebtor());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(cartReceiptCosmosClientMock, never())
                 .findIOMessageWithCartIdAndEventIdAndUserType(anyString(), anyString(), any());
@@ -1029,15 +1076,15 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(result);
         assertNotNull(result.getPayerNotifyResult());
         assertEquals(UserNotifyStatus.ALREADY_NOTIFIED, result.getPayerNotifyResult().getNotifyStatus());
-        assertNull(result.getPayerNotifyResult().getMessageId());
+        assertNull(result.getPayerNotifyResult().getMessage());
         assertNull(result.getDebtorNotifyResultMap());
 
-        assertEquals(VALID_PAYER_MESSAGE_ID, cart.getPayload().getIdMessagePayer());
+        assertEquals(VALID_PAYER_MESSAGE_ID, cart.getPayload().getMessagePayer().getId());
         assertNull(cart.getPayload().getReasonErrPayer());
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
         assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
         assertNull(cartPayment.getReasonErrDebtor());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(ioServiceMock, never()).sendNotificationToIOUser(any());
     }
@@ -1078,17 +1125,17 @@ class CartReceiptToIOServiceImplTest {
         assertNotNull(result);
         assertNotNull(result.getPayerNotifyResult());
         assertEquals(UserNotifyStatus.NOT_NOTIFIED, result.getPayerNotifyResult().getNotifyStatus());
-        assertNull(result.getPayerNotifyResult().getMessageId());
+        assertNull(result.getPayerNotifyResult().getMessage());
         assertNull(result.getDebtorNotifyResultMap());
 
-        assertNull(cart.getPayload().getIdMessagePayer());
+        assertNull(cart.getPayload().getMessagePayer());
         assertNotNull(cart.getPayload().getReasonErrPayer());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cart.getPayload().getReasonErrPayer().getCode());
         assertEquals(ERROR_MESSAGE, cart.getPayload().getReasonErrPayer().getMessage());
         CartPayment cartPayment = cart.getPayload().getCart().get(0);
         assertEquals(EVENT_1_ID, cartPayment.getBizEventId());
         assertNull(cartPayment.getReasonErrDebtor());
-        assertNull(cartPayment.getIdMessageDebtor());
+        assertNull(cartPayment.getMessageDebtor());
 
         verify(ioServiceMock, never()).sendNotificationToIOUser(any());
     }
@@ -1566,7 +1613,7 @@ class CartReceiptToIOServiceImplTest {
     private NotifyUserResult buildNotifiedResult(String messageId) {
         return NotifyUserResult.builder()
                 .notifyStatus(UserNotifyStatus.NOTIFIED)
-                .messageId(messageId)
+                .message(MessageData.builder().id(messageId).build())
                 .build();
     }
 
@@ -1583,5 +1630,11 @@ class CartReceiptToIOServiceImplTest {
         Response<SendMessageResult> queueResponse = mock(Response.class);
         when(queueResponse.getStatusCode()).thenReturn(status);
         return queueResponse;
+    }
+
+    private MessagePayload buildMessagePayload(String markdown, String subject) {
+        return MessagePayload.builder()
+                .content(MessageContent.builder().markdown(markdown).subject(subject).build())
+                .build();
     }
 }
