@@ -2,13 +2,13 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function createReceipt(id) {
+function createReceipt(id, fiscalCodeToken) {
 	let receipt =
 	{
 		"eventId": id,
 		"eventData": {
-			"payerFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
-			"debtorFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
+			"payerFiscalCode": fiscalCodeToken,
+			"debtorFiscalCode": fiscalCodeToken,
 			"amount": "200",
 			"cart": [
 				{
@@ -28,13 +28,13 @@ function createReceipt(id) {
 	return receipt
 }
 
-function createCartReceipt(id) {
+function createCartReceipt(id, fiscalCodeToken) {
 	return {
 		"eventId": id,
 		"id": id,
 		"version": "1",
 		"payload": {
-			"payerFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
+			"payerFiscalCode": fiscalCodeToken,
 			"transactionCreationDate": "2025-11-27T15:22:45.227227227Z",
 			"totalNotice": 2,
 			"totalAmount": "26,48",
@@ -45,16 +45,16 @@ function createCartReceipt(id) {
 			"cart": [
 				{
 					"bizEventId": "doc-test-ricevute-5606a4ef-61e7-48e2-ac1b-13581fd47f48-0-0-0",
-					"subject": "N004-DVTMCL66B25E098J",
+					"subject": "N004",
 					"payeeName": "Ministero delle infrastrutture e dei trasporti",
-					"debtorFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
+					"debtorFiscalCode": fiscalCodeToken,
 					"amount": "16.0"
 				},
 				{
 					"bizEventId": "doc-test-ricevute-5606a4ef-61e7-48e2-ac1b-13581fd47f48-0-0-1",
 					"subject": "Pagamento multa 1",
 					"payeeName": "Ministero delle infrastrutture e dei trasporti",
-					"debtorFiscalCode": "4cdaa80f-fc52-45f5-a413-d6ebc4d0759e",
+					"debtorFiscalCode": fiscalCodeToken,
 					"amount": "10.2",
 					"mdAttach": {
 						"name": "pagopa-ricevuta-251127-doc-test-ricevute-5606a4ef-61e7-48e2-ac1b-13581fd47f48-0-0-1-d-c.pdf",
@@ -72,14 +72,14 @@ function createCartReceipt(id) {
 	}
 }
 
-function createReceiptForError(id) {
-	let receiptForError = createReceipt(id);
+function createReceiptForError(id, fiscalCodeToken) {
+	let receiptForError = createReceipt(id, fiscalCodeToken);
 	receiptForError.status = "IO_ERROR_TO_NOTIFY";
 	return receiptForError;
 }
 
-function createCartReceiptForError(id) {
-	let receiptForError = createCartReceipt(id);
+function createCartReceiptForError(id, fiscalCodeToken) {
+	let receiptForError = createCartReceipt(id, fiscalCodeToken);
 	receiptForError.status = "IO_ERROR_TO_NOTIFY";
 	return receiptForError;
 }

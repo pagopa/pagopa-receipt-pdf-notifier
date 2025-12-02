@@ -19,8 +19,8 @@ async function getDocumentByIdFromReceiptsDatastore(id) {
         .fetchNext();
 }
 
-async function createDocumentInReceiptsDatastore(id) {
-    let event = createReceipt(id);
+async function createDocumentInReceiptsDatastore(id, fiscalCodeToken) {
+    let event = createReceipt(id, fiscalCodeToken);
     try {
         return await container.items.create(event);
     } catch (err) {
@@ -51,8 +51,8 @@ async function getDocumentByIdFromCartReceiptsDatastore(id) {
         .fetchNext();
 }
 
-async function createDocumentInCartReceiptsDatastore(id) {
-    let event = createCartReceipt(id);
+async function createDocumentInCartReceiptsDatastore(id, fiscalCodeToken) {
+    let event = createCartReceipt(id, fiscalCodeToken);
     try {
         return await cartContainer.items.create(event);
     } catch (err) {
