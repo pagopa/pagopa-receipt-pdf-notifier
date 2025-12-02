@@ -2,8 +2,8 @@ apiVersion: v2
 name: pagopareceiptpdfnotifier
 description: Microservice description
 type: application
-version: 0.106.0
-appVersion: 0.15.0
+version: 0.107.0
+appVersion: 0.15.0-1-PAGOPA-3426-add-remote-content
 dependencies:
   - name: microservice-chart
     version: 7.5.0
