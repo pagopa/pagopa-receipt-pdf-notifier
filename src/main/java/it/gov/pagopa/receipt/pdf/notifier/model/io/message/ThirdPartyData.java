@@ -19,7 +19,10 @@ public class ThirdPartyData {
     private String id;
 
     @JsonProperty("has_attachments")
-    private Boolean hasAttachments = false;
+    private Boolean hasAttachments;
+
+    @JsonProperty("has_remote_content")
+    private Boolean hasRemoteContent;
 
     @JsonProperty("configuration_id")
     private String configurationId;

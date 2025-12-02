@@ -60,7 +60,7 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
 //        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
 //        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
 
-        return buildMessage(fiscalCode, SUBJECT_PAYER, MARKDOWN_PAYER, thirdPartyId);
+        return buildMessageWithRemoteContent(fiscalCode, SUBJECT_PAYER, MARKDOWN_PAYER, thirdPartyId);
     }
 
     @Override
@@ -72,7 +72,18 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
 //        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
 //        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
 
-        return buildMessage(fiscalCode, SUBJECT_PAYER, MARKDOWN_PAYER, thirdPartyId);
+        return buildMessageWithRemoteContent(fiscalCode, SUBJECT_PAYER, MARKDOWN_PAYER, thirdPartyId);
+    }
+
+    private MessagePayload buildMessageWithRemoteContent(
+            String fiscalCode,
+            String subject,
+            String markdown,
+            String thirdPartyId
+    ) {
+        MessagePayload messagePayload = buildMessage(fiscalCode, subject, markdown, thirdPartyId);
+        messagePayload.getContent().getThirdPartyData().setHasRemoteContent(true);
+        return messagePayload;
     }
 
     private MessagePayload buildMessage(
@@ -91,6 +102,7 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
                                 .thirdPartyData(ThirdPartyData.builder()
                                         .id(thirdPartyId)
                                         .hasAttachments(true)
+                                        .hasRemoteContent(false)
                                         .configurationId(IO_CONFIGURATION_ID)
                                         .build())
                                 .build()
