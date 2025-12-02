@@ -77,11 +77,13 @@ jobs:
           CUCUMBER_PUBLISH_TOKEN_ENV: ${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
           RECEIPTS_STORAGE_CONN_STRING_ENV: ${{ secrets.RECEIPTS_STORAGE_CONN_STRING }}
           RECEIPTS_COSMOS_CONN_STRING_ENV: ${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}
+          TOKENIZER_API_KEY_ENV: ${{ secrets.TOKENIZER_API_KEY }}
         run: |
           export CANARY=${{ inputs.canary }}
           export CUCUMBER_PUBLISH_TOKEN="$CUCUMBER_PUBLISH_TOKEN_ENV"
           export RECEIPTS_STORAGE_CONN_STRING="$RECEIPTS_STORAGE_CONN_STRING_ENV"
           export RECEIPTS_COSMOS_CONN_STRING="$RECEIPTS_COSMOS_CONN_STRING_ENV"
+          export TOKENIZER_API_KEY="$TOKENIZER_API_KEY_ENV"
 
           cd ./integration-test
           chmod +x ./run_integration_test.sh
