@@ -12,7 +12,6 @@ import it.gov.pagopa.receipt.pdf.notifier.model.io.message.MessagePayload;
 import it.gov.pagopa.receipt.pdf.notifier.model.io.message.ThirdPartyData;
 import it.gov.pagopa.receipt.pdf.notifier.service.NotificationMessageBuilder;
 import org.apache.commons.text.StringSubstitutor;
-import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -26,18 +25,33 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
 
     private static final String IO_CONFIGURATION_ID = System.getenv().getOrDefault("IO_CONFIGURATION_ID", "");
     private static final String SUBJECT_PAYER = new String(System.getenv().getOrDefault("SUBJECT_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+    private static final String SUBJECT_PAYER_CART = new String(System.getenv().getOrDefault("SUBJECT_PAYER_CART", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String SUBJECT_DEBTOR = new String(System.getenv().getOrDefault("SUBJECT_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String MARKDOWN_PAYER = new String(System.getenv().getOrDefault("MARKDOWN_PAYER", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+    private static final String MARKDOWN_PAYER_CART = new String(System.getenv().getOrDefault("MARKDOWN_PAYER_CART", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+    private static final String MARKDOWN_PAYER_CART_ITEM = new String(System.getenv().getOrDefault("MARKDOWN_PAYER_CART_ITEM", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String MARKDOWN_DEBTOR = new String(System.getenv().getOrDefault("MARKDOWN_DEBTOR", "").getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     private static final String ADVANCED = "ADVANCED";
     private static final String CART_PLACEHOLDER = "_CART_";
+    private static final String CART_ITEM_PAYEE_NAME = "cart.item.payee.name";
+    private static final String TRANSACTION_AMOUNT = "transaction.amount";
+    private static final String CART_ITEM_SUBJECT = "cart.item.subject";
+    public static final String NOTICE_INDEX = "notice.index";
+    private static final String NOTICES = "notices";
+    private static final String NOTICES_TOTAL = "notices_total";
+    private static final String PREFIX = "{";
+    private static final String SUFFIX = "}";
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public MessagePayload buildMessagePayload(String fiscalCode, Receipt receipt, UserType userType) throws MissingFieldsForNotificationException {
-        StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
+    public MessagePayload buildMessagePayload(
+            String fiscalCode,
+            Receipt receipt,
+            UserType userType
+    ) throws MissingFieldsForNotificationException {
+        StringSubstitutor stringSubstitutor = buildSingleReceiptStringSubstitutor(receipt.getEventData(), receipt.getId());
 
         String subject;
         String markdown;
@@ -52,27 +66,46 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
     }
 
     @Override
-    public MessagePayload buildCartPayerMessagePayload(String fiscalCode, CartForReceipt cart) throws MissingFieldsForNotificationException {
-        // TODO define string builder for cart payer message
-//        StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
+    public MessagePayload buildCartPayerMessagePayload(
+            String fiscalCode,
+            CartForReceipt cart
+    ) throws MissingFieldsForNotificationException {
+        if (cart.getPayload() == null
+                || cart.getPayload().getCart() == null
+                || cart.getPayload().getCart().isEmpty()
+        ) {
+            throw new MissingFieldsForNotificationException(
+                    "Unable to build the notification message for cart receipt, there are missing fields in receipt necessary for subject and markdown");
+        }
+
+        StringBuilder notices = new StringBuilder(10);
+        int count = 1;
+        for (CartPayment cartPayment : cart.getPayload().getCart()) {
+            StringSubstitutor stringSubstitutor = buildCartItemStringSubstitutor(cartPayment, String.valueOf(count));
+            notices.append(stringSubstitutor.replace(MARKDOWN_PAYER_CART_ITEM));
+            count++;
+        }
 
         String thirdPartyId = String.format("%s%s", cart.getEventId(), CART_PLACEHOLDER);
-//        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
-//        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
+        StringSubstitutor stringSubstitutor = buildCartStringSubstitutor(notices.toString(), cart.getPayload().getTotalNotice());
+        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER_CART);
 
-        return buildMessageWithRemoteContent(fiscalCode, SUBJECT_PAYER, MARKDOWN_PAYER, thirdPartyId);
+        return buildMessageWithRemoteContent(fiscalCode, SUBJECT_PAYER_CART, markdown, thirdPartyId);
     }
 
     @Override
-    public MessagePayload buildCartDebtorMessagePayload(String fiscalCode, CartPayment cartPayment, String cartId) throws MissingFieldsForNotificationException {
-        // TODO define string builder for cart debtor message
-//        StringSubstitutor stringSubstitutor = buildStringSubstitutor(receipt.getEventData(), receipt.getId());
+    public MessagePayload buildCartDebtorMessagePayload(
+            String fiscalCode,
+            CartPayment cartPayment,
+            String cartId
+    ) throws MissingFieldsForNotificationException {
+        StringSubstitutor stringSubstitutor = buildCartItemStringSubstitutor(cartPayment, "");
 
         String thirdPartyId = String.format("%s%s%s", cartId, CART_PLACEHOLDER, cartPayment.getBizEventId());
-//        String subject = stringSubstitutor.replace(SUBJECT_PAYER);
-//        String markdown = stringSubstitutor.replace(MARKDOWN_PAYER);
+        String subject = stringSubstitutor.replace(SUBJECT_DEBTOR);
+        String markdown = stringSubstitutor.replace(MARKDOWN_DEBTOR);
 
-        return buildMessageWithRemoteContent(fiscalCode, SUBJECT_PAYER, MARKDOWN_PAYER, thirdPartyId);
+        return buildMessageWithRemoteContent(fiscalCode, subject, markdown, thirdPartyId);
     }
 
     private MessagePayload buildMessageWithRemoteContent(
@@ -110,8 +143,10 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
                 .build();
     }
 
-    @NotNull
-    private StringSubstitutor buildStringSubstitutor(EventData eventData, String receiptId) throws MissingFieldsForNotificationException {
+    private StringSubstitutor buildSingleReceiptStringSubstitutor(
+            EventData eventData,
+            String receiptId
+    ) throws MissingFieldsForNotificationException {
         if (eventData == null
                 || eventData.getAmount() == null
                 || eventData.getCart() == null
@@ -125,12 +160,41 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
 
         List<CartItem> cart = eventData.getCart();
         // Build map
-        Map<String, String> valuesMap = new HashMap<>();
-        valuesMap.put("cart.items[0].payee.name", cart.get(0).getPayeeName());
-        valuesMap.put("transaction.amount", eventData.getAmount());
-        valuesMap.put("cart.items[0].subject", cart.get(0).getSubject() != null ? cart.get(0).getSubject() : "-");
+        Map<String, String> valuesMap = new HashMap<>(4);
+        valuesMap.put(CART_ITEM_PAYEE_NAME, cart.get(0).getPayeeName());
+        valuesMap.put(TRANSACTION_AMOUNT, eventData.getAmount());
+        valuesMap.put(CART_ITEM_SUBJECT, cart.get(0).getSubject() != null ? cart.get(0).getSubject() : "-");
 
         // Build StringSubstitutor
-        return new StringSubstitutor(valuesMap, "{", "}");
+        return new StringSubstitutor(valuesMap, PREFIX, SUFFIX);
+    }
+
+    private StringSubstitutor buildCartItemStringSubstitutor(CartPayment cartPayment, String count) throws MissingFieldsForNotificationException {
+        if (cartPayment == null
+                || cartPayment.getAmount() == null
+                || cartPayment.getPayeeName() == null) {
+            throw new MissingFieldsForNotificationException(
+                    "Unable to build the notification message for cart receipt, there are missing fields in receipt necessary for subject and markdown");
+        }
+
+        // Build map
+        Map<String, String> valuesMap = new HashMap<>(5);
+        valuesMap.put(NOTICE_INDEX, count);
+        valuesMap.put(CART_ITEM_PAYEE_NAME, cartPayment.getPayeeName());
+        valuesMap.put(TRANSACTION_AMOUNT, cartPayment.getAmount());
+        valuesMap.put(CART_ITEM_SUBJECT, cartPayment.getSubject() != null ? cartPayment.getSubject() : "-");
+
+        // Build StringSubstitutor
+        return new StringSubstitutor(valuesMap, PREFIX, SUFFIX);
+    }
+
+    private StringSubstitutor buildCartStringSubstitutor(String cartItems, int totalNotices) {
+        // Build map
+        Map<String, String> valuesMap = new HashMap<>(3);
+        valuesMap.put(NOTICES, cartItems);
+        valuesMap.put(NOTICES_TOTAL, String.valueOf(totalNotices));
+
+        // Build StringSubstitutor
+        return new StringSubstitutor(valuesMap, PREFIX, SUFFIX);
     }
 }
