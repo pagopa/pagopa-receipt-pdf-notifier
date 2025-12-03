@@ -4,7 +4,10 @@ metadata:
   name: message-template
   namespace: receipts
 data:
-  markdown-debtor: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-  subjet-debtor: "Ricevuta del pagamento a {cart.items[0].payee.name}"
-  markdown-payer: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.items[0].subject}\n\n**Ente creditore**: {cart.items[0].payee.name}\n\nEcco la ricevuta con i dettagli."
-  subject-payer: "Ricevuta del pagamento a {cart.items[0].payee.name}"
+  markdown-debtor: "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.item.subject}\n\n**Ente creditore**: {cart.item.payee.name}\n\nEcco la ricevuta con i dettagli."
+  subject-debtor: "Ricevuta del pagamento a {cart.item.payee.name}"
+  markdown-payer: "Hai effettuato il pagamento di un avviso:\n\n**Importo**: {transaction.amount} €\n\n**Oggetto:** {cart.item.subject}\n\n**Ente creditore**: {cart.item.payee.name}\n\nEcco la ricevuta con i dettagli."
+  subject-payer: "Ricevuta del pagamento a {cart.item.payee.name}"
+  markdown-payer-cart: "Hai effettuato il pagamento di {notice.total} avvisi:\n\n{notices}\nEcco la ricevuta con i dettagli."
+  markdown-payer-cart-item: "# Avviso {notice.index}\n\n**Importo:** {transaction.amount} €\n**Oggetto:** {cart.item.subject}\n**Ente creditore:** {cart.item.payee.name}\n\n"
+  subject-payer-cart: "Ricevuta di pagamento"
