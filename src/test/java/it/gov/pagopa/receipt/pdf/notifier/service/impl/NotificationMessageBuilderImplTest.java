@@ -63,6 +63,7 @@ class NotificationMessageBuilderImplTest {
         assertNotNull(message.getContent().getThirdPartyData());
         assertEquals(EVENT_ID, message.getContent().getThirdPartyData().getId());
         assertEquals(Boolean.TRUE, message.getContent().getThirdPartyData().getHasAttachments());
+        assertEquals(Boolean.FALSE, message.getContent().getThirdPartyData().getHasRemoteContent());
     }
 
     @Test
@@ -81,6 +82,7 @@ class NotificationMessageBuilderImplTest {
         assertNotNull(message.getContent().getThirdPartyData());
         assertEquals(EVENT_ID, message.getContent().getThirdPartyData().getId());
         assertEquals(Boolean.TRUE, message.getContent().getThirdPartyData().getHasAttachments());
+        assertEquals(Boolean.FALSE, message.getContent().getThirdPartyData().getHasRemoteContent());
     }
 
     @Test
@@ -108,6 +110,7 @@ class NotificationMessageBuilderImplTest {
         assertNotNull(message.getContent().getThirdPartyData());
         assertEquals(EVENT_ID, message.getContent().getThirdPartyData().getId());
         assertEquals(Boolean.TRUE, message.getContent().getThirdPartyData().getHasAttachments());
+        assertEquals(Boolean.FALSE, message.getContent().getThirdPartyData().getHasRemoteContent());
     }
 
     @Test
@@ -126,6 +129,7 @@ class NotificationMessageBuilderImplTest {
         assertNotNull(message.getContent().getThirdPartyData());
         assertEquals(EVENT_ID, message.getContent().getThirdPartyData().getId());
         assertEquals(Boolean.TRUE, message.getContent().getThirdPartyData().getHasAttachments());
+        assertEquals(Boolean.FALSE, message.getContent().getThirdPartyData().getHasRemoteContent());
     }
 
     private Receipt buildReceipt(boolean withSubject) {

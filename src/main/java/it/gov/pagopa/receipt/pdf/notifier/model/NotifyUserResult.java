@@ -1,5 +1,6 @@
 package it.gov.pagopa.receipt.pdf.notifier.model;
 
+import it.gov.pagopa.receipt.pdf.notifier.entity.cart.MessageData;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,5 +16,5 @@ import lombok.Setter;
 public class NotifyUserResult {
 
     private UserNotifyStatus notifyStatus;
-    private String messageId;
+    private MessageData message;
 }

@@ -10,6 +10,7 @@ import it.gov.pagopa.receipt.pdf.notifier.client.impl.NotifierCartQueueClientImp
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartPayment;
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.CartStatusType;
+import it.gov.pagopa.receipt.pdf.notifier.entity.cart.MessageData;
 import it.gov.pagopa.receipt.pdf.notifier.entity.cart.Payload;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.CartIOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.exception.CartIoMessageNotFoundException;
@@ -132,13 +133,8 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
 
         UserNotifyStatus payerNotified = gePayerNotifyStatus(notifyCartResult);
         if (payerNotified.equals(NOTIFIED)) {
-            CartIOMessage message = CartIOMessage.builder()
-                    .id(notifyCartResult.getPayerNotifyResult().getMessageId() + UUID.randomUUID())
-                    .messageId(notifyCartResult.getPayerNotifyResult().getMessageId())
-                    .cartId(cartForReceipt.getEventId())
-                    .userType(UserType.PAYER)
-                    .build();
-            ioMessages.add(message);
+            MessageData messageData = notifyCartResult.getPayerNotifyResult().getMessage();
+            ioMessages.add(buildCartIOMessageForPayer(messageData, cartForReceipt.getEventId()));
         }
 
         List<UserNotifyStatus> debtorNotifyStatus = new ArrayList<>();
@@ -146,14 +142,8 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
             notifyCartResult.getDebtorNotifyResultMap().forEach((bizEventId, notifyDebtorResult) -> {
                 UserNotifyStatus debtorNotified = notifyDebtorResult.getNotifyStatus();
                 if (NOTIFIED.equals(debtorNotified)) {
-                    CartIOMessage message = CartIOMessage.builder()
-                            .id(notifyDebtorResult.getMessageId() + UUID.randomUUID())
-                            .messageId(notifyDebtorResult.getMessageId())
-                            .cartId(cartForReceipt.getEventId())
-                            .eventId(bizEventId)
-                            .userType(UserType.DEBTOR)
-                            .build();
-                    ioMessages.add(message);
+                    MessageData messageData = notifyDebtorResult.getMessage();
+                    ioMessages.add(buildCartIOMessageForDebtor(bizEventId, messageData, cartForReceipt.getEventId()));
                 }
                 debtorNotifyStatus.add(debtorNotified);
 
@@ -187,15 +177,15 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
         try {
             String fiscalCode = this.pdvTokenizerServiceRetryWrapper.getFiscalCodeWithRetry(fiscalCodeToken);
 
-            if (userShouldBeDiscardedFromNotification(fiscalCode, payload.getIdMessagePayer())) {
+            if (userShouldBeDiscardedFromNotification(fiscalCode, payload.getMessagePayer())) {
                 return NotifyUserResult.builder()
                         .notifyStatus(NOT_TO_BE_NOTIFIED)
                         .build();
             }
 
-            String ioMessageId = getIOMessageForUserIfAlreadyExist(cartForReceipt.getEventId(), null, UserType.PAYER);
-            if (ioMessageId != null) {
-                payload.setIdMessagePayer(ioMessageId);
+            CartIOMessage ioMessage = getIOMessageForUserIfAlreadyExist(cartForReceipt.getEventId(), null, UserType.PAYER);
+            if (ioMessage != null && ioMessage.getMessageId() != null) {
+                payload.setMessagePayer(buildMessageDataFromCartIOMessage(ioMessage));
                 return NotifyUserResult.builder()
                         .notifyStatus(ALREADY_NOTIFIED)
                         .build();
@@ -205,10 +195,12 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
             MessagePayload messagePayload = this.notificationMessageBuilder
                     .buildCartPayerMessagePayload(fiscalCode, cartForReceipt);
             String messageId = this.ioService.sendNotificationToIOUser(messagePayload);
-            payload.setIdMessagePayer(messageId);
+
+            MessageData messageData = buildMessageDataResult(messageId, messagePayload);
+            payload.setMessagePayer(messageData);
             return NotifyUserResult.builder()
                     .notifyStatus(NOTIFIED)
-                    .messageId(messageId)
+                    .message(messageData)
                     .build();
         } catch (Exception e) {
             int code = getCodeOrDefault(e);
@@ -228,15 +220,15 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
         try {
             String fiscalCode = this.pdvTokenizerServiceRetryWrapper.getFiscalCodeWithRetry(fiscalCodeToken);
 
-            if (userShouldBeDiscardedFromNotification(fiscalCode, cartPayment.getIdMessageDebtor())) {
+            if (userShouldBeDiscardedFromNotification(fiscalCode, cartPayment.getMessageDebtor())) {
                 return NotifyUserResult.builder()
                         .notifyStatus(NOT_TO_BE_NOTIFIED)
                         .build();
             }
 
-            String existingMessageId = getIOMessageForUserIfAlreadyExist(cartId, cartPayment.getBizEventId(), UserType.DEBTOR);
-            if (existingMessageId != null) {
-                cartPayment.setIdMessageDebtor(existingMessageId);
+            CartIOMessage ioMessage = getIOMessageForUserIfAlreadyExist(cartId, cartPayment.getBizEventId(), UserType.DEBTOR);
+            if (ioMessage != null && ioMessage.getMessageId() != null) {
+                cartPayment.setMessageDebtor(buildMessageDataFromCartIOMessage(ioMessage));
                 return NotifyUserResult.builder()
                         .notifyStatus(ALREADY_NOTIFIED)
                         .build();
@@ -246,10 +238,12 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
             MessagePayload messagePayload = this.notificationMessageBuilder
                     .buildCartDebtorMessagePayload(fiscalCode, cartPayment, cartId);
             String messageId = this.ioService.sendNotificationToIOUser(messagePayload);
-            cartPayment.setIdMessageDebtor(messageId);
+
+            MessageData messageData = buildMessageDataResult(messageId, messagePayload);
+            cartPayment.setMessageDebtor(messageData);
             return NotifyUserResult.builder()
                     .notifyStatus(NOTIFIED)
-                    .messageId(messageId)
+                    .message(messageData)
                     .build();
         } catch (Exception e) {
             int code = getCodeOrDefault(e);
@@ -263,9 +257,9 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
 
     private boolean userShouldBeDiscardedFromNotification(
             String fiscalCode,
-            String idMessage
+            MessageData messageData
     ) throws IOAPIException, ErrorToNotifyException {
-        if (!isFiscalCodeValid(fiscalCode) || idMessage != null) {
+        if (!isFiscalCodeValid(fiscalCode) || (messageData != null && messageData.getId() != null)) {
             return true;
         }
 
@@ -309,12 +303,12 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
         }
     }
 
-    private String getIOMessageForUserIfAlreadyExist(String cartId, String eventId, UserType userType) {
+    private CartIOMessage getIOMessageForUserIfAlreadyExist(String cartId, String eventId, UserType userType) {
         try {
             CartIOMessage ioMessage = this.cartReceiptCosmosClient
                     .findIOMessageWithCartIdAndEventIdAndUserType(cartId, eventId, userType);
             logger.warn("The cart receipt has already been notified for user");
-            return ioMessage.getMessageId();
+            return ioMessage;
         } catch (CartIoMessageNotFoundException e) {
             return null;
         }
@@ -327,5 +321,50 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
             return notifyCartResult.getPayerNotifyResult().getNotifyStatus();
         }
         return NOT_TO_BE_NOTIFIED;
+    }
+
+    private MessageData buildMessageDataResult(String messageId, MessagePayload messagePayload) {
+        return MessageData.builder()
+                .id(messageId)
+                .subject(messagePayload.getContent().getSubject())
+                .markdown(messagePayload.getContent().getMarkdown())
+                .build();
+    }
+
+    private MessageData buildMessageDataFromCartIOMessage(CartIOMessage ioMessage) {
+        return MessageData.builder()
+                .id(ioMessage.getMessageId())
+                .subject(ioMessage.getSubject())
+                .markdown(ioMessage.getMarkdown())
+                .build();
+    }
+
+    private CartIOMessage buildCartIOMessageForPayer(
+            MessageData messageData, String eventId
+    ) {
+        return CartIOMessage.builder()
+                .id(messageData.getId() + UUID.randomUUID())
+                .messageId(messageData.getId())
+                .subject(messageData.getSubject())
+                .markdown(messageData.getMarkdown())
+                .cartId(eventId)
+                .userType(UserType.PAYER)
+                .build();
+    }
+
+    private CartIOMessage buildCartIOMessageForDebtor(
+            String bizEventId,
+            MessageData messageData,
+            String eventId
+    ) {
+        return CartIOMessage.builder()
+                .id(messageData.getId() + UUID.randomUUID())
+                .messageId(messageData.getId())
+                .subject(messageData.getSubject())
+                .markdown(messageData.getMarkdown())
+                .cartId(eventId)
+                .eventId(bizEventId)
+                .userType(UserType.DEBTOR)
+                .build();
     }
 }

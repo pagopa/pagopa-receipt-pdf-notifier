@@ -19,7 +19,7 @@ public class Payload {
     private int totalNotice;
     private String totalAmount;
     private ReceiptMetadata mdAttachPayer;
-    private String idMessagePayer;
+    private MessageData messagePayer;
     private List<CartPayment> cart;
     private ReasonError reasonErrPayer;
 
