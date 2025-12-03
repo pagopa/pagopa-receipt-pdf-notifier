@@ -68,3 +68,8 @@ data "azurerm_key_vault_secret" "key_vault_deploy_webhook_slack" {
   name         = "pagopa-pagamenti-deploy-slack-webhook"
   key_vault_id = data.azurerm_key_vault.key_vault_domain.id
 }
+
+data "azurerm_key_vault_secret" "key_vault_tokenizer_api_key" {
+  name         = "tokenizer-api-key"
+  key_vault_id = data.azurerm_key_vault.key_vault_domain.id
+}

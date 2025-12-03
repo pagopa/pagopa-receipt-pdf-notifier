@@ -14,6 +14,7 @@
     "@azure/storage-blob": "^12.14.0",
     "@azure/storage-queue": "^12.13.0",
     "@cucumber/cucumber": "^9.1.2",
+    "axios": "^1.13.2",
     "dotenv": "^16.1.4",
     "dotenv-cli": "^7.2.1",
     "npx": "^10.2.2"
