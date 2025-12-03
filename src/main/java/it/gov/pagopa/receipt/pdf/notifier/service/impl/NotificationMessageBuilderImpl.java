@@ -38,7 +38,7 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
     private static final String CART_ITEM_SUBJECT = "cart.item.subject";
     public static final String NOTICE_INDEX = "notice.index";
     private static final String NOTICES = "notices";
-    private static final String NOTICES_TOTAL = "notices_total";
+    private static final String NOTICES_TOTAL = "notice.total";
     private static final String PREFIX = "{";
     private static final String SUFFIX = "}";
 
