@@ -6,5 +6,5 @@ version: 0.107.0
 appVersion: 0.15.0-1-PAGOPA-3426-add-remote-content
 dependencies:
   - name: microservice-chart
-    version: 7.5.0
+    version: 8.0.2
     repository: "https://pagopa.github.io/aks-microservice-chart-blueprint"
