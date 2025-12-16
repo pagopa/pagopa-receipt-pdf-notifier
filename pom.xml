@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.project</groupId>
     <artifactId>pagopa-receipt-pdf-notifier</artifactId>
-    <version>0.15.2</version>
+    <version>0.15.2-1-fix-get-profile-response-handling</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-notifier</name>
