@@ -108,26 +108,8 @@ public class ReceiptToIO {
                     return;
                 }
 
-                String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
-                String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
-
-                EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
-
-                //Notify to debtor
-                if (!ANONIMO.equals(debtorFiscalCode) && !(Boolean.TRUE.equals(payerNotifyDisabled) && debtorFiscalCode.equals(payerFiscalCode))) {
-                    UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
-                    usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
-                }
-
-                if (!Boolean.TRUE.equals(payerNotifyDisabled)
-                        && (payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode)))
-                ) {
-                    //Notify to payer
-                    UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
-                    usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
-                }
-
-                List<IOMessage> ioMessages = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, receipt);
+                EnumMap<UserType, UserNotifyStatus> notifyResult = notifyUsers(receipt);
+                List<IOMessage> ioMessages = this.receiptToIOService.verifyMessagesNotification(notifyResult, receipt);
 
                 messagesNotified.addAll(ioMessages);
                 receiptsNotified.add(receipt);
@@ -143,6 +125,28 @@ public class ReceiptToIO {
         if (!messagesNotified.isEmpty()) {
             documentMessages.setValue(messagesNotified);
         }
+    }
+
+    private EnumMap<UserType, UserNotifyStatus> notifyUsers(Receipt receipt) {
+        String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
+        String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
+
+        EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
+
+        //Notify to debtor
+        if (!ANONIMO.equals(debtorFiscalCode) && !(Boolean.TRUE.equals(payerNotifyDisabled) && debtorFiscalCode.equals(payerFiscalCode))) {
+            UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
+            usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
+        }
+
+        if (!Boolean.TRUE.equals(payerNotifyDisabled)
+                && (payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode)))
+        ) {
+            //Notify to payer
+            UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
+            usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
+        }
+        return usersToBeVerified;
     }
 
     private boolean isReceiptNotValid(Receipt receipt) {
