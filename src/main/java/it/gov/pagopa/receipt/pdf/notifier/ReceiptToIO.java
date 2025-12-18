@@ -12,8 +12,10 @@ import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserNotifyStatus;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
 import it.gov.pagopa.receipt.pdf.notifier.service.ReceiptToIOService;
 import it.gov.pagopa.receipt.pdf.notifier.service.impl.ReceiptToIOServiceImpl;
+import it.gov.pagopa.receipt.pdf.notifier.utils.MDCConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -98,33 +100,22 @@ public class ReceiptToIO {
         List<IOMessage> messagesNotified = new ArrayList<>();
 
         listReceipts.parallelStream().forEach(receipt -> {
-            if (isReceiptNotValid(receipt)) {
-                return;
+            try {
+                String eventId = receipt != null ? receipt.getEventId() : null;
+                MDC.put(MDCConstants.BIZ_EVENT_ID, eventId);
+                if (isReceiptNotValid(receipt)) {
+                    logger.info("Receipt discarded");
+                    return;
+                }
+
+                EnumMap<UserType, UserNotifyStatus> notifyResult = notifyUsers(receipt);
+                List<IOMessage> ioMessages = this.receiptToIOService.verifyMessagesNotification(notifyResult, receipt);
+
+                messagesNotified.addAll(ioMessages);
+                receiptsNotified.add(receipt);
+            } finally {
+                MDC.remove(MDCConstants.BIZ_EVENT_ID);
             }
-
-            String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
-            String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
-
-            EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
-
-            //Notify to debtor
-            if (!ANONIMO.equals(debtorFiscalCode) && !(Boolean.TRUE.equals(payerNotifyDisabled) && debtorFiscalCode.equals(payerFiscalCode))) {
-                UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
-                usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
-            }
-
-            if (!Boolean.TRUE.equals(payerNotifyDisabled)
-                    && (payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode)))
-            ) {
-                //Notify to payer
-                UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
-                usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
-            }
-
-            List<IOMessage> ioMessages = this.receiptToIOService.verifyMessagesNotification(usersToBeVerified, receipt);
-
-            messagesNotified.addAll(ioMessages);
-            receiptsNotified.add(receipt);
         });
 
         if (!receiptsNotified.isEmpty()) {
@@ -134,6 +125,28 @@ public class ReceiptToIO {
         if (!messagesNotified.isEmpty()) {
             documentMessages.setValue(messagesNotified);
         }
+    }
+
+    private EnumMap<UserType, UserNotifyStatus> notifyUsers(Receipt receipt) {
+        String debtorFiscalCode = receipt.getEventData().getDebtorFiscalCode();
+        String payerFiscalCode = receipt.getEventData().getPayerFiscalCode();
+
+        EnumMap<UserType, UserNotifyStatus> usersToBeVerified = new EnumMap<>(UserType.class);
+
+        //Notify to debtor
+        if (!ANONIMO.equals(debtorFiscalCode) && !(Boolean.TRUE.equals(payerNotifyDisabled) && debtorFiscalCode.equals(payerFiscalCode))) {
+            UserNotifyStatus debtorNotifyStatus = this.receiptToIOService.notifyMessage(debtorFiscalCode, UserType.DEBTOR, receipt);
+            usersToBeVerified.put(UserType.DEBTOR, debtorNotifyStatus);
+        }
+
+        if (!Boolean.TRUE.equals(payerNotifyDisabled)
+                && (payerFiscalCode != null && (debtorFiscalCode == null || !debtorFiscalCode.equals(payerFiscalCode)))
+        ) {
+            //Notify to payer
+            UserNotifyStatus payerNotifyStatus = this.receiptToIOService.notifyMessage(payerFiscalCode, UserType.PAYER, receipt);
+            usersToBeVerified.put(UserType.PAYER, payerNotifyStatus);
+        }
+        return usersToBeVerified;
     }
 
     private boolean isReceiptNotValid(Receipt receipt) {

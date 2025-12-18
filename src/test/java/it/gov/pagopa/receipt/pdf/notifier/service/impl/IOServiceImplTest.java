@@ -78,6 +78,17 @@ class IOServiceImplTest {
 
     @Test
     @SneakyThrows
+    void isNotifyToIOUserAllowedKOResponse404() {
+        when(getProfileResponse.statusCode()).thenReturn(HttpStatus.SC_NOT_FOUND);
+        when(ioClientMock.getProfile(anyString())).thenReturn(getProfileResponse);
+
+        Boolean result = assertDoesNotThrow(() -> sut.isNotifyToIOUserAllowed(CF));
+
+        assertFalse(result);
+    }
+
+    @Test
+    @SneakyThrows
     void isNotifyToIOUserAllowedKOUnexpectedError() {
         when(ioClientMock.getProfile(anyString()))
                 .thenThrow(new IOAPIException(ERROR_MESSAGE, ReasonErrorCode.ERROR_IO_API_IO.getCode()));

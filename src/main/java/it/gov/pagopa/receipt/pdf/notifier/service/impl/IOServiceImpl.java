@@ -50,6 +50,10 @@ public class IOServiceImpl implements IOService {
             throw new ErrorToNotifyException("IO /profiles failed to respond");
         }
 
+        if (getProfileResponse.statusCode() == HttpStatus.SC_NOT_FOUND) {
+            return false;
+        }
+
         if (getProfileResponse.statusCode() != HttpStatus.SC_OK || getProfileResponse.body() == null) {
             String errorMsg = String.format("IO /profiles responded with code %s", getProfileResponse.statusCode());
             throw new ErrorToNotifyException(errorMsg);
