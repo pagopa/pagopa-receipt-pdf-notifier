@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: "pagopa-receipt-pdf-notifier"
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-notifier
-    tag: "0.15.2-2-fix-get-profile-response-handling"
+    tag: "0.15.3"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
