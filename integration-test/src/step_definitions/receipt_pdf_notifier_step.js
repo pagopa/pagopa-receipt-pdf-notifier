@@ -43,6 +43,13 @@ When('receipt has been properly notified after {int} ms', async function (time) 
     // boundary time spent by azure function to process event
     await sleep(time);
     this.responseToCheck = await getDocumentByIdFromReceiptsDatastore(this.receiptId);
+
+    if (this.responseToCheck.resources.length === 0) {
+        // in some rare cases the first read does not find the document, retry after sleep
+        await sleep(time);
+        this.responseToCheck = await getDocumentByIdFromReceiptsDatastore(this.receiptId);
+    }
+    assert.strictEqual(this.responseToCheck.resources.length > 0, true);
 });
 
 Then('the receipt has not the status {string}', function (targetStatus) {
@@ -81,6 +88,13 @@ When('cart receipt has been properly notified after {int} ms', async function (t
     // boundary time spent by azure function to process event
     await sleep(time);
     this.responseToCheck = await getDocumentByIdFromCartReceiptsDatastore(this.cartReceiptId);
+
+    if (this.responseToCheck.resources.length === 0) {
+        // in some rare cases the first read does not find the document, retry after sleep
+        await sleep(time);
+        this.responseToCheck = await getDocumentByIdFromCartReceiptsDatastore(this.cartReceiptId);
+    }
+    assert.strictEqual(this.responseToCheck.resources.length > 0, true);
 });
 
 Then('the cart receipt has not the status {string}', function (targetStatus) {
