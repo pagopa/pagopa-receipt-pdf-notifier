@@ -13,7 +13,7 @@
         <then>
             <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
                 <encoder class="co.elastic.logging.logback.EcsEncoder">
-                    <serviceName>${name}</serviceName>
+                    <serviceName>${SERVICE_NAME}</serviceName>
                     <serviceVersion>${version}</serviceVersion>
                     <serviceEnvironment>${ENV}</serviceEnvironment>
                 </encoder>
