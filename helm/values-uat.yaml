@@ -88,6 +88,7 @@ microservice-chart:
     LOG_LEVEL: "INFO"
     LANG: "C.UTF-8"
     WEBSITE_SITE_NAME: "pagopareceiptpdfnotifier" # required to show cloud role name in application insights
+    SERVICE_NAME: "pagopa-receipt-pdf-notifier"
     ASPNETCORE_URLS: "http://*:8080"
     FUNCTIONS_WORKER_RUNTIME: "java"
     NOTIFIER_QUEUE_TOPIC: "pagopa-u-weu-receipts-queue-receipt-io-notifier-error"
