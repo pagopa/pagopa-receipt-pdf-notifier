@@ -86,7 +86,7 @@ public class NotificationMessageBuilderImpl implements NotificationMessageBuilde
             count++;
         }
 
-        String thirdPartyId = String.format("%s%s", cart.getEventId(), CART_PLACEHOLDER);
+        String thirdPartyId = String.format("%s%s", cart.getCartId(), CART_PLACEHOLDER);
         StringSubstitutor stringSubstitutor = buildCartStringSubstitutor(notices.toString(), cart.getPayload().getTotalNotice());
         String markdown = stringSubstitutor.replace(MARKDOWN_PAYER_CART);
 

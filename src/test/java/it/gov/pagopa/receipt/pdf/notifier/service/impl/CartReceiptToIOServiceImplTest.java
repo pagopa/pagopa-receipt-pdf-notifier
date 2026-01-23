@@ -102,7 +102,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSuccessPayerNull() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(
@@ -174,7 +174,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSuccessPayerNullAndDebtorAnonimo() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(buildCartPayment(EVENT_1_ID, ANONIMO)))
@@ -216,7 +216,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSuccessSameDebtorPayer() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -269,7 +269,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSkippedSameDebtorPayerAndPayerDisabled() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -314,7 +314,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSuccessDifferentDebtorPayer() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -400,7 +400,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSkippedPayerNullAndDebtorCFNotValid() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN)))
@@ -447,7 +447,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSkippedPayerNullAndDebtorIdMessageAlreadyPresent() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(
@@ -499,7 +499,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartPayerNullAndDebtorFailCallToTokenizerThrowsPDVTokenizerException() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN)))
@@ -548,7 +548,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartPayerNullAndDebtorFailCallToTokenizerThrowsJsonProcessingException() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN)))
@@ -597,7 +597,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartPayerNullAndDebtorFailGetProfileThrowsIOAPIException() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN)))
@@ -647,7 +647,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartPayerNullAndDebtorFailGetProfileThrowsErrorToNotifyException() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN)))
@@ -697,7 +697,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartPayerNullAndDebtorSkippedNotifyNotAllowed() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN)))
@@ -746,7 +746,7 @@ class CartReceiptToIOServiceImplTest {
     void notifyCartPayerNullAndDebtorFailBuildNotificationPayload() {
         CartPayment payment = buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN);
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(payment))
@@ -799,7 +799,7 @@ class CartReceiptToIOServiceImplTest {
     void notifyCartPayerNullAndDebtorFailNotifyThrowsIOAPIException() {
         CartPayment payment = buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN);
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(payment))
@@ -850,7 +850,7 @@ class CartReceiptToIOServiceImplTest {
     void notifyCartPayerNullAndDebtorFailNotifyThrowsErrorToNotifyException() {
         CartPayment payment = buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN);
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(payment))
@@ -900,7 +900,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartPayerNullAndDebtorSkippedAlreadyNotified() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN)))
@@ -949,7 +949,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSamePayerDebtorSkippedCFNotValid() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -995,7 +995,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSamePayerDebtorFailGetProfileThrowsErrorToNotifyException() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1044,7 +1044,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSamePayerDebtorSkippedAlreadyNotified() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1093,7 +1093,7 @@ class CartReceiptToIOServiceImplTest {
     @SneakyThrows
     void notifyCartSamePayerDebtorFailBuildMessagePayload() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1143,7 +1143,7 @@ class CartReceiptToIOServiceImplTest {
     @Test
     void verifyNotificationPayerNullSuccess() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .cart(List.of(buildCartPayment(EVENT_1_ID, DEBTOR_1_CF_TOKEN)))
@@ -1182,7 +1182,7 @@ class CartReceiptToIOServiceImplTest {
     @Test
     void verifyNotificationSameDebtorPayerSuccess() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1221,7 +1221,7 @@ class CartReceiptToIOServiceImplTest {
     @Test
     void verifyNotificationDifferentDebtorPayerSuccess() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1267,7 +1267,7 @@ class CartReceiptToIOServiceImplTest {
     @Test
     void verifyNotificationDifferentDebtorPayerPayerNotToBeNotified() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1308,7 +1308,7 @@ class CartReceiptToIOServiceImplTest {
     @Test
     void verifyNotificationDifferentDebtorPayerDebtorNotToBeNotified() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1349,7 +1349,7 @@ class CartReceiptToIOServiceImplTest {
     @Test
     void verifyNotificationDifferentDebtorPayerAllNotToBeNotified() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1389,7 +1389,7 @@ class CartReceiptToIOServiceImplTest {
         when(notifierCartQueueClientMock.sendMessageToQueue(anyString())).thenReturn(queueResponse);
 
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1433,7 +1433,7 @@ class CartReceiptToIOServiceImplTest {
         when(notifierCartQueueClientMock.sendMessageToQueue(anyString())).thenReturn(queueResponse);
 
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1474,7 +1474,7 @@ class CartReceiptToIOServiceImplTest {
     @Test
     void verifyNotificationDifferentDebtorPayerDebtorNotNotifiedMaxRetryReached() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1521,7 +1521,7 @@ class CartReceiptToIOServiceImplTest {
         when(notifierCartQueueClientMock.sendMessageToQueue(anyString())).thenReturn(queueResponse);
 
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
@@ -1565,7 +1565,7 @@ class CartReceiptToIOServiceImplTest {
         when(notifierCartQueueClientMock.sendMessageToQueue(anyString())).thenThrow(RuntimeException.class);
 
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(PAYER_CF_TOKEN)
