@@ -108,7 +108,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
                 if (!ANONIMO.equals(debtorFiscalCode) && !Objects.equals(debtorFiscalCode, payerFiscalCode)) {
                     NotifyUserResult debtorNotifyResult = notifyDebtor(
                             debtorFiscalCode,
-                            cartForReceipt.getEventId(),
+                            cartForReceipt.getCartId(),
                             cartPayment
                     );
                     notifyCartResult.addDebtorNotifyStatusToMap(cartPayment.getBizEventId(), debtorNotifyResult);
@@ -134,7 +134,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
         UserNotifyStatus payerNotified = gePayerNotifyStatus(notifyCartResult);
         if (payerNotified.equals(NOTIFIED)) {
             MessageData messageData = notifyCartResult.getPayerNotifyResult().getMessage();
-            ioMessages.add(buildCartIOMessageForPayer(messageData, cartForReceipt.getEventId()));
+            ioMessages.add(buildCartIOMessageForPayer(messageData, cartForReceipt.getCartId()));
         }
 
         List<UserNotifyStatus> debtorNotifyStatus = new ArrayList<>();
@@ -143,7 +143,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
                 UserNotifyStatus debtorNotified = notifyDebtorResult.getNotifyStatus();
                 if (NOTIFIED.equals(debtorNotified)) {
                     MessageData messageData = notifyDebtorResult.getMessage();
-                    ioMessages.add(buildCartIOMessageForDebtor(bizEventId, messageData, cartForReceipt.getEventId()));
+                    ioMessages.add(buildCartIOMessageForDebtor(bizEventId, messageData, cartForReceipt.getCartId()));
                 }
                 debtorNotifyStatus.add(debtorNotified);
 
@@ -183,7 +183,7 @@ public class CartReceiptToIOServiceImpl implements CartReceiptToIOService {
                         .build();
             }
 
-            CartIOMessage ioMessage = getIOMessageForUserIfAlreadyExist(cartForReceipt.getEventId(), null, UserType.PAYER);
+            CartIOMessage ioMessage = getIOMessageForUserIfAlreadyExist(cartForReceipt.getCartId(), null, UserType.PAYER);
             if (ioMessage != null && ioMessage.getMessageId() != null) {
                 payload.setMessagePayer(buildMessageDataFromCartIOMessage(ioMessage));
                 return NotifyUserResult.builder()

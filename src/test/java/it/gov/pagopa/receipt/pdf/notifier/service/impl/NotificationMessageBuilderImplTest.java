@@ -159,7 +159,7 @@ class NotificationMessageBuilderImplTest {
     @SneakyThrows
     void buildCartPayerMessagePayloadSuccess() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(EVENT_ID)
+                .cartId(EVENT_ID)
                 .payload(
                         Payload.builder()
                                 .totalNotice(3)
@@ -208,7 +208,7 @@ class NotificationMessageBuilderImplTest {
     @SneakyThrows
     void buildCartPayerMessagePayloadWithoutSubjectSuccess() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(EVENT_ID)
+                .cartId(EVENT_ID)
                 .payload(
                         Payload.builder()
                                 .totalNotice(3)
@@ -254,7 +254,7 @@ class NotificationMessageBuilderImplTest {
     @SneakyThrows
     void buildCartPayerMessagePayloadFail() {
         CartForReceipt cart = CartForReceipt.builder()
-                .eventId(EVENT_ID)
+                .cartId(EVENT_ID)
                 .payload(
                         Payload.builder()
                                 .totalNotice(3)
