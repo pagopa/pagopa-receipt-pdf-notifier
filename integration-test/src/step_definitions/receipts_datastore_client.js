@@ -45,8 +45,8 @@ async function deleteDocumentFromReceiptsDatastore(id, partitionKey) {
 async function getDocumentByIdFromCartReceiptsDatastore(id) {
     return await cartContainer.items
         .query({
-            query: "SELECT * from c WHERE c.eventId=@eventId",
-            parameters: [{ name: "@eventId", value: id }]
+            query: "SELECT * from c WHERE c.cartId=@cartId",
+            parameters: [{ name: "@cartId", value: id }]
         })
         .fetchNext();
 }

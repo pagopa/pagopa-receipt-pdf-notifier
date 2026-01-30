@@ -96,7 +96,7 @@ public class CartReceiptToIO {
 
         listReceipts.parallelStream().forEach(cartReceipt -> {
             try {
-                String cartId = cartReceipt != null ? cartReceipt.getEventId() : null;
+                String cartId = cartReceipt != null ? cartReceipt.getCartId() : null;
                 MDC.put(MDCConstants.CART_ID, cartId);
                 if (isCartReceiptNotValid(cartReceipt)) {
                     logger.info("Cart receipt discarded");

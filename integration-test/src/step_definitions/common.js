@@ -30,7 +30,7 @@ function createReceipt(id, fiscalCodeToken) {
 
 function createCartReceipt(id, fiscalCodeToken) {
 	return {
-		"eventId": id,
+		"cartId": id,
 		"id": id,
 		"version": "1",
 		"payload": {

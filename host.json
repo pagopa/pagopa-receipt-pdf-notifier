@@ -13,7 +13,9 @@
     "fileLoggingMode": "debugOnly",
     "logLevel": {
       "Function.NotifierRetryProcessor": "Information",
-      "Function.ReceiptToIoProcessor": "Information"
+      "Function.ReceiptToIoProcessor": "Information",
+      "Function.CartReceiptToIoProcessor": "Information",
+      "Function.NotifierCartRetryProcessor": "Information"
     },
     "applicationInsights": {
       "samplingSettings": {
