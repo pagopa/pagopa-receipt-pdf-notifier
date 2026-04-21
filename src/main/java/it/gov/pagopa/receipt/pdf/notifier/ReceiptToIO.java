@@ -72,7 +72,7 @@ public class ReceiptToIO {
             @CosmosDBTrigger(
                     name = "ReceiptInputDatastore",
                     databaseName = "db",
-                    containerName = "receipts",
+                    containerName = "receipts-pk",
                     leaseContainerName = "receipts-leases",
                     leaseContainerPrefix = "materialized",
                     createLeaseContainerIfNotExists = true,
@@ -82,7 +82,7 @@ public class ReceiptToIO {
             @CosmosDBOutput(
                     name = "ReceiptOutputDatastore",
                     databaseName = "db",
-                    containerName = "receipts",
+                    containerName = "receipts-pk",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<Receipt>> documentReceipts,
             @CosmosDBOutput(
