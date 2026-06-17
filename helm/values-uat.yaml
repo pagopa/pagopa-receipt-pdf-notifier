@@ -23,7 +23,7 @@ microservice-chart:
     periodSeconds: 10
   deployment:
     create: true
-    replicas: 1
+    replicas: 3
     strategy:
       type: RollingUpdate
       rollingUpdate:
@@ -63,12 +63,12 @@ microservice-chart:
       memory: "768Mi"
       cpu: "300m"
     limits:
-      memory: "768Mi"
+      memory: "1024Mi"
       cpu: "500m"
   autoscaling:
     enable: true
-    minReplica: 1
-    maxReplica: 1
+    minReplica: 3
+    maxReplica: 10
     pollingInterval: 10 # seconds
     cooldownPeriod: 50 # seconds
     triggers:
@@ -81,7 +81,7 @@ microservice-chart:
         metadata:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
-          value: "70"
+          value: "80"
   fileConfig: {}
   envConfig:
     ENV: "uat"
