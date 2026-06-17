@@ -43,7 +43,7 @@ public class NotifierRetry {
             @CosmosDBOutput(
                     name = "ReceiptOutputDatastore",
                     databaseName = "db",
-                    containerName = "receipts",
+                    containerName = "receipts-index",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<Receipt>> documentReceipts,
             final ExecutionContext context
