@@ -5,11 +5,15 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.SqlParameter;
+import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.notifier.client.CartReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.CartIOMessage;
 import it.gov.pagopa.receipt.pdf.notifier.exception.CartIoMessageNotFoundException;
 import it.gov.pagopa.receipt.pdf.notifier.model.enumeration.UserType;
+
+import java.util.Arrays;
 
 /**
  * {@inheritDoc}
@@ -58,24 +62,38 @@ public class CartReceiptCosmosClientImpl implements CartReceiptCosmosClient {
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerMessageId);
 
         //Build query
-        String query;
-        if (UserType.PAYER.equals(userType)) {
-            query = String.format(
-                    "SELECT * FROM c WHERE  c.cartId = '%s' AND c.userType = '%s'",
-                    cartId, userType);
-        } else {
-            query = String.format(
-                    "SELECT * FROM c WHERE  c.cartId = '%s' AND c.eventId = '%s' AND c.userType = '%s'",
-                    cartId, eventId, userType);
-        }
+        SqlQuerySpec querySpec = buildQuery(cartId, eventId, userType);
 
         //Query the container
         CosmosPagedIterable<CartIOMessage> queryResponse = cosmosContainer
-                .queryItems(query, new CosmosQueryRequestOptions(), CartIOMessage.class);
+                .queryItems(querySpec, new CosmosQueryRequestOptions(), CartIOMessage.class);
 
         if (queryResponse.iterator().hasNext()) {
             return queryResponse.iterator().next();
         }
         throw new CartIoMessageNotFoundException("Document not found in the defined container");
+    }
+
+    private SqlQuerySpec buildQuery(String cartId, String eventId, UserType userType) {
+        SqlQuerySpec querySpec;
+        if (UserType.PAYER.equals(userType)) {
+            querySpec = new SqlQuerySpec(
+                    "SELECT * FROM c WHERE c.cartId = @cartId AND c.userType = @userType ",
+                    Arrays.asList(
+                            new SqlParameter("@cartId", cartId),
+                            new SqlParameter("@userType", userType)
+                    )
+            );
+        } else {
+            querySpec = new SqlQuerySpec(
+                    "SELECT * FROM c WHERE c.cartId = @cartId AND c.eventId = @eventId AND c.userType = @userType ",
+                    Arrays.asList(
+                            new SqlParameter("@cartId", cartId),
+                            new SqlParameter("@eventId", eventId),
+                            new SqlParameter("@userType", userType)
+                    )
+            );
+        }
+        return querySpec;
     }
 }
