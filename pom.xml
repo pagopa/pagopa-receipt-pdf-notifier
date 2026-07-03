@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.project</groupId>
     <artifactId>pagopa-receipt-pdf-notifier</artifactId>
-    <version>0.15.5</version>
+    <version>0.15.5-1-PAGOPA-3661-notifier</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-notifier</name>
@@ -34,7 +34,7 @@
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-cosmos</artifactId>
-            <version>4.45.1</version>
+            <version>4.45.2-hotfix</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
