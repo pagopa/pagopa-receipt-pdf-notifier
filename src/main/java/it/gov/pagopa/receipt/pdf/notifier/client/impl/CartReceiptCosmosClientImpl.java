@@ -5,6 +5,7 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
@@ -63,10 +64,12 @@ public class CartReceiptCosmosClientImpl implements CartReceiptCosmosClient {
 
         //Build query
         SqlQuerySpec querySpec = buildQuery(cartId, eventId, userType);
+        CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
+        options.setPartitionKey(new PartitionKey(cartId));
 
         //Query the container
         CosmosPagedIterable<CartIOMessage> queryResponse = cosmosContainer
-                .queryItems(querySpec, new CosmosQueryRequestOptions(), CartIOMessage.class);
+                .queryItems(querySpec, options, CartIOMessage.class);
 
         if (queryResponse.iterator().hasNext()) {
             return queryResponse.iterator().next();

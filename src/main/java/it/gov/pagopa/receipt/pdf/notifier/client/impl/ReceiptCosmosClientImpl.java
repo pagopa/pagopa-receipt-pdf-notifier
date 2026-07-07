@@ -5,6 +5,7 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
 import it.gov.pagopa.receipt.pdf.notifier.client.ReceiptCosmosClient;
@@ -67,10 +68,12 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
                         new SqlParameter("@userType", userType)
                 )
         );
+        CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
+        options.setPartitionKey(new PartitionKey(eventId));
 
         //Query the container
         return cosmosContainer
-                .queryItems(querySpec, new CosmosQueryRequestOptions(), IOMessage.class)
+                .queryItems(querySpec, options, IOMessage.class)
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new IoMessageNotFoundException("Document not found in the defined container"));
