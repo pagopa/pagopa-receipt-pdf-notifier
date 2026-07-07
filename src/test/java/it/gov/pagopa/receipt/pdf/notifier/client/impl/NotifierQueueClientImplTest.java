@@ -39,8 +39,7 @@ class NotifierQueueClientImplTest {
         withEnvironmentVariables(
                 "STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=samplequeue;AccountKey=" + mockKey + ";EndpointSuffix=core.windows.net",
                 "NOTIFIER_QUEUE_TOPIC", "validTopic"
-        ).execute(() -> assertDoesNotThrow(NotifierQueueClientImpl::getInstance)
-        );
+        ).execute(() -> assertDoesNotThrow(NotifierQueueClientImpl::getInstance));
     }
 
     @Test

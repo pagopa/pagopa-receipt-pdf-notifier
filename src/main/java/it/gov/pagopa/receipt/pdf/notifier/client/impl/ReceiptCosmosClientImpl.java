@@ -19,8 +19,6 @@ import java.util.Arrays;
  */
 public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
 
-    private static ReceiptCosmosClientImpl instance;
-
     private final CosmosContainer ioMessageContainer;
 
     @SuppressWarnings("resource") // CosmosClient lifecycle == singleton lifecycle; never closed on purpose
@@ -45,11 +43,15 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
     }
 
     public static ReceiptCosmosClientImpl getInstance() {
-        if (instance == null) {
-            instance = new ReceiptCosmosClientImpl();
-        }
+        return SingletonHelper.INSTANCE;
+    }
 
-        return instance;
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
+    private static class SingletonHelper {
+        private static final ReceiptCosmosClientImpl INSTANCE = new ReceiptCosmosClientImpl();
     }
 
     /**

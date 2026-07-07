@@ -14,8 +14,6 @@ import java.time.temporal.ChronoUnit;
  */
 public class NotifierQueueClientImpl implements NotifierQueueClient {
 
-    private static NotifierQueueClientImpl instance;
-
     private final int receiptQueueDelay = Integer.parseInt(System.getenv().getOrDefault("NOTIFIER_QUEUE_DELAY", "1"));
 
     private final QueueClient queueClient;
@@ -35,11 +33,15 @@ public class NotifierQueueClientImpl implements NotifierQueueClient {
     }
 
     public static NotifierQueueClientImpl getInstance() {
-        if (instance == null) {
-            instance = new NotifierQueueClientImpl();
-        }
+        return SingletonHelper.INSTANCE;
+    }
 
-        return instance;
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
+    private static class SingletonHelper {
+        private static final NotifierQueueClientImpl INSTANCE = new NotifierQueueClientImpl();
     }
 
     /**
@@ -49,7 +51,6 @@ public class NotifierQueueClientImpl implements NotifierQueueClient {
      * @return response from the queue
      */
     public Response<SendMessageResult> sendMessageToQueue(String messageText) {
-
         return this.queueClient.sendMessageWithResponse(
                 messageText, Duration.of(receiptQueueDelay, ChronoUnit.SECONDS),
                 null, null, null);

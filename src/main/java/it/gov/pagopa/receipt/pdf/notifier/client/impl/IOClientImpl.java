@@ -31,15 +31,6 @@ public class IOClientImpl implements IOClient {
 
     private final HttpClient client;
 
-    private static IOClient instance = null;
-
-    public static IOClient getInstance() {
-        if (instance == null) {
-            instance = new IOClientImpl();
-        }
-        return instance;
-    }
-
     private IOClientImpl() {
         this.client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
@@ -48,6 +39,18 @@ public class IOClientImpl implements IOClient {
 
     IOClientImpl(HttpClient client) {
         this.client = client;
+    }
+
+    public static IOClientImpl getInstance() {
+        return SingletonHelper.INSTANCE;
+    }
+
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
+    private static class SingletonHelper {
+        private static final IOClientImpl INSTANCE = new IOClientImpl();
     }
 
     /**

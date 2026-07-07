@@ -43,7 +43,7 @@ class ReceiptCosmosClientImplTest {
         withEnvironmentVariables(
                 "COSMOS_RECEIPT_KEY", mockKey,
                 "COSMOS_RECEIPT_SERVICE_ENDPOINT", ""
-        ).execute(() -> assertThrows(IllegalArgumentException.class, ReceiptCosmosClientImpl::getInstance));
+        ).execute(() -> assertThrows(ExceptionInInitializerError.class, ReceiptCosmosClientImpl::getInstance));
     }
 
     @Test

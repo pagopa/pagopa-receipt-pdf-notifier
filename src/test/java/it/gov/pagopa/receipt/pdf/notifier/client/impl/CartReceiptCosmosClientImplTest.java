@@ -45,7 +45,7 @@ class CartReceiptCosmosClientImplTest {
         withEnvironmentVariables(
                 "COSMOS_RECEIPT_KEY", mockKey,
                 "COSMOS_RECEIPT_SERVICE_ENDPOINT", ""
-        ).execute(() -> assertThrows(IllegalArgumentException.class, CartReceiptCosmosClientImpl::getInstance));
+        ).execute(() -> assertThrows(ExceptionInInitializerError.class, CartReceiptCosmosClientImpl::getInstance));
     }
 
     @Test
