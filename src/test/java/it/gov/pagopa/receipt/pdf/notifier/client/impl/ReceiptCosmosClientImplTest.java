@@ -1,8 +1,6 @@
 package it.gov.pagopa.receipt.pdf.notifier.client.impl;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.IOMessage;
@@ -30,10 +28,6 @@ import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables
 class ReceiptCosmosClientImplTest {
 
     @Mock
-    private CosmosClient cosmosClientMock;
-    @Mock
-    private CosmosDatabase mockDatabase;
-    @Mock
     private CosmosContainer mockContainer;
     @Mock
     private CosmosPagedIterable<IOMessage> mockIOMessageIterable;
@@ -49,8 +43,7 @@ class ReceiptCosmosClientImplTest {
         withEnvironmentVariables(
                 "COSMOS_RECEIPT_KEY", mockKey,
                 "COSMOS_RECEIPT_SERVICE_ENDPOINT", ""
-        ).execute(() -> assertThrows(IllegalArgumentException.class, ReceiptCosmosClientImpl::getInstance)
-        );
+        ).execute(() -> assertThrows(IllegalArgumentException.class, ReceiptCosmosClientImpl::getInstance));
     }
 
     @Test
@@ -58,8 +51,6 @@ class ReceiptCosmosClientImplTest {
         String messageId = "messageId";
         IOMessage ioMessage = IOMessage.builder().messageId(messageId).build();
 
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(IOMessage.class)))
                 .thenReturn(mockIOMessageIterable);
         when(mockIOMessageIterable.stream()).thenReturn(mockIOMessageStream);
@@ -74,8 +65,6 @@ class ReceiptCosmosClientImplTest {
 
     @Test
     void findIOMessageWithEventIdAndUserTypeFailNotFound() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(IOMessage.class)))
                 .thenReturn(mockIOMessageIterable);
         when(mockIOMessageIterable.stream()).thenReturn(mockIOMessageStream);

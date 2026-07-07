@@ -1,8 +1,6 @@
 package it.gov.pagopa.receipt.pdf.notifier.client.impl;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.notifier.entity.message.CartIOMessage;
@@ -14,7 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Iterator;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -31,16 +30,11 @@ class CartReceiptCosmosClientImplTest {
     private static final String BIZ_EVENT_ID = "1";
 
     @Mock
-    private CosmosClient cosmosClientMock;
-
-    @Mock
-    private CosmosDatabase mockDatabase;
-    @Mock
     private CosmosContainer mockContainer;
     @Mock
     private CosmosPagedIterable<CartIOMessage> mockIterable;
     @Mock
-    private Iterator<CartIOMessage> mockIterator;
+    private Stream<CartIOMessage> mockStream;
 
     @InjectMocks
     private CartReceiptCosmosClientImpl sut;
@@ -56,13 +50,10 @@ class CartReceiptCosmosClientImplTest {
 
     @Test
     void findIOMessageWithCartIdAndEventIdAndUserTypeSuccessForPayer() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(CartIOMessage.class)))
                 .thenReturn(mockIterable);
-        when(mockIterable.iterator()).thenReturn(mockIterator);
-        when(mockIterator.hasNext()).thenReturn(true);
-        when(mockIterator.next()).thenReturn(new CartIOMessage());
+        when(mockIterable.stream()).thenReturn(mockStream);
+        when(mockStream.findFirst()).thenReturn(Optional.of(new CartIOMessage()));
 
         CartIOMessage result = assertDoesNotThrow(
                 () -> sut.findIOMessageWithCartIdAndEventIdAndUserType(CART_ID, null, UserType.PAYER)
@@ -73,13 +64,10 @@ class CartReceiptCosmosClientImplTest {
 
     @Test
     void findIOMessageWithCartIdAndEventIdAndUserTypeSuccessForDebtor() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(CartIOMessage.class)))
                 .thenReturn(mockIterable);
-        when(mockIterable.iterator()).thenReturn(mockIterator);
-        when(mockIterator.hasNext()).thenReturn(true);
-        when(mockIterator.next()).thenReturn(new CartIOMessage());
+        when(mockIterable.stream()).thenReturn(mockStream);
+        when(mockStream.findFirst()).thenReturn(Optional.of(new CartIOMessage()));
 
         CartIOMessage result = assertDoesNotThrow(
                 () -> sut.findIOMessageWithCartIdAndEventIdAndUserType(CART_ID, BIZ_EVENT_ID, UserType.DEBTOR)
@@ -90,12 +78,10 @@ class CartReceiptCosmosClientImplTest {
 
     @Test
     void getCartItemFail() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(CartIOMessage.class)))
                 .thenReturn(mockIterable);
-        when(mockIterable.iterator()).thenReturn(mockIterator);
-        when(mockIterator.hasNext()).thenReturn(false);
+        when(mockIterable.stream()).thenReturn(mockStream);
+        when(mockStream.findFirst()).thenReturn(Optional.empty());
 
         assertThrows(
                 CartIoMessageNotFoundException.class,

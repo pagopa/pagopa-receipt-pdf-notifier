@@ -1,6 +1,5 @@
 package it.gov.pagopa.receipt.pdf.notifier.client.impl;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
@@ -22,23 +21,27 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
 
     private static ReceiptCosmosClientImpl instance;
 
-    private final String databaseId = System.getenv("COSMOS_RECEIPT_DB_NAME");
-    private final String containerMessageId = System.getenv("COSMOS_RECEIPT_MESSAGE_CONTAINER_NAME");
+    private final CosmosContainer ioMessageContainer;
 
-    private final CosmosClient cosmosClient;
-
+    @SuppressWarnings("resource") // CosmosClient lifecycle == singleton lifecycle; never closed on purpose
     private ReceiptCosmosClientImpl() {
         String azureKey = System.getenv("COSMOS_RECEIPT_KEY");
         String serviceEndpoint = System.getenv("COSMOS_RECEIPT_SERVICE_ENDPOINT");
 
-        this.cosmosClient = new CosmosClientBuilder()
+        String databaseId = System.getenv("COSMOS_RECEIPT_DB_NAME");
+        String containerMessageId = System.getenv("COSMOS_RECEIPT_MESSAGE_CONTAINER_NAME");
+
+        CosmosDatabase cosmosDatabase = new CosmosClientBuilder()
                 .endpoint(serviceEndpoint)
                 .key(azureKey)
-                .buildClient();
+                .buildClient()
+                .getDatabase(databaseId);
+
+        this.ioMessageContainer = cosmosDatabase.getContainer(containerMessageId);
     }
 
-    ReceiptCosmosClientImpl(CosmosClient cosmosClient) {
-        this.cosmosClient = cosmosClient;
+    ReceiptCosmosClientImpl(CosmosContainer ioMessageContainer) {
+        this.ioMessageContainer = ioMessageContainer;
     }
 
     public static ReceiptCosmosClientImpl getInstance() {
@@ -57,9 +60,6 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
             String eventId,
             UserType userType
     ) throws IoMessageNotFoundException {
-        CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-        CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerMessageId);
-
         //Build query
         SqlQuerySpec querySpec = new SqlQuerySpec(
                 "SELECT * FROM c WHERE c.eventId = @eventId AND c.userType = @userType ",
@@ -72,7 +72,7 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
         options.setPartitionKey(new PartitionKey(eventId));
 
         //Query the container
-        return cosmosContainer
+        return ioMessageContainer
                 .queryItems(querySpec, options, IOMessage.class)
                 .stream()
                 .findFirst()
