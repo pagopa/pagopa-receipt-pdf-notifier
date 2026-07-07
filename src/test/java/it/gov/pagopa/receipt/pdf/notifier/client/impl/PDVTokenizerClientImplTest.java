@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.http.HttpClient;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
@@ -27,6 +28,14 @@ class PDVTokenizerClientImplTest {
     void setUp() {
         clientMock = mock(HttpClient.class);
         sut = spy(new PDVTokenizerClientImpl(clientMock));
+    }
+
+    @Test
+    void testSingletonError() {
+        PDVTokenizerClientImpl first = assertDoesNotThrow(PDVTokenizerClientImpl::getInstance);
+        PDVTokenizerClientImpl second = assertDoesNotThrow(PDVTokenizerClientImpl::getInstance);
+
+        assertEquals(first, second);
     }
 
     @Test
