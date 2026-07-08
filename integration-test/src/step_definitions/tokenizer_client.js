@@ -10,11 +10,9 @@ const tokenizerClient = axios.create({
 async function createToken(fiscalCode) {
   	return await tokenizerClient.put("", { "pii": fiscalCode })
   		.then(res => {
-			console.log("tokenizer response", res.status, res.data);
   			return res.data;
   		})
   		.catch(error => {
-			console.log("tokenizer error", error.response.status, error.response.data);
   			return error.response;
   		});
 
