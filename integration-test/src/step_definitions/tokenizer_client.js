@@ -1,14 +1,14 @@
 const axios = require("axios");
 
-const tokenizer_url = process.env.TOKENIZER_URL;
+const tokenizerClient = axios.create({
+	baseURL: process.env.TOKENIZER_URL,
+	headers: {
+		'x-api-key': process.env.TOKENIZER_API_KEY || ""
+	}
+});
 
 async function createToken(fiscalCode) {
-    let token_api_key = process.env.TOKENIZER_API_KEY;
-  	let headers = {
-  	  "x-api-key": token_api_key
-  	};
-
-  	return await axios.put(tokenizer_url, { "pii": fiscalCode }, { headers })
+  	return await tokenizerClient.put("", { "pii": fiscalCode })
   		.then(res => {
 			console.log("tokenizer response", res.status, res.data);
   			return res.data;
