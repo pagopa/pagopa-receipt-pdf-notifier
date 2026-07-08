@@ -58,7 +58,6 @@ Then('the receipt has not the status {string}', function (targetStatus) {
 });
 
 Then('the receipt has the status {string}', function (targetStatus) {
-    console.log("Receipt", this.responseToCheck.resources[0].id, this.responseToCheck.resources[0].status);
     assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
 
@@ -68,7 +67,6 @@ Given('a random receipt with id {string} enqueued on notification error queue', 
     await deleteDocumentFromReceiptsDatastore(this.receiptId, this.receiptId);
 
     let event = createReceiptForError(this.receiptId, this.fiscalCodeToken);
-    console.log("Enqueuing event on notification error queue:", event);
     await putMessageOnQueue(event);
 });
 
@@ -101,7 +99,6 @@ Then('the cart receipt has not the status {string}', function (targetStatus) {
 });
 
 Then('the cart receipt has the status {string}', function (targetStatus) {
-    console.log("Cart receipt", this.responseToCheck.resources[0].id, this.responseToCheck.resources[0].status);
     assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
 
@@ -111,7 +108,6 @@ Given('a random cart receipt with id {string} enqueued on notification error que
     await deleteDocumentFromCartReceiptsDatastore(this.cartReceiptId, this.cartReceiptId);
 
     let event = createCartReceiptForError(this.cartReceiptId, this.fiscalCodeToken);
-    console.log("Enqueuing event on notification error queue for cart:", event);
     await putMessageOnCartQueue(event);
 });
 

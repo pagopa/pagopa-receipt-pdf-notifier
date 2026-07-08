@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.http.HttpClient;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -25,6 +27,14 @@ class IOClientImplTest {
     void setUp() {
         clientMock = mock(HttpClient.class);
         sut = spy(new IOClientImpl(clientMock));
+    }
+
+    @Test
+    void testSingletonError() {
+        IOClientImpl first = assertDoesNotThrow(IOClientImpl::getInstance);
+        IOClientImpl second = assertDoesNotThrow(IOClientImpl::getInstance);
+
+        assertEquals(first, second);
     }
 
     @Test
