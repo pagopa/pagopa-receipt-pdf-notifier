@@ -82,6 +82,7 @@ microservice-chart:
           value: "70"
   fileConfig: {}
   envConfig:
+    JAVA_OPTS: "-XX:-UseBASE64Intrinsics"
     ENV: "dev"
     LOG_LEVEL: "INFO"
     LANG: "C.UTF-8"
